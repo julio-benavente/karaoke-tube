@@ -1,0 +1,19 @@
+{
+  "name": "@karaoke-tube/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "pnpm --filter @karaoke-tube/web build && wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@karaoke-tube/shared": "workspace:*",
+    "hono": "^4.13.14"
+  },
+  "devDependencies": {
+    "wrangler": "^4.156.0"
+  }
+}
