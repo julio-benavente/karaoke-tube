@@ -9,6 +9,7 @@ import { QueueScreen } from "./screens/Queue";
 import { PartyScreen } from "./screens/Party";
 
 const Gallery = lazy(() => import("./dev/Gallery").then((m) => ({ default: m.Gallery })));
+const HostApp = lazy(() => import("./host/HostApp").then((m) => ({ default: m.HostApp })));
 const TvPreview = lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview })));
 
 export function App() {
@@ -24,6 +25,7 @@ export function App() {
             <Route path="queue" element={<QueueScreen />} />
             <Route path="party" element={<PartyScreen />} />
           </Route>
+          <Route path="/host/:code" element={<HostApp />} />
           <Route path="/dev/ui" element={<Gallery />} />
           <Route path="/dev/tv" element={<TvPreview />} />
           <Route path="*" element={<Navigate to="/join" replace />} />

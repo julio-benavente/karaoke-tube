@@ -5,7 +5,8 @@ export type PartyInfo = { code: string; guestCount: number };
 export type PopupMessage =
   | { type: "START_PARTY"; nickname: string; avatarSeed: string } // → { ok: true, code } | { ok: false, error }
   | { type: "GET_PARTY" } // → { ok: true, party: PartyInfo | null }
-  | { type: "END_PARTY" }; // → { ok: true }
+  | { type: "END_PARTY" } // → { ok: true }
+  | { type: "OPEN_HOST" }; // background opens or focuses the host app on the website
 
 type Reply = { ok?: boolean; code?: string; error?: string; party?: PartyInfo | null } | undefined;
 
@@ -74,18 +75,8 @@ export async function createPartyApi(): Promise<PartyApi> {
   };
 }
 
+/** The host app lives on the website; the background opens (or focuses) it with the host's link. */
 async function openHost() {
-  try {
-    const url = browser.runtime.getURL("/host.html");
-    const [existing] = await browser.tabs.query({ url });
-    if (existing?.id !== undefined) {
-      await browser.tabs.update(existing.id, { active: true });
-      if (existing.windowId !== undefined) await browser.windows.update(existing.windowId, { focused: true });
-    } else {
-      await browser.tabs.create({ url });
-    }
-  } catch {
-    window.open("/host.html", "_blank");
-  }
+  await send({ type: "OPEN_HOST" });
   window.close();
 }

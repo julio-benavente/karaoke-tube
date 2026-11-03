@@ -18,7 +18,8 @@ import {
   useRoomErrors,
   useToast,
 } from "@karaoke-tube/ui";
-import { createHostClients } from "./client";
+import { useParams } from "react-router";
+import { adoptHostLink, askExtensionShowOnTv, createHostClients, hasCredentials } from "./client";
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
@@ -30,7 +31,24 @@ export type View = "home" | "search" | "settings";
 
 /** H1: the host app, full tab. Sidebar | main | queue, player bar at the bottom. */
 export function HostApp() {
-  const clients = useMemo(() => createHostClients(), []);
+  const code = (useParams().code ?? "").toUpperCase();
+  const isMock = new URLSearchParams(location.search).get("mock") === "1";
+  // Before creating the client: it rejoins with the credentials the extension's link carries.
+  const allowed = useMemo(() => {
+    adoptHostLink(code);
+    return isMock || hasCredentials(code);
+  }, [code, isMock]);
+  const clients = useMemo(() => (allowed ? createHostClients(code) : null), [allowed, code]);
+  if (!clients) {
+    return (
+      <div className={css.center}>
+        <EmptyState icon={<CircleSlash />} title="Open the host app from the extension">
+          Start or open your party with the Karaoke Tube button in Chrome's toolbar. Joining as a guest?{" "}
+          <a href={`/join/${code}`}>Join {code}</a>.
+        </EmptyState>
+      </div>
+    );
+  }
   return (
     <RoomProvider client={clients.room} search={clients.search}>
       <ToastProvider offset={96}>
@@ -52,7 +70,7 @@ function Host() {
   if (state?.status === "ended" || closeReason === "ended") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => window.close()}>Close tab</Button>}>
+        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => (location.href = "/")}>Done</Button>}>
           Thanks for hosting! Start a new party from the Karaoke Tube button in your toolbar.
         </EmptyState>
       </div>
@@ -63,6 +81,15 @@ function Host() {
       <div className={css.center}>
         <EmptyState icon={<CircleSlash />} title="Not connected" action={<Button onClick={() => location.reload()}>Reconnect</Button>}>
           The host app lost its connection to the party.
+        </EmptyState>
+      </div>
+    );
+  }
+  if (me && me.role === "guest") {
+    return (
+      <div className={css.center}>
+        <EmptyState icon={<CircleSlash />} title="This is the host's screen" action={<Button onClick={() => (location.href = `/r/${state?.code ?? ""}`)}>Go to the party</Button>}>
+          You're a guest in this party.
         </EmptyState>
       </div>
     );
@@ -173,11 +200,6 @@ function QueueIcon() {
 
 /** Ask the background to bring the YouTube window forward; it goes full screen on the TV. */
 async function showOnTv(show: (m: string) => void) {
-  try {
-    const res = (await browser.runtime.sendMessage({ type: "SHOW_ON_TV" })) as { ok?: boolean } | undefined;
-    if (res?.ok) return;
-  } catch {
-    // background doesn't handle it yet
-  }
+  if (await askExtensionShowOnTv()) return;
   show("Drag the YouTube window onto the TV, then press F for full screen.");
 }

@@ -1,24 +1,7 @@
-import type { ClientMessage, ConnectionStatus, ErrorCode, QueueItem, Reaction, RoomState } from "@karaoke-tube/shared";
+import type { QueueItem, Reaction, RoomState } from "@karaoke-tube/shared";
 
-/** `browser.runtime.connect({ name })` names. */
-export const ROOM_PORT = "room";
+/** `browser.runtime.connect({ name })` name for the party's YouTube tab. */
 export const PLAYER_PORT = "player";
-
-// ── room port: extension pages (host app) ⇄ background ──────────────────
-
-export type RoomPortToPage =
-  /** Sent on connect and after every change. `memberId` is the host's. */
-  | {
-      type: "snapshot";
-      status: ConnectionStatus;
-      state: RoomState | null;
-      memberId: string | null;
-      closeReason: "kicked" | "ended" | "left" | null;
-    }
-  | { type: "reaction"; memberId: string; reaction: Reaction }
-  | { type: "error"; code: ErrorCode; message: string };
-
-export type RoomPortToBackground = { type: "send"; msg: ClientMessage };
 
 // ── player port: the party's YouTube tab ⇄ background ───────────────────
 

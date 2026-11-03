@@ -18,7 +18,9 @@ export type ExtMessage =
   | { type: "START_PARTY"; nickname: string; avatarSeed: string }
   | { type: "END_PARTY" }
   | { type: "GET_PARTY" }
-  /** Host app's "Show on TV": focus the party's YouTube window and make it full screen. */
+  /** Popup's "Open host app": open or focus the host app (on the website). */
+  | { type: "OPEN_HOST" }
+  /** Host app's "Show on TV" (from the website, via externally_connectable). */
   | { type: "SHOW_ON_TV" };
 
 export type StartPartyResponse = { ok: true; code: string } | { ok: false; error: string };

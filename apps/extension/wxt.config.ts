@@ -26,5 +26,7 @@ export default defineConfig({
     host_permissions: ["http://localhost:8787/*", "https://*.workers.dev/*"],
     // Figtree for the TV overlay, loaded by the content script at document level.
     web_accessible_resources: [{ resources: ["fonts/*.woff2"], matches: ["*://*.youtube.com/*"] }],
+    // The host app on the website sends "Show on TV" to the extension. Ports don't count in match patterns.
+    externally_connectable: { matches: ["http://localhost/*", "https://*.workers.dev/*"] },
   },
 });

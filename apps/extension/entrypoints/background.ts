@@ -1,7 +1,8 @@
 import { createRoomClient, memoryCredentials } from "@karaoke-tube/client";
-import type { CreateRoomResponse, QueueItem, RoomClient, RoomState, ServerMessage } from "@karaoke-tube/shared";
+import type { CreateRoomResponse, QueueItem, RoomClient, ServerMessage } from "@karaoke-tube/shared";
 import {
   API_URL,
+  WEB_URL,
   fetchHealth,
   type EndPartyResponse,
   type ExtMessage,
@@ -9,19 +10,12 @@ import {
   type ShowOnTvResponse,
   type StartPartyResponse,
 } from "@/utils/api";
-import {
-  PLAYER_PORT,
-  ROOM_PORT,
-  type PlayerPortToBackground,
-  type PlayerPortToTab,
-  type RoomPortToBackground,
-  type RoomPortToPage,
-} from "@/utils/ports";
+import { PLAYER_PORT, type PlayerPortToBackground, type PlayerPortToTab } from "@/utils/ports";
 
 type Port = Browser.runtime.Port;
 
 /** What survives a service worker restart (chrome.storage.session, cleared when the browser closes). */
-type SavedParty = { code: string; memberId: string; key: string; youtubeTabId: number | null };
+type SavedParty = { code: string; memberId: string; key: string; youtubeTabId: number | null; hostTabId?: number | null };
 const PARTY_KEY = "party";
 const YOUTUBE_URL = "https://www.youtube.com/";
 
@@ -29,12 +23,7 @@ let party: SavedParty | null = null;
 let room: RoomClient | null = null;
 /** The last `play` from the room, so a reloaded YouTube tab can pick the song up again. */
 let currentPlay: QueueItem | null = null;
-/** Last state seen, kept after the party ends so the host app can show the ended screen. */
-let lastState: RoomState | null = null;
-/** Why the last party's connection closed, for the host app (`RoomClient.closeReason`). */
-let closedReason: "kicked" | "ended" | "left" | null = null;
 let playerPort: Port | null = null;
-const pagePorts = new Set<Port>();
 let ready: Promise<void> = Promise.resolve();
 
 export default defineBackground(() => {
@@ -53,14 +42,27 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onConnect.addListener((port) => {
-    if (port.name === ROOM_PORT) void onPagePort(port);
-    else if (port.name === PLAYER_PORT) void onPlayerPort(port);
+    if (port.name === PLAYER_PORT) void onPlayerPort(port);
+  });
+
+  // The host app on the website asks for "Show on TV" (manifest `externally_connectable`).
+  browser.runtime.onMessageExternal.addListener((msg: ExtMessage, sender, sendResponse) => {
+    if (!sender.url || new URL(sender.url).origin !== new URL(WEB_URL).origin || msg?.type !== "SHOW_ON_TV") return;
+    ready
+      .then(showOnTv)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true;
   });
 
   browser.tabs.onRemoved.addListener((tabId) => {
     if (party && party.youtubeTabId === tabId) {
       console.log("[bg] party YouTube tab closed");
       party.youtubeTabId = null;
+      void save();
+    }
+    if (party && party.hostTabId === tabId) {
+      party.hostTabId = null;
       void save();
     }
   });
@@ -81,6 +83,8 @@ async function handleMessage(msg: ExtMessage): Promise<unknown> {
       return getParty();
     case "SHOW_ON_TV":
       return showOnTv();
+    case "OPEN_HOST":
+      return openHost();
   }
 }
 
@@ -100,15 +104,39 @@ async function startParty(nickname: string, avatarSeed: string): Promise<StartPa
   const created = (await res.json()) as CreateRoomResponse;
   console.log("[bg] room created", created.code);
 
-  party = { code: created.code, memberId: created.memberId, key: created.key, youtubeTabId: null };
-  lastState = null;
-  closedReason = null;
+  party = { code: created.code, memberId: created.memberId, key: created.key, youtubeTabId: null, hostTabId: null };
   await save();
   connectRoom();
-  await browser.tabs.create({ url: browser.runtime.getURL("/host.html") });
+  await openHost();
   party.youtubeTabId = await openYouTubeWindow();
   await save();
   return { ok: true, code: created.code };
+}
+
+/**
+ * The host app is a page on the website. Its link carries the host's credentials in the fragment (never sent
+ * to a server) and this extension's id, so the page can rejoin as the host and ask for "Show on TV".
+ */
+function hostUrl(p: SavedParty): string {
+  const hash = new URLSearchParams({ m: p.memberId, k: p.key, x: browser.runtime.id });
+  return `${WEB_URL}/host/${p.code}#${hash}`;
+}
+
+async function openHost(): Promise<{ ok: boolean }> {
+  if (!party) return { ok: false };
+  if (party.hostTabId != null) {
+    try {
+      const tab = await browser.tabs.update(party.hostTabId, { active: true });
+      if (tab?.windowId !== undefined) await browser.windows.update(tab.windowId, { focused: true });
+      return { ok: true };
+    } catch {
+      party.hostTabId = null; // closed
+    }
+  }
+  const tab = await browser.tabs.create({ url: hostUrl(party) });
+  party.hostTabId = tab.id ?? null;
+  await save();
+  return { ok: true };
 }
 
 /** A separate window the host drags onto the TV. */
@@ -190,13 +218,9 @@ function connectRoom() {
     if (room !== client) return;
     onRoomChange(client);
   });
-  client.onReaction((e) => {
-    postPages({ type: "reaction", ...e });
-    postPlayer({ type: "reaction", ...e });
-  });
+  client.onReaction((e) => postPlayer({ type: "reaction", ...e }));
   client.onError((e) => {
     console.warn("[bg] room error", e.code, e.message);
-    postPages({ type: "error", ...e });
     // The room was deleted (ended more than an hour ago) or never existed.
     if (e.code === "room_not_found" || e.code === "bad_key") void endLocal();
   });
@@ -220,8 +244,6 @@ function onServerMessage(msg: ServerMessage) {
 
 function onRoomChange(client: RoomClient) {
   const state = client.state;
-  if (state) lastState = state;
-  postPages(snapshot());
   if (!state) return;
   if (!state.nowPlaying && currentPlay) {
     currentPlay = null;
@@ -235,7 +257,6 @@ function onRoomChange(client: RoomClient) {
 async function endLocal() {
   if (!party && !room) return;
   console.log("[bg] party over");
-  closedReason = lastState?.status === "ended" ? "ended" : (room?.closeReason ?? "left");
   room?.close();
   room = null;
   party = null;
@@ -244,44 +265,9 @@ async function endLocal() {
   postPlayer({ type: "not_party" });
   playerPort?.disconnect();
   playerPort = null;
-  postPages(snapshot());
-}
-
-function snapshot(): RoomPortToPage {
-  return {
-    type: "snapshot",
-    status: room?.status ?? "closed",
-    state: room?.state ?? lastState,
-    memberId: party?.memberId ?? lastState?.members.find((m) => m.role === "host")?.id ?? null,
-    closeReason: room ? (room.closeReason ?? null) : closedReason,
-  };
 }
 
 // ── Ports ────────────────────────────────────────────────────────────────
-
-async function onPagePort(port: Port) {
-  await ready;
-  pagePorts.add(port);
-  port.onDisconnect.addListener(() => pagePorts.delete(port));
-  port.onMessage.addListener((raw) => {
-    const msg = raw as RoomPortToBackground;
-    if (msg.type === "send") {
-      if (room) room.send(msg.msg);
-      else port.postMessage({ type: "error", code: "room_not_found", message: "No party is running." } satisfies RoomPortToPage);
-    }
-  });
-  port.postMessage(snapshot());
-}
-
-function postPages(msg: RoomPortToPage) {
-  for (const port of pagePorts) {
-    try {
-      port.postMessage(msg);
-    } catch {
-      pagePorts.delete(port);
-    }
-  }
-}
 
 async function onPlayerPort(port: Port) {
   await ready;
