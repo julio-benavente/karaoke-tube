@@ -140,6 +140,13 @@ export type ErrorCode =
   | "queue_limit"
   | "invalid_message";
 
+// ── Room codes ───────────────────────────────────────────────────────────
+
+/** Characters in a room code: no 0/O or 1/I, so it reads well off a TV. */
+export const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+/** 6 characters ≈ 1 billion codes: hard to guess, still easy to type. */
+export const ROOM_CODE_LENGTH = 6;
+
 // ── HTTP: /api ───────────────────────────────────────────────────────────
 
 /** POST /api/rooms  body: CreateRoomRequest */
