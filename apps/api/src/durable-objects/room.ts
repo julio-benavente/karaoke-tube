@@ -404,6 +404,11 @@ export class Room extends DurableObject<Env> {
         }
         break;
       }
+      case "show_join": {
+        requireHost();
+        this.broadcast({ type: "join_flash" });
+        return;
+      }
       case "end_party": {
         if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can end the party.");
         await this.endRoom();
@@ -965,6 +970,7 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   if (typeof input.countdownSec === "number" && Number.isFinite(input.countdownSec)) {
     out.countdownSec = Math.max(0, Math.min(30, Math.trunc(input.countdownSec)));
   }
+  if (input.joinInfo === "between" || input.joinInfo === "always" || input.joinInfo === "start") out.joinInfo = input.joinInfo;
   for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }
@@ -1030,6 +1036,7 @@ export function parseClientMessage(text: string): ClientMessage {
     case "resume":
     case "restart":
     case "end_party":
+    case "show_join":
       break;
     case "player_status":
       ok(typeof m.tabOpen === "boolean");

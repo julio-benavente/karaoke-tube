@@ -1,4 +1,5 @@
 import { SELF } from "cloudflare:test";
+import type { RoomSettings } from "@karaoke-tube/shared";
 import { describe, expect, it } from "vitest";
 import { BASE, TestClient, createRoom, guest, hostRoom, song } from "./helpers";
 
@@ -93,6 +94,37 @@ describe("lock and end", () => {
 
     const back = await TestClient.open(code);
     expect((await back.request({ type: "rejoin", memberId: ana.id, key: ana.key }, "welcome")).memberId).toBe(ana.id);
+  });
+
+  it("joinInfo setting defaults to between, is sanitised and persists", async () => {
+    const { code, host } = await hostRoom({ player: false });
+    expect((await host.act({ type: "update_settings", settings: { countdownSec: 3 } })).settings.joinInfo).toBe("between");
+    expect((await host.act({ type: "update_settings", settings: { joinInfo: "always" } })).settings.joinInfo).toBe("always");
+    // Junk is ignored; the old value stays.
+    const junk = { joinInfo: "sometimes" } as unknown as Partial<RoomSettings>;
+    expect((await host.act({ type: "update_settings", settings: junk })).settings.joinInfo).toBe("always");
+    expect((await host.act({ type: "update_settings", settings: { joinInfo: "start" } })).settings.joinInfo).toBe("start");
+    // Persisted: a guest joining later sees it.
+    expect((await guest(code, "Late")).welcome.state.settings.joinInfo).toBe("start");
+  });
+
+  it("show_join: hosts and co-hosts may send it, guests may not; everyone gets join_flash", async () => {
+    const { code, host } = await hostRoom({ player: false });
+    const ana = await guest(code, "Ana");
+    const ben = await guest(code, "Ben");
+    await host.act({ type: "set_role", memberId: ana.id, role: "cohost" });
+
+    expect(await ben.client.expectError({ type: "show_join" })).toBe("not_allowed");
+    expect(ben.client.messages.some((m) => m.type === "join_flash")).toBe(false);
+
+    host.send({ type: "show_join" });
+    await ben.client.next("join_flash");
+    await ana.client.next("join_flash");
+    await host.next("join_flash");
+
+    const from = ben.client.messages.length;
+    ana.client.send({ type: "show_join" });
+    await ben.client.next("join_flash", from);
   });
 
   it("ends the party: status ended, `ended` broadcast, joins refused", async () => {
