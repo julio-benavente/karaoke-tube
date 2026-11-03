@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Maximize } from "lucide-react";
-import { createRoomClient } from "@karaoke-tube/client";
+import { createRoomClient, screenCredentials } from "@karaoke-tube/client";
 import type { QueueItem, RoomClient, ServerMessage } from "@karaoke-tube/shared";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import { useParams } from "react-router";
@@ -9,6 +9,7 @@ import { adoptHostLink, hasCredentials } from "../host/client";
 import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
 import { Lobby } from "./Lobby";
+import { clearScreen, loadScreen } from "./screenStore";
 
 const AWARDS_SHOW_MS = 60_000;
 const JOIN_FLASH_MS = 15_000;
@@ -28,10 +29,15 @@ export function TvScreen() {
   const t = useT();
   const code = normalizeRoomCode(useParams().code ?? "");
   // Before creating the client: it rejoins with the credentials the host app's link carries (#m=..&k=..).
+  // A paired screen (its own key) comes first; the host app's link (the host's login) still works too.
+  const screenKey = useMemo(() => {
+    const s = loadScreen();
+    return s && s.code === code ? s.key : null;
+  }, [code]);
   const allowed = useMemo(() => {
     adoptHostLink(code);
-    return hasCredentials(code);
-  }, [code]);
+    return screenKey !== null || hasCredentials(code);
+  }, [code, screenKey]);
   if (!allowed) {
     return (
       <div style={center}>
@@ -40,13 +46,16 @@ export function TvScreen() {
         <a style={{ color: "#ff4f8b" }} href={`/host/${code}`}>
           {t("tv.goHost")}
         </a>
+        <a style={{ color: "#ff4f8b" }} href="/tv">
+          {t("tv.pairThis")}
+        </a>
       </div>
     );
   }
-  return <Tv code={code} />;
+  return <Tv code={code} screenKey={screenKey} />;
 }
 
-function Tv({ code }: { code: string }) {
+function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
   const t = useT();
   const [started, setStarted] = useState(false);
   const clientRef = useRef<RoomClient | null>(null);
@@ -80,9 +89,13 @@ function Tv({ code }: { code: string }) {
         flashTimer.current = setTimeout(() => setFlash(false), JOIN_FLASH_MS);
       } else if (msg.type === "player_command") {
         playerRef.current?.command(msg.command);
+      } else if (msg.type === "screen_removed") {
+        // The host removed this screen (or paired another): back to showing a code.
+        clearScreen();
+        location.replace("/tv");
       }
     };
-    const c = createRoomClient({ code, player: true, onServerMessage });
+    const c = createRoomClient({ code, player: true, onServerMessage, ...(screenKey ? { credentials: screenCredentials(screenKey) } : {}) });
     clientRef.current = c;
     setClient(c);
     return () => {
@@ -91,7 +104,7 @@ function Tv({ code }: { code: string }) {
       clientRef.current = null;
       setClient(null);
     };
-  }, [code]);
+  }, [code, screenKey]);
 
   const subscribe = useCallback((l: () => void) => client?.subscribe(l) ?? (() => {}), [client]);
   const state = useSyncExternalStore(subscribe, () => client?.state ?? null);
@@ -129,14 +142,23 @@ function Tv({ code }: { code: string }) {
     }
   }, [state, hasNowPlaying]);
 
+  // This screen's pairing is no longer valid (removed while it was offline): show a fresh code.
+  useEffect(() => {
+    if (screenKey && closeReason === "forgotten") {
+      clearScreen();
+      location.replace("/tv");
+    }
+  }, [screenKey, closeReason]);
+
   const ended = state?.status === "ended" || closeReason === "ended";
   const [showFinal, setShowFinal] = useState(false);
   useEffect(() => {
     if (!ended) return;
     playerRef.current?.stop();
+    if (screenKey) clearScreen(); // the party is over: next time this TV opens it asks to be paired again
     const t = setTimeout(() => setShowFinal(true), AWARDS_SHOW_MS);
     return () => clearTimeout(t);
-  }, [ended]);
+  }, [ended, screenKey]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -1,4 +1,4 @@
-import { normalizeRoomCode, type ClientMessage, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
+import { SCREEN_MEMBER_ID, normalizeRoomCode, type ClientMessage, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
 import { BaseRoomClient } from "./base";
 
 export type Credentials = { memberId: string; key: string };
@@ -32,6 +32,15 @@ const HEARTBEAT_MS = 25_000;
 const PONG_TIMEOUT_MS = 10_000;
 
 export const storageKey = (code: string) => `kt:room:${normalizeRoomCode(code)}`;
+
+/** A paired TV screen connects as the reserved member id with its screen key (nothing to save or clear). */
+export function screenCredentials(screenKey: string): CredentialStore {
+  return {
+    load: () => ({ memberId: SCREEN_MEMBER_ID, key: screenKey }),
+    save() {},
+    clear() {},
+  };
+}
 
 export function localStorageCredentials(): CredentialStore {
   return {

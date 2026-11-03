@@ -126,3 +126,11 @@
     max-width: 520px;
   }
 }
+
+.tvLink {
+  align-self: center;
+  padding: var(--kt-space-2) var(--kt-space-3);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  text-decoration: underline;
+}

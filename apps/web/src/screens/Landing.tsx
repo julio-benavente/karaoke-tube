@@ -72,6 +72,9 @@ export function Landing() {
           <span className={css.choiceTitle}>{t("landing.join")}</span>
           <span className={css.choiceHint}>{t("landing.joinHint")}</span>
         </Link>
+        <Link to="/tv" className={css.tvLink}>
+          {t("landing.tv")}
+        </Link>
       </main>
       <LanguageSwitcher />
     </div>

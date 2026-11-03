@@ -213,7 +213,7 @@ function Host() {
         {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
         {status === "open" && state.playerConnected === false && (
           <div className={css.tvClosed} role="alert" data-testid="tv-banner">
-            <span>{t("host.noTv")}</span>
+            <span>{state.screenPaired ? t("host.tvOffline") : t("host.noTv")}</span>
             <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
               {t("host.openTv")}
             </Button>
@@ -304,8 +304,8 @@ function Host() {
       {status === "open" && state.playerConnected === false && (
         <div className={css.tvClosed} role="alert" data-testid="tv-banner">
           <span>
-            {t("host.noTv")}
-            <span className={css.tvHint}> {t("host.noTvHint")}</span>
+            {state.screenPaired ? t("host.tvOffline") : t("host.noTv")}
+            <span className={css.tvHint}> {state.screenPaired ? t("host.tvOfflineHint") : t("host.noTvHint")}</span>
           </span>
           <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
             {t("host.openTv")}

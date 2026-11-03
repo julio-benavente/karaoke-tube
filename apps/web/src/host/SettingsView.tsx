@@ -1,6 +1,7 @@
 import { Minus, Plus, QrCode } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
 import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { TvScreenSettings } from "./TvScreenSettings";
 import css from "./host.module.css";
 
 const JOIN_OPTIONS: Array<[JoinInfoMode, TKey]> = [
@@ -29,6 +30,8 @@ export function SettingsView() {
           <LanguageSwitcher />
         </div>
       </section>
+
+      <TvScreenSettings />
 
       <section className={css.settingsGroup}>
         <h2 className={css.h2}>{t("settings.queue")}</h2>
