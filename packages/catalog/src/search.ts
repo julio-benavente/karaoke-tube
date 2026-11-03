@@ -4,7 +4,8 @@
 
 import MiniSearch from "minisearch";
 import type { RoomInfoResponse, SearchApi, SearchResponse, Song, VideoResponse } from "@karaoke-tube/shared";
-import type { Catalog } from "./types";
+import { filterSongs, type SongFilter } from "./filter";
+import { isCatalog, type AnyCatalog } from "./types";
 
 export const CATALOG_URL = "/catalog/catalog.json";
 export const RESULTS = 15;
@@ -32,9 +33,13 @@ export type CatalogIndex = {
   search(query: string, limit?: number): Song[];
   /** A catalog song by YouTube video id (primary or alternate version). */
   byVideoId(videoId: string): Song | null;
+  /** Songs with the given labels (genre, decade, language, tags), most popular first. Empty for a catalog without labels. */
+  browse(filter: SongFilter, limit?: number): Song[];
+  /** True when the catalog carries genre/decade/language/tag labels (v2). */
+  hasLabels: boolean;
 };
 
-export function createCatalogIndex(catalog: Catalog): CatalogIndex {
+export function createCatalogIndex(catalog: AnyCatalog): CatalogIndex {
   const { songs, artists, channels, alts } = catalog;
   const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
 
@@ -70,6 +75,8 @@ export function createCatalogIndex(catalog: Catalog): CatalogIndex {
   let byId: Map<string, Song> | null = null;
   return {
     size: songs.t.length,
+    hasLabels: catalog.v >= 2,
+    browse: (filter, limit = RESULTS) => filterSongs(catalog, filter, limit).map((i) => toSong(i)),
     search(query, limit = RESULTS) {
       const words = tokenize(query).join(" ");
       if (!words) return [];
@@ -110,16 +117,17 @@ export type CatalogSearchOptions = {
   /** Load in the browser's idle time right away (default true in a browser). */
   autoLoad?: boolean;
   /** Test hook: where the catalog comes from. */
-  fetchCatalog?: (url: string) => Promise<Catalog>;
+  fetchCatalog?: (url: string) => Promise<AnyCatalog>;
   /** How long a search waits for a catalog that is still downloading before using YouTube instead. */
   waitMs?: number;
 };
 
-async function fetchCatalog(url: string): Promise<Catalog> {
+async function fetchCatalog(url: string): Promise<AnyCatalog> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`catalog ${res.status}`);
-  const data = (await res.json()) as Catalog;
-  if (data.v !== 1) throw new Error(`unsupported catalog version ${String(data.v)}`);
+  const data = (await res.json()) as AnyCatalog;
+  // v1 has no labels, v2 adds them; anything newer might have changed shape, so refuse it.
+  if (!isCatalog(data)) throw new Error(`unsupported catalog version ${String((data as { v: unknown }).v)}`);
   return data;
 }
 
