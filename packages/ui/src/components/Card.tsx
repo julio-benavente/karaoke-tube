@@ -2,6 +2,7 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Artwork } from "./Artwork";
 import { PlayButton } from "./Button";
+import { useT } from "../i18n/context";
 import css from "./Card.module.css";
 
 /** Square artwork card with title + subtitle; a play button slides up on hover. */
@@ -12,7 +13,7 @@ export function Card({
   round,
   onClick,
   onPlay,
-  playLabel = "Add to queue",
+  playLabel,
   className,
 }: {
   title: string;
@@ -24,6 +25,7 @@ export function Card({
   playLabel?: string;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div className={clsx(css.card, className)}>
       <button type="button" className={css.hit} onClick={onClick ?? onPlay} aria-label={title} />
@@ -31,7 +33,7 @@ export function Card({
         <Artwork src={image} label={title} shape={round ? "round" : "square"} radius="sm" shadow className={css.art} />
         {onPlay && (
           <span className={css.play}>
-            <PlayButton playing={false} size={44} onClick={onPlay} label={playLabel} />
+            <PlayButton playing={false} size={44} onClick={onPlay} label={playLabel ?? t("home.add")} />
           </span>
         )}
       </div>

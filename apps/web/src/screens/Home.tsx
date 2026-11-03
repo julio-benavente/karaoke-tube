@@ -94,7 +94,7 @@ export function HomeScreen() {
       </header>
 
       <h1 className={css.greeting}>
-        {greeting()}, {me.nickname}
+        {greeting(undefined, t)}, {me.nickname}
       </h1>
 
       {preset ? (

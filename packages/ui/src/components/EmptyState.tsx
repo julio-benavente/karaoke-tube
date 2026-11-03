@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { InputHTMLAttributes, ReactNode, Ref } from "react";
+import { useT } from "../i18n/context";
 import css from "./Misc.module.css";
 
 export function EmptyState({
@@ -53,7 +54,8 @@ export function Logo({ size = 32, className }: { size?: number; className?: stri
 }
 
 export function Spinner({ size = 28, className }: { size?: number; className?: string }) {
-  return <span className={clsx(css.spinner, className)} style={{ width: size, height: size }} role="status" aria-label="Loading" />;
+  const t = useT();
+  return <span className={clsx(css.spinner, className)} style={{ width: size, height: size }} role="status" aria-label={t("common.loading")} />;
 }
 
 /** Text input with the filled style. */
