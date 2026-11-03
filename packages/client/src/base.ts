@@ -1,5 +1,6 @@
 import type { ClientMessage, ConnectionStatus, ErrorCode, Member, Reaction, RoomClient, RoomState } from "@karaoke-tube/shared";
 
+export type CloseReason = "kicked" | "ended" | "left" | null;
 type ReactionEvent = { memberId: string; reaction: Reaction };
 type ErrorEvent = { code: ErrorCode; message: string };
 
@@ -10,6 +11,8 @@ type ErrorEvent = { code: ErrorCode; message: string };
 export abstract class BaseRoomClient implements RoomClient {
   status: ConnectionStatus = "connecting";
   state: RoomState | null = null;
+  /** Why status became "closed": the server sent `kicked` / `ended`, or `close()` was called ("left"). */
+  closeReason: CloseReason = null;
   protected memberId: string | null = null;
 
   private listeners = new Set<() => void>();

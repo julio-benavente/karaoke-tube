@@ -1,7 +1,8 @@
 import ReactDOM from "react-dom/client";
-import { PLAYER_PORT, type OverlayInfo, type PlayerPortToBackground, type PlayerPortToTab } from "@/utils/ports";
-import { Badge } from "./Badge";
+import type { Reaction, RoomState } from "@karaoke-tube/shared";
+import { PLAYER_PORT, type PlayerPortToBackground, type PlayerPortToTab } from "@/utils/ports";
 import { YouTubePlayer } from "./player";
+import { TvLayer, injectFigtree, type ReactionFeed } from "./TvLayer";
 
 const PING_EVERY_MS = 20_000;
 
@@ -13,25 +14,34 @@ export default defineContentScript({
   async main(ctx) {
     // Runs on every YouTube tab, but only the party's window (the background knows its tab id) does anything.
     let player: YouTubePlayer | null = null;
-    let overlay: OverlayInfo | null = null;
+    let state: RoomState | null = null;
+    const reactionListeners = new Set<(e: { memberId: string; reaction: Reaction }) => void>();
+    const onReaction: ReactionFeed = (listener) => {
+      reactionListeners.add(listener);
+      return () => reactionListeners.delete(listener);
+    };
     let root: ReactDOM.Root | null = null;
     let ui: Awaited<ReturnType<typeof createShadowRootUi<ReactDOM.Root>>> | null = null;
     let port: Browser.runtime.Port | null = null;
     let isParty = false;
 
     const render = () => {
-      if (root && overlay) root.render(<Badge overlay={overlay} />);
+      if (root && state) root.render(<TvLayer state={state} onReaction={onReaction} />);
     };
 
     const mountOverlay = async () => {
       if (ui) return;
+      injectFigtree();
       ui = await createShadowRootUi(ctx, {
         name: "karaoke-tube-overlay",
         // Inside the player element, so it's still there in fullscreen.
         position: "inline",
         anchor: "#movie_player",
         append: "last",
-        onMount(container) {
+        onMount(container, _shadow, shadowHost) {
+          // Cover the whole player; the TV components position themselves inside it.
+          shadowHost.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:60;";
+          container.style.cssText = "position:absolute;inset:0;";
           root = ReactDOM.createRoot(container);
           render();
           return root;
@@ -72,16 +82,26 @@ export default defineContentScript({
             leave();
             break;
           case "party":
-            console.log("[content] this is the party's YouTube window, room", msg.overlay.code);
+            console.log("[content] this is the party's YouTube window, room", msg.code);
             isParty = true;
-            overlay = msg.overlay;
+            state = msg.state ?? state;
             player ??= new YouTubePlayer(send);
             void mountOverlay();
             render();
             break;
-          case "overlay":
-            overlay = msg.overlay;
+          case "state":
+            state = msg.state;
             render();
+            break;
+          case "reaction":
+            for (const l of [...reactionListeners]) l(msg);
+            break;
+          case "fullscreen":
+            // Needs a user gesture in the tab; when Chrome refuses, the window is still full screen (background).
+            void document
+              .querySelector<HTMLElement>("#movie_player")
+              ?.requestFullscreen()
+              .catch(() => console.log("[content] player fullscreen needs a click or F on the TV window"));
             break;
           case "play":
             player?.play(msg.item);

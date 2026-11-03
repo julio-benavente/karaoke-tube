@@ -8,9 +8,5 @@ export type HealthResponse = {
   time: string;
 };
 
-// Messages sent over a room's WebSocket.
-export type RoomMessage =
-  | { type: "hello"; from: string }
-  | { type: "chat"; from: string; text: string }
-  | { type: "system"; text: string; members: number };
+// The contract between the tracks (domain types, WebSocket messages, HTTP responses, client interfaces).
 export * from "./protocol";

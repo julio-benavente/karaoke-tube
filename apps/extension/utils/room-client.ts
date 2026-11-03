@@ -23,6 +23,7 @@ class ExtensionRoomClient extends BaseRoomClient {
   }
 
   close() {
+    this.closeReason ??= "left";
     this.closed = true;
     this.port?.disconnect();
     this.port = null;
@@ -40,6 +41,7 @@ class ExtensionRoomClient extends BaseRoomClient {
       const msg = raw as RoomPortToPage;
       if (msg.type === "snapshot") {
         this.status = msg.status;
+        this.closeReason = msg.closeReason;
         this.setState(msg.state, msg.memberId);
         if (msg.status === "open" && this.outbox.length) {
           const pending = this.outbox;

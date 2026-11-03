@@ -117,6 +117,7 @@ class WebSocketRoomClient extends BaseRoomClient {
   }
 
   close() {
+    this.closeReason ??= "left";
     this.closedByUser = true;
     if (this.retryTimer) clearTimeout(this.retryTimer);
     if (typeof window !== "undefined") window.removeEventListener("online", this.onOnline);
@@ -182,6 +183,7 @@ class WebSocketRoomClient extends BaseRoomClient {
         this.status = "open";
         this.setState(msg.state, msg.memberId);
         this.flush(false);
+        if (msg.state.status === "ended") this.closeAs("ended");
         break;
       case "state":
         this.setState(msg.state);
@@ -211,14 +213,23 @@ class WebSocketRoomClient extends BaseRoomClient {
         break;
       case "kicked":
         this.store.clear(this.code);
-        this.setStatus("closed");
-        this.ws?.close(1000, "kicked");
+        this.closeAs("kicked");
+        break;
+      case "ended":
+        this.closeAs("ended");
         break;
       // `play` / `player_command` are for the extension's player; `ended` is also in the state.
       default:
         break;
     }
     this.opts.onServerMessage?.(msg);
+  }
+
+  /** The server ended our membership: stop for good, no reconnect. */
+  private closeAs(reason: "kicked" | "ended") {
+    this.closeReason = reason;
+    this.setStatus("closed");
+    this.ws?.close(1000, reason);
   }
 
   /** Sends queued messages: only a queued join/rejoin before we're a member, everything after. */

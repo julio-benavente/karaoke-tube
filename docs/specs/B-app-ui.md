@@ -78,7 +78,7 @@ Presentational only, props in and nothing else, exported from `packages/ui/src/t
 They must render inside a shadow root: no global CSS and no `document`-level styles, and the CSS must be importable as a string.
 Spec A mounts them in the content script. Build a `/dev/tv` route in `apps/web` to preview them over a fake video background.
 
-## Integration (last step, after Spec A's branch is merged)
+## Integration (last step, after Spec A's branch is merged) ✅
 - `apps/web`: replace the mock with `createRoomClient` / `createSearchApi` from `@karaoke-tube/client`.
 - Host page: use `createExtensionRoomClient()`.
 - Check the full flow with two phones (two browser windows) and the extension.
@@ -90,22 +90,7 @@ Titles and awards screens (G7, T3), duets UI, turn alerts, rating, avatar builde
 and nothing in the UI uses Spotify's name, logo, green or font.
 
 ## Requests for the other track
-- **Set `RoomClient.closeReason`** (new optional field, see README "Contract changes") in `createRoomClient` and
-  `createExtensionRoomClient`: `"kicked"` on the `kicked` message, `"ended"` on `ended`, `"left"` after `close()`.
-- **`SHOW_ON_TV` message** (background): the host app's "Show on TV" button sends `{ type: "SHOW_ON_TV" }`. Please focus the
-  party's YouTube window and make the player full screen if you can, and reply `{ ok: true }`. Without a reply the host app
-  shows a hint ("drag the YouTube window onto the TV, press F").
-- **Popup message replies** (background), as the popup reads them (`apps/extension/entrypoints/popup/party.ts`):
-  `START_PARTY` → `{ ok: true, code }` or `{ ok: false, error }`; `GET_PARTY` → `{ ok: true, party: { code, guestCount } | null }`;
-  `END_PARTY` → `{ ok: true }`. Until `GET_PARTY` replies with an `ok` boolean, the popup runs in a local "Demo" mode.
-  "Open host app" opens or focuses `host.html` itself.
-- **TV overlay mount** (content script): `import { TvOverlay, GetReadyCard, tvCss, TV_REACTION_MS } from "@karaoke-tube/ui/tv"`.
-  Put `<style>{tvCss}</style>` and the React root in a shadow root on a host element that covers `#movie_player`
-  (`position: absolute; inset: 0`). Show `GetReadyCard` while `playback.state === "get_ready"`, otherwise `TvOverlay`.
-  Keep each reaction in `reactions` for `TV_REACTION_MS`, then drop it. Make the QR with `qrcode`'s `toDataURL(joinUrl)`.
-  `apps/web/src/dev/TvPreview.tsx` shows the exact wiring.
-- **Figtree on the TV**: `@font-face` doesn't work inside a shadow root, so the overlay falls back to the system font
-  unless the content script adds Figtree at document level: list the `@fontsource/figtree` woff2 files (400/700/800) in
-  `web_accessible_resources` and inject `@font-face` rules that use `browser.runtime.getURL(...)`.
-- **`WXT_WEB_URL`** in `apps/extension/.env.example` (and `wxt.config.ts` if needed): the guest web app's origin. The host
-  app's QR code and invite link use `${WXT_WEB_URL}/join/<CODE>`; it falls back to `http://localhost:5173`.
+All handled during integration on `main`: `closeReason` in both clients, `SHOW_ON_TV` (focuses the YouTube window and
+makes it full screen; the player itself goes full screen only with a click or F, Chrome needs a user gesture), the popup
+reply shapes, the TV overlay mounted from `@karaoke-tube/ui/tv` with QR and reactions, Figtree via
+`web_accessible_resources`, and `WXT_WEB_URL`.

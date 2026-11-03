@@ -1,13 +1,18 @@
+import { createSearchApi } from "@karaoke-tube/client";
 import type { RoomClient, SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, type MockRoomClient } from "@karaoke-tube/ui";
+import { API_URL } from "@/utils/api";
+import { createExtensionRoomClient } from "@/utils/room-client";
 
 /**
- * The host page's clients. Uses the mock until Spec A's `createExtensionRoomClient()` exists in
- * `apps/extension/utils/room-client.ts`. Integration: import it here and return it instead of the mock.
- * `?mock=1` forces the mock; `?sim=1` adds simulated reactions and short songs.
+ * The host page's clients: the party the background runs (over the `room` port) and the real search API.
+ * `?mock=1` uses the mock instead; `?sim=1` adds simulated reactions and short songs.
  */
 export function createHostClients(): { room: RoomClient; search: SearchApi; isMock: boolean } {
   const params = new URLSearchParams(location.search);
+  if (params.get("mock") !== "1") {
+    return { room: createExtensionRoomClient(), search: createSearchApi(API_URL), isMock: false };
+  }
   const mock: MockRoomClient = createMockRoomClient({
     code: params.get("code") ?? "PRTY",
     role: "host",
@@ -19,5 +24,4 @@ export function createHostClients(): { room: RoomClient; search: SearchApi; isMo
   return { room: mock, search: createMockSearchApi(), isMock: true };
 }
 
-/** Where guests open the app. The QR code and invite link point here. */
-export const WEB_URL: string = (import.meta.env.WXT_WEB_URL as string | undefined) ?? "http://localhost:5173";
+export { WEB_URL } from "@/utils/api";

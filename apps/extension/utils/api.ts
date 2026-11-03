@@ -9,7 +9,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 /** The party the background is running, as the popup sees it. */
-export type PartyInfo = { code: string; memberId: string; status: "open" | "ended"; members: number };
+export type PartyInfo = { code: string; guestCount: number };
 
 // One-off messages to the background service worker (`browser.runtime.sendMessage`).
 export type ExtMessage =
@@ -17,8 +17,14 @@ export type ExtMessage =
   /** Creates a room, opens the host app and a YouTube window for the TV. */
   | { type: "START_PARTY"; nickname: string; avatarSeed: string }
   | { type: "END_PARTY" }
-  | { type: "GET_PARTY" };
+  | { type: "GET_PARTY" }
+  /** Host app's "Show on TV": focus the party's YouTube window and make it full screen. */
+  | { type: "SHOW_ON_TV" };
 
 export type StartPartyResponse = { ok: true; code: string } | { ok: false; error: string };
 export type EndPartyResponse = { ok: true } | { ok: false; error: string };
-export type GetPartyResponse = { party: PartyInfo | null };
+export type GetPartyResponse = { ok: true; party: PartyInfo | null };
+export type ShowOnTvResponse = { ok: true } | { ok: false; error: string };
+
+/** Where guests open the app. QR codes and invite links point at `${WEB_URL}/join/<CODE>`. */
+export const WEB_URL: string = import.meta.env.WXT_WEB_URL ?? "http://localhost:5173";

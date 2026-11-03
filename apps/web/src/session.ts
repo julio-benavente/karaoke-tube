@@ -1,16 +1,12 @@
+import { createRoomClient, createSearchApi } from "@karaoke-tube/client";
 import type { ErrorCode, Role, RoomClient, SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, MOCK_CODES, randomSeed, type MockRoomClient } from "@karaoke-tube/ui";
 
 /**
- * Picks the clients. `VITE_USE_MOCK=1` uses the mock from @karaoke-tube/ui.
- * Integration step: replace the non-mock branch with `createRoomClient` / `createSearchApi` from @karaoke-tube/client.
+ * Picks the clients: the real API by default (same origin; Vite proxies /api to `wrangler dev`),
+ * or the mock from @karaoke-tube/ui with `VITE_USE_MOCK=1`.
  */
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK === "1" || !HAS_REAL_CLIENT();
-
-// Until Spec A's @karaoke-tube/client lands, the real branch isn't available.
-function HAS_REAL_CLIENT() {
-  return false;
-}
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === "1";
 
 export type Identity = { nickname: string; avatarSeed: string };
 
@@ -62,7 +58,7 @@ export function hasJoined(code: string): boolean {
 
 let searchApi: SearchApi | null = null;
 export function getSearchApi(): SearchApi {
-  searchApi ??= createMockSearchApi();
+  searchApi ??= USE_MOCK ? createMockSearchApi() : createSearchApi();
   return searchApi;
 }
 
@@ -112,7 +108,8 @@ export function getRoomClient(code: string, identity?: Identity): RoomClient {
     (window as unknown as { kt: MockRoomClient }).kt = mock;
     client = mock;
   } else {
-    throw new Error("Real room client not wired yet (see Integration in docs/specs/B-app-ui.md)");
+    // Joins with `identity`; without it, rejoins with the member key saved under kt:room:<CODE>.
+    client = createRoomClient({ code, identity });
   }
   clients.set(code, client);
   return client;

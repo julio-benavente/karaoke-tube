@@ -6,12 +6,12 @@ import {
   type EndPartyResponse,
   type ExtMessage,
   type GetPartyResponse,
+  type ShowOnTvResponse,
   type StartPartyResponse,
 } from "@/utils/api";
 import {
   PLAYER_PORT,
   ROOM_PORT,
-  type OverlayInfo,
   type PlayerPortToBackground,
   type PlayerPortToTab,
   type RoomPortToBackground,
@@ -31,6 +31,8 @@ let room: RoomClient | null = null;
 let currentPlay: QueueItem | null = null;
 /** Last state seen, kept after the party ends so the host app can show the ended screen. */
 let lastState: RoomState | null = null;
+/** Why the last party's connection closed, for the host app (`RoomClient.closeReason`). */
+let closedReason: "kicked" | "ended" | "left" | null = null;
 let playerPort: Port | null = null;
 const pagePorts = new Set<Port>();
 let ready: Promise<void> = Promise.resolve();
@@ -77,6 +79,8 @@ async function handleMessage(msg: ExtMessage): Promise<unknown> {
       return endParty();
     case "GET_PARTY":
       return getParty();
+    case "SHOW_ON_TV":
+      return showOnTv();
   }
 }
 
@@ -97,9 +101,11 @@ async function startParty(nickname: string, avatarSeed: string): Promise<StartPa
   console.log("[bg] room created", created.code);
 
   party = { code: created.code, memberId: created.memberId, key: created.key, youtubeTabId: null };
+  lastState = null;
+  closedReason = null;
   await save();
   connectRoom();
-  await browser.tabs.create({ url: browser.runtime.getURL("/host.html" as "/popup.html") });
+  await browser.tabs.create({ url: browser.runtime.getURL("/host.html") });
   party.youtubeTabId = await openYouTubeWindow();
   await save();
   return { ok: true, code: created.code };
@@ -133,15 +139,25 @@ async function endParty(): Promise<EndPartyResponse> {
 }
 
 function getParty(): GetPartyResponse {
-  if (!party) return { party: null };
-  return {
-    party: {
-      code: party.code,
-      memberId: party.memberId,
-      status: room?.state?.status ?? "open",
-      members: room?.state?.members.length ?? 1,
-    },
-  };
+  if (!party) return { ok: true, party: null };
+  const guestCount = room?.state?.members.filter((m) => m.role !== "host").length ?? 0;
+  return { ok: true, party: { code: party.code, guestCount } };
+}
+
+/** Bring the party's YouTube window forward, full screen, with the player filling it. */
+async function showOnTv(): Promise<ShowOnTvResponse> {
+  if (!party) return { ok: false, error: "No party is running." };
+  if (party.youtubeTabId === null) {
+    party.youtubeTabId = await openYouTubeWindow();
+    await save();
+  }
+  const tabId = party.youtubeTabId;
+  if (tabId === null) return { ok: false, error: "Couldn't open the YouTube window." };
+  const tab = await browser.tabs.get(tabId);
+  await browser.tabs.update(tabId, { active: true });
+  if (tab.windowId !== undefined) await browser.windows.update(tab.windowId, { focused: true, state: "fullscreen" });
+  postPlayer({ type: "fullscreen" });
+  return { ok: true };
 }
 
 // ── The room connection ──────────────────────────────────────────────────
@@ -174,7 +190,10 @@ function connectRoom() {
     if (room !== client) return;
     onRoomChange(client);
   });
-  client.onReaction((e) => postPages({ type: "reaction", ...e }));
+  client.onReaction((e) => {
+    postPages({ type: "reaction", ...e });
+    postPlayer({ type: "reaction", ...e });
+  });
   client.onError((e) => {
     console.warn("[bg] room error", e.code, e.message);
     postPages({ type: "error", ...e });
@@ -208,7 +227,7 @@ function onRoomChange(client: RoomClient) {
     currentPlay = null;
     postPlayer({ type: "stop" });
   }
-  postPlayer({ type: "overlay", overlay: overlayInfo(state) });
+  postPlayer({ type: "state", state });
   if (state.status === "ended") void endLocal();
 }
 
@@ -216,6 +235,7 @@ function onRoomChange(client: RoomClient) {
 async function endLocal() {
   if (!party && !room) return;
   console.log("[bg] party over");
+  closedReason = lastState?.status === "ended" ? "ended" : (room?.closeReason ?? "left");
   room?.close();
   room = null;
   party = null;
@@ -233,18 +253,7 @@ function snapshot(): RoomPortToPage {
     status: room?.status ?? "closed",
     state: room?.state ?? lastState,
     memberId: party?.memberId ?? lastState?.members.find((m) => m.role === "host")?.id ?? null,
-  };
-}
-
-function overlayInfo(state: RoomState): OverlayInfo {
-  const names = new Map(state.members.map((m) => [m.id, m.nickname]));
-  const label = (item: QueueItem | null | undefined) =>
-    item ? `${item.singerIds.map((id) => names.get(id) ?? "?").join(" & ")} · ${item.song.title}` : null;
-  return {
-    code: state.code,
-    nowSinging: label(state.nowPlaying),
-    upNext: label(state.upNext[0]),
-    getReadyEndsAt: state.playback.state === "get_ready" ? state.playback.countdownEndsAt : null,
+    closeReason: room ? (room.closeReason ?? null) : closedReason,
   };
 }
 
@@ -297,10 +306,7 @@ async function onPlayerPort(port: Port) {
   });
 
   const state = room?.state ?? null;
-  port.postMessage({
-    type: "party",
-    overlay: state ? overlayInfo(state) : { code: party.code, nowSinging: null, upNext: null, getReadyEndsAt: null },
-  } satisfies PlayerPortToTab);
+  port.postMessage({ type: "party", code: party.code, state } satisfies PlayerPortToTab);
   // A reloaded tab picks the current song up again.
   if (currentPlay && state?.nowPlaying?.id === currentPlay.id) {
     port.postMessage({ type: "play", item: currentPlay } satisfies PlayerPortToTab);
