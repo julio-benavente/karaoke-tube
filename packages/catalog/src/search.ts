@@ -7,6 +7,15 @@ import type { RoomInfoResponse, SearchApi, SearchResponse, Song, VideoResponse }
 import { filterSongs, type SongFilter } from "./filter";
 import { isCatalog, type AnyCatalog } from "./types";
 
+/** Messages between the page and the catalog worker. */
+export type WorkerRequestBody =
+  | { op: "load"; url: string }
+  | { op: "search"; q: string }
+  | { op: "browse"; filter: SongFilter; limit: number }
+  | { op: "video"; videoId: string };
+export type WorkerRequest = WorkerRequestBody & { id: number };
+export type WorkerReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
+
 export const CATALOG_URL = "/catalog/catalog.json";
 export const RESULTS = 15;
 /** With fewer local hits than this, the live YouTube search is asked as well. */
@@ -39,23 +48,9 @@ export type CatalogIndex = {
   hasLabels: boolean;
 };
 
-export function createCatalogIndex(catalog: AnyCatalog): CatalogIndex {
-  const { songs, artists, channels, alts } = catalog;
-  const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
-
-  const toSong = (i: number, videoId = songs.id[i]!, channel = songs.c[i]!, durationSec = songs.d[i]!): Song => {
-    const artist = artistOf(i);
-    return {
-      videoId,
-      // "Artist - Title" is what every screen already knows how to split.
-      title: artist ? `${artist} - ${songs.t[i]}` : songs.t[i]!,
-      channel: channels[channel] ?? "",
-      durationSec,
-      thumbnailUrl: thumbnail(videoId),
-    };
-  };
-
-  const mini = new MiniSearch<Doc>({
+function newMini(catalog: AnyCatalog): MiniSearch<Doc> {
+  const { songs } = catalog;
+  return new MiniSearch<Doc>({
     fields: ["t", "a"],
     idField: "id",
     tokenize,
@@ -70,7 +65,45 @@ export function createCatalogIndex(catalog: AnyCatalog): CatalogIndex {
       boostDocument: (id) => 1 + ((songs.p[id as number] ?? 0) / 255) * 2,
     },
   });
-  mini.addAll(songs.t.map((t, i): Doc => ({ id: i, t, a: artistOf(i) })));
+}
+
+function docsOf(catalog: AnyCatalog): Doc[] {
+  const { songs, artists } = catalog;
+  return songs.t.map((t, i): Doc => ({ id: i, t, a: songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "" }));
+}
+
+/** Builds the search index in one go. Quick for tests and scripts; in a browser use `createCatalogIndexAsync`. */
+export function createCatalogIndex(catalog: AnyCatalog): CatalogIndex {
+  const mini = newMini(catalog);
+  mini.addAll(docsOf(catalog));
+  return indexOf(catalog, mini);
+}
+
+/**
+ * Builds the index in small chunks, giving the browser a turn between them, so a phone never freezes while the
+ * catalog of tens of thousands of songs is being indexed.
+ */
+export async function createCatalogIndexAsync(catalog: AnyCatalog, chunkSize = 250): Promise<CatalogIndex> {
+  const mini = newMini(catalog);
+  await mini.addAllAsync(docsOf(catalog), { chunkSize });
+  return indexOf(catalog, mini);
+}
+
+function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
+  const { songs, artists, channels, alts } = catalog;
+  const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
+
+  const toSong = (i: number, videoId = songs.id[i]!, channel = songs.c[i]!, durationSec = songs.d[i]!): Song => {
+    const artist = artistOf(i);
+    return {
+      videoId,
+      // "Artist - Title" is what every screen already knows how to split.
+      title: artist ? `${artist} - ${songs.t[i]}` : songs.t[i]!,
+      channel: channels[channel] ?? "",
+      durationSec,
+      thumbnailUrl: thumbnail(videoId),
+    };
+  };
 
   let byId: Map<string, Song> | null = null;
   return {
@@ -120,9 +153,11 @@ export type CatalogSearchOptions = {
   fetchCatalog?: (url: string) => Promise<AnyCatalog>;
   /** How long a search waits for a catalog that is still downloading before using YouTube instead. */
   waitMs?: number;
+  /** Run the catalog in a Web Worker (default in browsers). `false` keeps it in the page's thread. */
+  useWorker?: boolean;
 };
 
-async function fetchCatalog(url: string): Promise<AnyCatalog> {
+export async function fetchCatalog(url: string): Promise<AnyCatalog> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`catalog ${res.status}`);
   const data = (await res.json()) as AnyCatalog;
@@ -137,23 +172,90 @@ function whenIdle(work: () => void) {
   else setTimeout(work, 1500);
 }
 
+/** Where the catalog lives and gets searched: a Web Worker in browsers (nothing heavy ever runs on the page), or this thread. */
+type Engine = {
+  /** Download, parse and index the catalog. Resolves true when it can answer, false when it can't be loaded. */
+  load(): Promise<boolean>;
+  search(query: string): Promise<Song[]>;
+  browse(filter: SongFilter, limit: number): Promise<Song[]>;
+  byVideoId(videoId: string): Promise<Song | null>;
+};
+
+function inThreadEngine(url: string, load: (url: string) => Promise<AnyCatalog>): Engine {
+  let index: CatalogIndex | null = null;
+  return {
+    load: () =>
+      load(url)
+        .then((catalog) => createCatalogIndexAsync(catalog))
+        .then((built) => ((index = built), true))
+        .catch(() => false),
+    search: async (q) => index?.search(q) ?? [],
+    browse: async (filter, limit) => index?.browse(filter, limit) ?? [],
+    byVideoId: async (id) => index?.byVideoId(id) ?? null,
+  };
+}
+
+/** The same engine inside a Web Worker. Returns null where workers don't exist (tests, old browsers). */
+function workerEngine(url: string): Engine | null {
+  if (typeof Worker === "undefined" || typeof window === "undefined") return null;
+  let worker: Worker | null = null;
+  let seq = 0;
+  const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+
+  const fail = (e: Error) => {
+    for (const w of waiting.values()) w.reject(e);
+    waiting.clear();
+    worker?.terminate();
+    worker = null;
+  };
+  const start = (): Worker => {
+    const w = new Worker(new URL("./catalog.worker.ts", import.meta.url), { type: "module" });
+    w.onmessage = (e: MessageEvent<WorkerReply>) => {
+      const pending = waiting.get(e.data.id);
+      if (!pending) return;
+      waiting.delete(e.data.id);
+      if (e.data.ok) pending.resolve(e.data.result);
+      else pending.reject(new Error(e.data.error));
+    };
+    w.onerror = () => fail(new Error("catalog worker failed"));
+    return w;
+  };
+  const call = <T,>(msg: WorkerRequestBody): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      worker ??= start();
+      const id = ++seq;
+      waiting.set(id, { resolve: resolve as (v: unknown) => void, reject });
+      worker.postMessage({ ...msg, id } satisfies WorkerRequest);
+    });
+
+  return {
+    load: () => call<boolean>({ op: "load", url }).catch(() => false),
+    search: (q) => call<Song[]>({ op: "search", q }).catch(() => []),
+    browse: (filter, limit) => call<Song[]>({ op: "browse", filter, limit }).catch(() => []),
+    byVideoId: (id) => call<Song | null>({ op: "video", videoId: id }).catch(() => null),
+  };
+}
+
 export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearchOptions = {}): CatalogSearchApi {
   const { url = CATALOG_URL, fetchCatalog: load = fetchCatalog, waitMs = 6000 } = options;
   const autoLoad = options.autoLoad ?? typeof window !== "undefined";
+  // A test-supplied loader runs in this thread; otherwise a browser does everything in a worker.
+  const engine = (!options.fetchCatalog && options.useWorker !== false ? workerEngine(url) : null) ?? inThreadEngine(url, load);
 
-  let index: CatalogIndex | null = null;
-  let loading: Promise<CatalogIndex | null> | null = null;
+  let ready = false;
+  let loading: Promise<boolean> | null = null;
   let failedAt = 0;
 
-  function ensure(): Promise<CatalogIndex | null> {
-    if (index) return Promise.resolve(index);
+  function ensure(): Promise<boolean> {
+    if (ready) return Promise.resolve(true);
     if (loading) return loading;
-    if (failedAt && Date.now() - failedAt < 30_000) return Promise.resolve(null);
-    loading = load(url)
-      .then((catalog) => (index = createCatalogIndex(catalog)))
-      .catch(() => {
-        failedAt = Date.now();
-        return null;
+    if (failedAt && Date.now() - failedAt < 30_000) return Promise.resolve(false);
+    loading = engine
+      .load()
+      .then((ok) => {
+        if (ok) ready = true;
+        else failedAt = Date.now();
+        return ok;
       })
       .finally(() => {
         loading = null;
@@ -163,20 +265,20 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
 
   if (autoLoad) whenIdle(() => void ensure());
 
-  /** The index if it's ready, or soon enough to be worth waiting for. */
-  async function indexOrWait(): Promise<CatalogIndex | null> {
-    if (index) return index;
+  /** True if the catalog is ready, or will be soon enough to be worth waiting for. */
+  async function readyOrWait(): Promise<boolean> {
+    if (ready) return true;
     const pending = ensure();
-    return Promise.race([pending, new Promise<null>((r) => setTimeout(() => r(null), waitMs))]);
+    return Promise.race([pending, new Promise<boolean>((r) => setTimeout(() => r(false), waitMs))]);
   }
 
   return {
-    preload: async () => (await ensure()) !== null,
+    preload: () => ensure(),
 
     async search(query) {
       const q = query.trim();
       if (!q) return { query, results: [] };
-      const local = (await indexOrWait())?.search(q) ?? [];
+      const local = (await readyOrWait()) ? await engine.search(q) : [];
       if (local.length >= MIN_LOCAL || q.length < 3) return { query, results: local };
 
       // The catalog has (almost) nothing: ask YouTube, keep what the catalog found first.
@@ -191,13 +293,12 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
     },
 
     async browse(filter, limit = RESULTS) {
-      const idx = await indexOrWait();
-      return idx ? idx.browse(filter, limit) : [];
+      return (await readyOrWait()) ? engine.browse(filter, limit) : [];
     },
 
     async video(videoId): Promise<VideoResponse> {
       // A catalog song needs no network (and no YouTube quota).
-      const known = index?.byVideoId(videoId);
+      const known = ready ? await engine.byVideoId(videoId) : null;
       if (known) return { song: known };
       return remote.video(videoId);
     },

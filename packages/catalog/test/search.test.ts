@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SearchApi, Song } from "@karaoke-tube/shared";
 import { buildCatalog, type ChannelConfig, type RawVideo } from "../src/build.ts";
-import { createCatalogIndex, createCatalogSearchApi } from "../src/search";
+import { createCatalogIndex, createCatalogIndexAsync, createCatalogSearchApi } from "../src/search";
 
 const channels: ChannelConfig[] = [
   { key: "sk", id: "1", title: "Sing King", order: "artist-song", priority: 100 },
@@ -31,6 +31,21 @@ const videos: RawVideo[] = SONGS.map(([channelKey, title, id, views]) => ({
 const { catalog } = buildCatalog(videos, channels, new Date("2026-01-01"));
 
 const titles = (songs: Song[]) => songs.map((s) => s.title);
+
+describe("createCatalogIndexAsync", () => {
+  it("builds in small chunks, yielding to the event loop, and answers exactly like the one-shot build", async () => {
+    let turns = 0;
+    const tick = setInterval(() => turns++, 0); // counts event-loop turns while the index is being built
+    const async = await createCatalogIndexAsync(catalog, 2); // 8 songs in chunks of 2 → several turns
+    clearInterval(tick);
+    const sync = createCatalogIndex(catalog);
+    expect(turns).toBeGreaterThan(0);
+    for (const q of ["queen", "bohemain rapsody", "adele hel", "love story", "hotel"]) {
+      expect(titles(async.search(q))).toEqual(titles(sync.search(q)));
+    }
+    expect(async.size).toBe(sync.size);
+  });
+});
 
 describe("createCatalogIndex", () => {
   const index = createCatalogIndex(catalog);
