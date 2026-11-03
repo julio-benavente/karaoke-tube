@@ -312,6 +312,7 @@
 }
 
 .viewTop {
+  gap: var(--kt-space-3);
   position: sticky;
   top: 0;
   z-index: var(--kt-z-sticky);
@@ -622,4 +623,86 @@
   justify-content: flex-end;
   gap: var(--kt-space-3);
   margin-top: var(--kt-space-6);
+}
+
+/* C3 award counts in the player bar */
+.awards {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  height: 28px;
+  padding: 0 var(--kt-space-3);
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-accent-soft);
+  color: var(--kt-text);
+  font-size: var(--kt-text-md);
+  white-space: nowrap;
+  animation: awardsIn 300ms var(--kt-ease-out);
+}
+
+.awardsLabel {
+  color: var(--kt-text-2);
+  font-weight: var(--kt-weight-medium);
+}
+
+.awardsIdle {
+  color: var(--kt-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.awardCount {
+  font-weight: var(--kt-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes awardsIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* C6 pending songs in the queue panel */
+.pendingBox {
+  margin: var(--kt-space-2) 0;
+  padding: var(--kt-space-2);
+  border-radius: var(--kt-radius-lg);
+  background: var(--kt-accent-soft);
+}
+
+.pendingBox .queueSub {
+  padding-top: var(--kt-space-2);
+}
+
+.pendingBtns {
+  display: flex;
+  gap: var(--kt-space-1);
+  flex: none;
+}
+
+.pendingBtn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-white-10);
+  color: var(--kt-text);
+}
+
+.pendingBtn:hover {
+  background: var(--kt-white-20);
+}
+
+.pendingApprove,
+.pendingApprove:hover {
+  background: var(--kt-accent);
+  color: var(--kt-accent-ink);
+}
+
+.singerBlock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-3);
+  align-items: center;
 }

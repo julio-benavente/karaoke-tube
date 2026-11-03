@@ -1,6 +1,6 @@
 import { CircleSlash, Lock, LockOpen, Tv, Power, Flame } from "lucide-react";
 import { useMemo, useState } from "react";
-import { REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
+import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
 import {
   Button,
   EmptyState,
@@ -10,9 +10,12 @@ import {
   PlayerBarDivider,
   RoomProvider,
   Sheet,
+  SingWithProvider,
   Spinner,
   ToastProvider,
   errorText,
+  songParts,
+  useCountdown,
   useReactions,
   useRoom,
   useRoomErrors,
@@ -52,7 +55,9 @@ export function HostApp() {
   return (
     <RoomProvider client={clients.room} search={clients.search}>
       <ToastProvider offset={96}>
-        <Host />
+        <SingWithProvider>
+          <Host />
+        </SingWithProvider>
       </ToastProvider>
     </RoomProvider>
   );
@@ -126,6 +131,7 @@ function Host() {
           onRestart={() => send({ type: "restart" })}
           right={
             <>
+              <AwardCounts />
               <ReactionCount />
               <PlayerBarDivider />
               <IconButton
@@ -185,6 +191,34 @@ function ReactionCount() {
         {last ? REACTION_EMOJI[last.reaction] : <Flame size={16} />}
       </span>
       <span className={css.reactionNum}>{total}</span>
+    </span>
+  );
+}
+
+/** C3: award counts for the song that just ended, while members can still give them. */
+function AwardCounts() {
+  const { state } = useRoom();
+  const win = state?.awardWindow ?? null;
+  const left = useCountdown(win?.closesAt);
+  if (!state || !win || !state.settings.awards || left <= 0) return null;
+  const given = AWARDS.filter((a) => (win.counts[a] ?? 0) > 0);
+  return (
+    <span
+      className={css.awards}
+      title={`Awards for ${songParts(win.item.song).title}, open for ${left}s`}
+      data-testid="award-counts"
+      aria-live="polite"
+    >
+      <span className={css.awardsLabel}>Awards</span>
+      {given.length === 0 ? (
+        <span className={css.awardsIdle}>{left}s</span>
+      ) : (
+        given.map((a) => (
+          <span key={a} className={css.awardCount} title={AWARD_INFO[a].label}>
+            {AWARD_INFO[a].emoji} {win.counts[a]}
+          </span>
+        ))
+      )}
     </span>
   );
 }
