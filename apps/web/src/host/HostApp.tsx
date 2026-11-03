@@ -224,7 +224,7 @@ function Host() {
             </Button>
           </div>
         )}
-        <main className={css.mobileMain}>
+        <main className={`${css.mobileMain} ${status === "open" && state.playerConnected === false ? css.hasBanner : ""}`}>
           {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}
           {view === "queue" && (

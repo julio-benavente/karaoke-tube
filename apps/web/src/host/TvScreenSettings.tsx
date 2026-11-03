@@ -53,9 +53,9 @@ export function TvScreenSettings() {
   return (
     <section className={css.settingsGroup} data-testid="tv-screen-settings">
       <h2 className={css.h2}>{t("tvscreen.title")}</h2>
-      <div className={css.settingRow}>
+      <div className={`${css.settingRow} ${css.settingStack}`}>
         <div className={css.settingText}>
-          <span className={css.settingLabel}>
+          <span className={`${css.settingLabel} ${css.settingLabelIcon}`}>
             <Tv size={14} /> {paired ? (connected ? t("tvscreen.connected") : t("tvscreen.offline")) : t("tvscreen.none")}
           </span>
           <span className={css.settingDesc}>{paired ? t("tvscreen.pairedDesc") : t("tvscreen.noneDesc")}</span>
@@ -83,7 +83,7 @@ export function TvScreenSettings() {
         )}
       </div>
       {isHost && (
-        <form className={css.settingRow} onSubmit={pair}>
+        <form className={`${css.settingRow} ${css.settingStack}`} onSubmit={pair}>
           <div className={css.settingText}>
             <span className={css.settingLabel}>{paired ? t("tvscreen.replace") : t("tvscreen.pair")}</span>
             <span className={css.settingDesc}>{t("tvscreen.pairDesc", { url: `${location.host}/tv` })}</span>
@@ -106,7 +106,7 @@ export function TvScreenSettings() {
           </Button>
         </form>
       )}
-      <div className={css.settingRow}>
+      <div className={`${css.settingRow} ${css.settingStack}`}>
         <div className={css.settingText}>
           <span className={css.settingLabel}>{t("tvscreen.layout")}</span>
           <span className={css.settingDesc}>{(state.settings.tvLayout ?? "bar") === "bar" ? t("tvscreen.layoutBarDesc") : t("tvscreen.layoutCleanDesc")}</span>
@@ -125,7 +125,7 @@ export function TvScreenSettings() {
         </div>
       </div>
       {(state.settings.tvLayout ?? "bar") === "bar" && (
-        <div className={css.settingRow}>
+        <div className={`${css.settingRow} ${css.settingStack}`}>
           <div className={css.settingText}>
             <span className={css.settingLabel}>{t("tvscreen.barSize")}</span>
             <span className={css.settingDesc}>{t(`tvscreen.size.${state.settings.tvBarSize ?? "medium"}Desc`)}</span>
@@ -145,7 +145,7 @@ export function TvScreenSettings() {
           </div>
         </div>
       )}
-      <div className={css.settingRow}>
+      <div className={`${css.settingRow} ${css.settingStack}`}>
         <div className={css.settingText}>
           <span className={css.settingLabel}>{t("tvscreen.thisComputer")}</span>
           <span className={css.settingDesc}>{t("tvscreen.thisComputerDesc")}</span>

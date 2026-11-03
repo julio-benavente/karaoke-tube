@@ -167,6 +167,7 @@ export function SingWithButton({ className }: { className?: string }) {
       <button
         type="button"
         className={`${css.pill} ${solo ? "" : css.pillOn} ${className ?? ""}`}
+        data-solo={solo || undefined}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
       >

@@ -69,7 +69,7 @@ export function SearchView() {
               setTitle(null);
               search.setQuery(e.target.value, { run: !parseYouTubeId(e.target.value) });
             }}
-            placeholder={t("search.placeholderHost")}
+            placeholder={window.matchMedia("(max-width: 820px)").matches ? t("search.placeholder") : t("search.placeholderHost")}
             type="search"
           />
           {search.query && (

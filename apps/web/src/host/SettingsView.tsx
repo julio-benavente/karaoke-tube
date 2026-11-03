@@ -35,7 +35,7 @@ export function SettingsView() {
 
       <section className={css.settingsGroup}>
         <h2 className={css.h2}>{t("settings.queue")}</h2>
-        <div className={css.settingRow}>
+        <div className={`${css.settingRow} ${css.settingStack}`}>
           <div className={css.settingText}>
             <span className={css.settingLabel}>{t("settings.queueOrder")}</span>
             <span className={css.settingDesc}>
@@ -92,7 +92,7 @@ export function SettingsView() {
           checked={s.locked}
           onChange={(v) => set({ locked: v })}
         />
-        <div className={css.settingRow}>
+        <div className={`${css.settingRow} ${css.settingStack}`}>
           <div className={css.settingText}>
             <span className={css.settingLabel}>{t("settings.joinTv")}</span>
             <span className={css.settingDesc}>{t("settings.joinTvDesc")}</span>

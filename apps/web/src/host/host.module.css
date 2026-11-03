@@ -840,10 +840,60 @@
   margin: 0 var(--kt-space-2) var(--kt-space-3);
 }
 
+/* Phone: the "no TV" notice is a slim strip across the top, and the page starts below it (it used to float over the titles). */
 .mobileFrame .tvClosed {
-  top: var(--kt-space-2);
-  max-width: calc(100vw - 24px);
+  top: 0;
+  left: 0;
+  right: 0;
+  max-width: none;
+  min-height: 44px;
+  padding: var(--kt-space-1) var(--kt-space-3);
+  justify-content: space-between;
+  border-radius: 0;
   font-size: var(--kt-text-sm);
+  transform: none;
+}
+
+.mobileFrame .tvClosed > span {
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.mobileMain.hasBanner {
+  padding-top: calc(env(safe-area-inset-top) + 44px);
+}
+
+/* Phone: next to the search field "Who sings?" is just its icon until someone is picked, so the field keeps its room. */
+.mobileMain .viewTop button[data-solo] > span {
+  display: none;
+}
+
+/* Settings rows with a wide control (selector, dropdown, form): text on top, control full width underneath. */
+.mobileMain .settingStack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--kt-space-3);
+}
+
+.mobileMain .settingStack > .segmented {
+  display: flex;
+  width: 100%;
+}
+
+.mobileMain .settingStack > .segmented button {
+  flex: 1;
+  padding: 0 var(--kt-space-2);
+}
+
+.mobileMain .settingStack > .select,
+.mobileMain .settingStack > button {
+  width: 100%;
+}
+
+.settingLabelIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-2);
 }
 
 .watchHere {
