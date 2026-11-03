@@ -1,6 +1,6 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
 import type { CSSProperties } from "react";
-import { REACTION_EMOJI, type Member, type QueueItem, type Reaction } from "@karaoke-tube/shared";
+import { REACTION_EMOJI, TV_BAR_PERCENT, type Member, type QueueItem, type Reaction, type TvBarSize, type TvLayout } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
 import { singerLabel as itemSingers, songParts } from "../format";
 import { detectLang, makeT, type TFn } from "../i18n/core";
@@ -29,6 +29,13 @@ export type TvOverlayProps = {
   reactions: TvReaction[];
   /** Hide the join card (e.g. host turned it off or the video is small). */
   hideJoin?: boolean;
+  /**
+   * "overlay" (default): chips and join card float over the video. "bar": a bar of its own along the bottom with the
+   * singer, what is up next and the join QR + code; the page leaves that space free so nothing covers the video.
+   */
+  layout?: TvLayout | "overlay";
+  /** Height of the bar, when `layout` is "bar". */
+  barSize?: TvBarSize;
   /** Translator (these render in a shadow root, outside the app's React tree). Default: the saved/browser language. */
   t?: TFn;
 };
@@ -39,7 +46,8 @@ const name = (members: Member[], id: string | undefined) => members.find((m) => 
  * T1: overlay on the YouTube player. Now-singing chip, up-next chip, QR + code, floating reactions.
  * Pure: props in, no room access. Render inside the player element (and a shadow root) with `tvCss`.
  */
-export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, reactions, hideJoin, t = makeT(detectLang()) }: TvOverlayProps) {
+export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, reactions, hideJoin, layout = "overlay", barSize = "medium", t = makeT(detectLang()) }: TvOverlayProps) {
+  const bar = layout === "bar";
   const next = upNext[0];
   const singer = nowPlaying ? name(members, nowPlaying.singerIds[0]) : undefined;
   const nextSinger = next ? name(members, next.singerIds[0]) : undefined;
@@ -49,7 +57,48 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
 
   return (
     <div className="kt-tv" aria-hidden="true">
-      {nowPlaying && nowParts && (
+      {bar && (
+        <div className="kt-tvbar" style={{ ["--b" as string]: TV_BAR_PERCENT[barSize] } as CSSProperties}>
+          <div className="kt-tvbar-now">
+            {nowPlaying && nowParts ? (
+              <>
+                <img className="kt-tvbar-avatar" src={avatarUri(singer?.avatarSeed ?? nowPlaying.id)} alt="" />
+                <div className="kt-tvbar-text" key={nowPlaying.id}>
+                  <span className="kt-tvbar-kicker">{t("queue.nowSinging")}</span>
+                  <span className="kt-tvbar-singer">{singerLabel(nowPlaying)}</span>
+                  <span className="kt-tvbar-song">
+                    {nowParts.title} · {nowParts.artist}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="kt-tvbar-text">
+                <span className="kt-tvbar-singer">{t("tv.addSongs")}</span>
+              </div>
+            )}
+          </div>
+          {next && nextParts && (
+            <div className="kt-tvbar-next">
+              <span className="kt-tvbar-kicker">{t("tv.upNext")}</span>
+              <span className="kt-tvbar-nextsinger">{singerLabel(next)}</span>
+              <span className="kt-tvbar-song">{nextParts.title}</span>
+            </div>
+          )}
+          <div className="kt-tvbar-join">
+            {qrSrc && (
+              <div className="kt-tvbar-qr">
+                <img src={qrSrc} alt="" />
+              </div>
+            )}
+            <div className="kt-tvbar-jointext">
+              <span className="kt-tvbar-kicker">{t("join.title")}</span>
+              <span className="kt-tvbar-code">{formatRoomCode(code)}</span>
+              {joinText && <span className="kt-tvbar-url">{joinText}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+      {!bar && nowPlaying && nowParts && (
         <div className="kt-tv-chip kt-tv-now" key={nowPlaying.id}>
           <img className="kt-tv-avatar" src={avatarUri(singer?.avatarSeed ?? nowPlaying.id)} alt="" />
           <div className="kt-tv-chiptext">
@@ -62,7 +111,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
         </div>
       )}
 
-      {next && nextParts && (
+      {!bar && next && nextParts && (
         <div className="kt-tv-chip kt-tv-next" key={next.id}>
           <img className="kt-tv-avatar" src={avatarUri(nextSinger?.avatarSeed ?? next.id)} alt="" />
           <span className="kt-tv-nextline">
@@ -73,7 +122,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
         </div>
       )}
 
-      {!hideJoin && (
+      {!bar && !hideJoin && (
         <div className="kt-tv-join">
           {qrSrc && (
             <div className="kt-tv-qr">

@@ -19,7 +19,10 @@ const fail = (c: Context, status: 400 | 403 | 404, message: string) =>
 
 export const pairRoutes = new Hono<{ Bindings: Env }>()
   // A TV asks for a code to show on its screen.
-  .post("/start", limit, async (c) => c.json(await stub(c.env).start()))
+  .post("/start", limit, async (c) => {
+    const body = await c.req.json<{ previous?: unknown }>().catch(() => null);
+    return c.json(await stub(c.env).start(typeof body?.previous === "string" ? body.previous.slice(0, 64) : undefined));
+  })
 
   // The TV polls until the host has entered the code.
   .get("/:id", limit, async (c) => c.json(await stub(c.env).status(c.req.param("id") ?? "")))

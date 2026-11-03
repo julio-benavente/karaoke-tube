@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { MonitorUp, Tv } from "lucide-react";
 import { localStorageCredentials } from "@karaoke-tube/client";
-import type { PairClaimRequest } from "@karaoke-tube/shared";
+import type { PairClaimRequest, TvBarSize, TvLayout } from "@karaoke-tube/shared";
 import { Button, TextField, useRoom, useT, useToast } from "@karaoke-tube/ui";
 import { openTvScreen } from "./client";
 import css from "./host.module.css";
@@ -105,6 +105,45 @@ export function TvScreenSettings() {
             {t("tvscreen.pairButton")}
           </Button>
         </form>
+      )}
+      <div className={css.settingRow}>
+        <div className={css.settingText}>
+          <span className={css.settingLabel}>{t("tvscreen.layout")}</span>
+          <span className={css.settingDesc}>{(state.settings.tvLayout ?? "bar") === "bar" ? t("tvscreen.layoutBarDesc") : t("tvscreen.layoutCleanDesc")}</span>
+        </div>
+        <div className={css.segmented} role="radiogroup" aria-label={t("tvscreen.layout")}>
+          {(
+            [
+              ["bar", t("tvscreen.layoutBar")],
+              ["clean", t("tvscreen.layoutClean")],
+            ] as Array<[TvLayout, string]>
+          ).map(([mode, label]) => (
+            <button key={mode} type="button" role="radio" aria-checked={(state.settings.tvLayout ?? "bar") === mode} className={(state.settings.tvLayout ?? "bar") === mode ? css.segOn : ""} onClick={() => send({ type: "update_settings", settings: { tvLayout: mode } })}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {(state.settings.tvLayout ?? "bar") === "bar" && (
+        <div className={css.settingRow}>
+          <div className={css.settingText}>
+            <span className={css.settingLabel}>{t("tvscreen.barSize")}</span>
+            <span className={css.settingDesc}>{t(`tvscreen.size.${state.settings.tvBarSize ?? "medium"}Desc`)}</span>
+          </div>
+          <div className={css.segmented} role="radiogroup" aria-label={t("tvscreen.barSize")}>
+            {(
+              [
+                ["small", t("tvscreen.size.small")],
+                ["medium", t("tvscreen.size.medium")],
+                ["large", t("tvscreen.size.large")],
+              ] as Array<[TvBarSize, string]>
+            ).map(([size, label]) => (
+              <button key={size} type="button" role="radio" aria-checked={(state.settings.tvBarSize ?? "medium") === size} className={(state.settings.tvBarSize ?? "medium") === size ? css.segOn : ""} onClick={() => send({ type: "update_settings", settings: { tvBarSize: size } })}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
       <div className={css.settingRow}>
         <div className={css.settingText}>

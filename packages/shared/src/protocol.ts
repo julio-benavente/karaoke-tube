@@ -61,9 +61,17 @@ export type RoomSettings = {
   titles: boolean;
   /** When the TV shows the join QR + code: "between" = lobby/idle + get-ready card, "always" = also during songs, "start" = lobby/idle only. */
   joinInfo: JoinInfoMode;
+  /** How the TV lays out the video: a "bar" of its own under the video (nothing covers the lyrics), or "clean" full screen with chips over it. */
+  tvLayout: TvLayout;
+  /** How tall the TV's bar is: small (laptop or monitor up close), medium (living-room TV), large (projector, big room). */
+  tvBarSize: TvBarSize;
 };
 
 export type JoinInfoMode = "between" | "always" | "start";
+export type TvLayout = "bar" | "clean";
+export type TvBarSize = "small" | "medium" | "large";
+/** The bar's height as a percentage of the screen height. */
+export const TV_BAR_PERCENT: Record<TvBarSize, number> = { small: 9, medium: 13, large: 18 };
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   queueMode: "rotation",
@@ -78,6 +86,8 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   awards: true,
   titles: true,
   joinInfo: "between",
+  tvLayout: "bar",
+  tvBarSize: "medium",
 };
 
 export type PlaybackState = "idle" | "get_ready" | "playing" | "paused";
@@ -393,7 +403,7 @@ export interface SearchApi {
 /** Reserved member id a paired TV screen connects with. Never a real member. */
 export const SCREEN_MEMBER_ID = "screen";
 
-/** POST /api/pair/start: the TV asks for a code to show. */
+/** POST /api/pair/start { previous? }: the TV asks for a code to show (giving the id of the one it is replacing). */
 export type PairStartResponse = { id: string; code: string; expiresInSec: number };
 /** GET /api/pair/:id: the TV polls until the host has entered the code. */
 export type PairStatusResponse = { state: "waiting" } | { state: "expired" } | { state: "paired"; roomCode: string; screenKey: string };

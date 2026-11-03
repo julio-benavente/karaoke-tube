@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Maximize } from "lucide-react";
 import { createRoomClient, screenCredentials } from "@karaoke-tube/client";
-import type { QueueItem, RoomClient, ServerMessage } from "@karaoke-tube/shared";
+import { TV_BAR_PERCENT, type QueueItem, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import { useParams } from "react-router";
 import { useT } from "@karaoke-tube/ui";
@@ -150,6 +150,9 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
     }
   }, [screenKey, closeReason]);
 
+  // Bar layout: the video gets a box of its own above the bar. Full-screen ("clean") keeps the overlay look.
+  const barPct = (state?.settings.tvLayout ?? "bar") === "bar" ? TV_BAR_PERCENT[state?.settings.tvBarSize ?? "medium"] : 0;
+
   const ended = state?.status === "ended" || closeReason === "ended";
   const [showFinal, setShowFinal] = useState(false);
   useEffect(() => {
@@ -195,8 +198,18 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
 
   return (
     <div style={page} data-testid="tv-page">
-      <div ref={wrapRef} style={{ position: "absolute", inset: 0, visibility: "hidden", pointerEvents: "none" }}>
-        <div ref={targetRef} />
+      {/* The video: full screen, or (bar layout) a 16:9 box above the bar, so nothing covers the lyrics. */}
+      <div style={barPct ? { position: "absolute", inset: `0 0 ${barPct}vh 0`, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" } : { position: "absolute", inset: 0, pointerEvents: "none" }}>
+        <div
+          ref={wrapRef}
+          style={
+            barPct
+              ? { width: `min(100vw, calc((100vh - ${barPct}vh) * 16 / 9))`, height: `min(calc(100vh - ${barPct}vh), calc(100vw * 9 / 16))`, overflow: "hidden", visibility: "hidden", pointerEvents: "none" }
+              : { position: "absolute", inset: 0, visibility: "hidden", pointerEvents: "none" }
+          }
+        >
+          <div ref={targetRef} />
+        </div>
       </div>
       {/* Swallows the mouse so YouTube's hover UI (title bar, pause button, share) never shows over the song. */}
       <div style={{ position: "absolute", inset: 0, zIndex: 5 }} />

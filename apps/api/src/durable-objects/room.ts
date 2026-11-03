@@ -1213,6 +1213,8 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
     out.countdownSec = Math.max(0, Math.min(30, Math.trunc(input.countdownSec)));
   }
   if (input.joinInfo === "between" || input.joinInfo === "always" || input.joinInfo === "start") out.joinInfo = input.joinInfo;
+  if (input.tvLayout === "bar" || input.tvLayout === "clean") out.tvLayout = input.tvLayout;
+  if (input.tvBarSize === "small" || input.tvBarSize === "medium" || input.tvBarSize === "large") out.tvBarSize = input.tvBarSize;
   for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }

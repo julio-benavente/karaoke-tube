@@ -671,3 +671,117 @@
     }
   }
 }
+
+/* ── Bar layout: a bar of its own under the video ──────────
+ * --b is the bar's height in cqh (1% of the screen). Everything inside scales from it, so one rule serves every size. */
+.kt-tvbar {
+  --u: calc(var(--b) * 1cqh);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--u);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.45);
+  padding: 0 calc(var(--u) * 0.45);
+  background: #000;
+  border-top: calc(var(--u) * 0.02) solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+
+.kt-tvbar-now {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.3);
+}
+
+.kt-tvbar-avatar {
+  flex: none;
+  width: calc(var(--u) * 0.72);
+  height: calc(var(--u) * 0.72);
+  border-radius: 50%;
+  background: #221d27;
+  box-shadow: 0 0 0 calc(var(--u) * 0.04) var(--tv-accent);
+}
+
+.kt-tvbar-text,
+.kt-tvbar-next,
+.kt-tvbar-jointext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.kt-tvbar-kicker {
+  color: var(--tv-accent);
+  font-size: calc(var(--u) * 0.16);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kt-tvbar-singer {
+  font-size: calc(var(--u) * 0.36);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tvbar-song {
+  color: var(--tv-text-2);
+  font-size: calc(var(--u) * 0.21);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tvbar-next {
+  flex: 0 1 28cqw;
+}
+
+.kt-tvbar-nextsinger {
+  font-size: calc(var(--u) * 0.26);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tvbar-join {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+}
+
+.kt-tvbar-qr {
+  flex: none;
+  height: calc(var(--u) * 0.86);
+  width: calc(var(--u) * 0.86);
+  padding: calc(var(--u) * 0.04);
+  border-radius: calc(var(--u) * 0.08);
+  background: #fff;
+}
+
+.kt-tvbar-qr img {
+  width: 100%;
+  height: 100%;
+}
+
+.kt-tvbar-code {
+  font-size: calc(var(--u) * 0.34);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kt-tvbar-url {
+  color: var(--tv-text-2);
+  font-size: calc(var(--u) * 0.17);
+  white-space: nowrap;
+}

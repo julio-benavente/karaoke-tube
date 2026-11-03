@@ -59,6 +59,8 @@ export function cleanSettings(input: unknown): Partial<RoomSettings> {
   if (typeof s.maxWaitingPerMember === "number" && Number.isFinite(s.maxWaitingPerMember)) out.maxWaitingPerMember = Math.max(1, Math.min(20, Math.trunc(s.maxWaitingPerMember)));
   if (typeof s.countdownSec === "number" && Number.isFinite(s.countdownSec)) out.countdownSec = Math.max(0, Math.min(30, Math.trunc(s.countdownSec)));
   if (s.joinInfo === "between" || s.joinInfo === "always" || s.joinInfo === "start") out.joinInfo = s.joinInfo;
+  if (s.tvLayout === "bar" || s.tvLayout === "clean") out.tvLayout = s.tvLayout;
+  if (s.tvBarSize === "small" || s.tvBarSize === "medium" || s.tvBarSize === "large") out.tvBarSize = s.tvBarSize;
   for (const k of ["hostsOnlyAdd", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
     if (typeof s[k] === "boolean") out[k] = s[k];
   }

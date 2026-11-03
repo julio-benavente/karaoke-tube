@@ -36,6 +36,19 @@ describe("TV pairing", () => {
     expect((await claim(tv.code, room)).status).toBe(404); // and the code can't be used twice
   });
 
+  it("a TV that asks for a new code invalidates its old one", async () => {
+    const room = await hostRoom({ player: false });
+    const first = await start();
+    const res = await post("/start", { previous: first.id });
+    const second = (await res.json()) as PairStartResponse;
+    expect(second.code).not.toBe(first.code);
+    expect(second.id).not.toBe(first.id);
+    expect(await status(first.id)).toEqual({ state: "expired" });
+    expect((await claim(first.code, room)).status).toBe(404); // the old code no longer works
+    expect((await claim(second.code, room)).status).toBe(200); // the new one does
+    expect(await status(second.id)).toMatchObject({ state: "paired", roomCode: room.code });
+  });
+
   it("only a host can pair, and bad or unknown codes are refused", async () => {
     const room = await hostRoom({ player: false });
     const ana = await guest(room.code, "Ana");

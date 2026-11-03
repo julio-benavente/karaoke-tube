@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
-/** How long a code on a TV stays valid. */
-const TTL_MS = 15 * 60_000;
+/** How long a code on a TV stays valid. The TV replaces it a bit before that, so the code on screen is always fresh. */
+const TTL_MS = 6 * 60_000;
 /** Unambiguous letters and digits (no 0/O, 1/I/L), easy to read off a TV and type on a phone. */
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -30,8 +30,10 @@ export class Pairing extends DurableObject<Env> {
     return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
   }
 
-  async start(): Promise<{ id: string; code: string; expiresInSec: number }> {
+  /** A TV asks for a code. With `previousId` (the TV is replacing its code) the old code stops working at once. */
+  async start(previousId?: string): Promise<{ id: string; code: string; expiresInSec: number }> {
     this.purge();
+    if (previousId) this.sql.exec("DELETE FROM pairs WHERE id = ? AND room_code IS NULL", previousId);
     const id = crypto.randomUUID();
     for (let i = 0; i < 20; i++) {
       const code = this.newCode();

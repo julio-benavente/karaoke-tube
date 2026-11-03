@@ -117,6 +117,8 @@ function Preview() {
               qrSrc={qr}
               joinText={`${location.host}/join`}
               reactions={reactions}
+              layout={new URLSearchParams(location.search).get("layout") === "bar" ? "bar" : "overlay"}
+              barSize={(new URLSearchParams(location.search).get("size") as "small" | "medium" | "large") ?? "medium"}
             />
           )}
         </ShadowMount>

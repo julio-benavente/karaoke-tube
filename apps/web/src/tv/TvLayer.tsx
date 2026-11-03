@@ -102,6 +102,9 @@ export function TvLayer({ state, onReaction, flash = false }: { state: RoomState
           joinText={joinText}
           reactions={reactions}
           hideJoin={!(flash || joinInfo === "always")}
+          // The bar is for while a song is on; the lobby already shows the join QR + code full screen.
+          layout={nowPlaying ? (state.settings.tvLayout ?? "bar") : "overlay"}
+          barSize={state.settings.tvBarSize ?? "medium"}
         />
       )}
     </ShadowMount>
