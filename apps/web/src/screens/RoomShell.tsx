@@ -18,6 +18,8 @@ import {
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
 import { NowSingingSheet } from "./NowSinging";
+import { AwardPrompt } from "./AwardPrompt";
+import { EndStory } from "./EndStory";
 import css from "./RoomShell.module.css";
 
 type ShellCtx = { openNowSinging: () => void; code: string; leave: () => void };
@@ -105,7 +107,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
     );
   }
   if (state?.status === "ended" || closeReason === "ended") {
-    return <ThanksScreen onDone={leave} />;
+    return state?.recap ? <EndStory recap={state.recap} meId={me?.id} onDone={leave} /> : <ThanksScreen onDone={leave} />;
   }
   if (status === "closed") {
     return (
