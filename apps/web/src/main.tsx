@@ -1,11 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App";
-
-console.log("[web] booting");
+import "@karaoke-tube/ui/styles";
+import { Gallery } from "./dev/Gallery";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <Gallery />
   </StrictMode>,
 );

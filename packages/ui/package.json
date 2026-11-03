@@ -8,7 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./tv": "./src/tv/index.ts",
-    "./styles.css": "./src/styles.css"
+    "./styles": "./src/styles.ts"
   },
   "scripts": {
     "typecheck": "tsc -p ."

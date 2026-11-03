@@ -1,0 +1,63 @@
+.root {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  border-radius: var(--kt-radius-full);
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-card);
+  object-fit: cover;
+}
+
+.ring {
+  box-shadow: 0 0 0 2px var(--kt-base), 0 0 0 4px var(--kt-accent);
+}
+
+.dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 28%;
+  height: 28%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: var(--kt-radius-full);
+  border: 2px solid var(--kt-panel);
+}
+
+.on {
+  background: var(--kt-accent);
+}
+
+.off {
+  background: var(--kt-text-3);
+}
+
+.stack {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stacked + .stacked,
+.stacked + .more {
+  margin-left: -6px;
+}
+
+.stacked img {
+  box-shadow: 0 0 0 2px var(--kt-panel);
+}
+
+.more {
+  display: inline-grid;
+  place-items: center;
+  margin-left: -6px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-hover);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-xs);
+  font-weight: var(--kt-weight-bold);
+}

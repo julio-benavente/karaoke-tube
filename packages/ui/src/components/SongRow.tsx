@@ -1,0 +1,50 @@
+import clsx from "clsx";
+import { CircleCheck, CirclePlus, LoaderCircle } from "lucide-react";
+import type { ReactNode } from "react";
+import type { Song } from "@karaoke-tube/shared";
+import { formatTime, songParts } from "../format";
+import { Artwork } from "./Artwork";
+import css from "./Rows.module.css";
+
+export type SongRowProps = {
+  song: Song;
+  /** Shows ⊕; becomes ✓ when `added`. */
+  onAdd?: () => void;
+  added?: boolean;
+  adding?: boolean;
+  onClick?: () => void;
+  /** Show the duration on wide screens. */
+  showDuration?: boolean;
+  index?: number;
+  trailing?: ReactNode;
+};
+
+/** Search result / song list row: artwork, title, artist, ⊕ add. */
+export function SongRow({ song, onAdd, added, adding, onClick, showDuration = true, index, trailing }: SongRowProps) {
+  const { title, artist } = songParts(song);
+  return (
+    <div className={css.row}>
+      <button type="button" className={css.hit} onClick={onClick ?? onAdd} aria-label={`${title} by ${artist}`} />
+      {index !== undefined && <span className={css.index}>{index}</span>}
+      <Artwork src={song.thumbnailUrl} label={song.title} size={48} className={css.art} />
+      <div className={css.text}>
+        <div className={css.title}>{title}</div>
+        <div className={css.sub}>{artist}</div>
+      </div>
+      {showDuration && <span className={css.duration}>{formatTime(song.durationSec)}</span>}
+      {trailing}
+      {onAdd && (
+        <button
+          type="button"
+          className={clsx(css.action, added && css.added)}
+          onClick={onAdd}
+          disabled={adding}
+          aria-label={added ? `Add ${title} again` : `Add ${title} to queue`}
+          title={added ? "In the queue" : "Add to queue"}
+        >
+          {adding ? <LoaderCircle className={css.spin} /> : added ? <CircleCheck /> : <CirclePlus />}
+        </button>
+      )}
+    </div>
+  );
+}

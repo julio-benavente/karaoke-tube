@@ -36,7 +36,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 
 ## Tasks (in order)
 
-### B1. `packages/ui` foundation
+### B1. `packages/ui` foundation ✅
 - New workspace package `@karaoke-tube/ui` (React 19, TypeScript, exports from `src/index.ts`, consumed as source like `shared`).
 - `tokens.css`, base reset, Figtree.
 - Hooks: `RoomProvider` (takes a `RoomClient`), `useRoom()` (state, me, status, send), `useReactions()`, `useSearch()` (takes a `SearchApi`).

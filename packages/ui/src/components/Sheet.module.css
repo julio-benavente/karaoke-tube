@@ -1,0 +1,116 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--kt-z-sheet);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--kt-overlay);
+  opacity: 0;
+  transition: opacity 300ms var(--kt-ease);
+}
+
+.shown .backdrop {
+  opacity: 1;
+}
+
+.panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--kt-elevated);
+  transform: translateY(100%);
+  transition: transform 300ms var(--kt-ease);
+  outline: none;
+}
+
+.shown .panel {
+  transform: translateY(0);
+}
+
+.auto {
+  padding: var(--kt-space-2) 0 calc(var(--kt-space-4) + env(safe-area-inset-bottom));
+  border-radius: var(--kt-radius-lg) var(--kt-radius-lg) 0 0;
+}
+
+.full {
+  top: 0;
+  max-height: none;
+  height: 100%;
+}
+
+@media (min-width: 640px) {
+  .auto {
+    left: 50%;
+    right: auto;
+    bottom: 50%;
+    width: 420px;
+    border-radius: var(--kt-radius-lg);
+    transform: translate(-50%, calc(50% + 24px));
+    opacity: 0;
+    transition:
+      transform var(--kt-medium) var(--kt-ease),
+      opacity var(--kt-medium) var(--kt-ease);
+  }
+
+  .shown .auto {
+    transform: translate(-50%, 50%) !important;
+    opacity: 1;
+  }
+}
+
+.handle {
+  flex: none;
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--kt-space-2);
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-white-30);
+}
+
+@media (min-width: 640px) {
+  .handle {
+    display: none;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-4);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--kt-space-4);
+  font-size: var(--kt-text-base);
+  text-align: left;
+  transition: background-color var(--kt-fast) var(--kt-ease);
+}
+
+.action:hover {
+  background: var(--kt-white-10);
+}
+
+.action svg {
+  width: 22px;
+  height: 22px;
+  color: var(--kt-text-2);
+}
+
+.danger,
+.danger svg {
+  color: var(--kt-danger);
+}

@@ -1,0 +1,77 @@
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--kt-z-player);
+  padding-top: var(--kt-space-6);
+  background: linear-gradient(to bottom, transparent 0, rgba(7, 6, 9, 0.85) 40%, var(--kt-base) 70%);
+  pointer-events: none;
+}
+
+.dock > * {
+  pointer-events: auto;
+}
+
+.tabs {
+  display: flex;
+  height: var(--kt-tabs-height);
+  margin-top: var(--kt-space-1);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: content-box;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--kt-text-2);
+  transition: color var(--kt-fast) var(--kt-ease), transform var(--kt-fast) var(--kt-ease);
+}
+
+.tab:active {
+  transform: scale(0.94);
+}
+
+.on {
+  color: var(--kt-text);
+}
+
+.icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: var(--kt-weight-medium);
+}
+
+.on .label {
+  font-weight: var(--kt-weight-bold);
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-accent);
+  color: var(--kt-accent-ink);
+  font-size: 10px;
+  font-weight: var(--kt-weight-bold);
+  line-height: 16px;
+  text-align: center;
+}

@@ -1,0 +1,125 @@
+.tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.7;
+  padding: var(--kt-space-3) var(--kt-space-4);
+  overflow: hidden;
+  border-radius: var(--kt-radius-md);
+  text-align: left;
+  transition: filter var(--kt-fast) var(--kt-ease);
+}
+
+.tile:hover {
+  filter: brightness(1.08);
+}
+
+.tile:active {
+  filter: brightness(0.95);
+}
+
+.title {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 75%;
+  font-size: var(--kt-text-lg);
+  font-weight: var(--kt-weight-bold);
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+.art {
+  position: absolute;
+  right: -12%;
+  bottom: -8%;
+  width: 46%;
+  transform: rotate(25deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: var(--kt-text-2xl);
+  }
+}
+
+/* Shortcut tile */
+.shortcut {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--kt-radius-xs);
+  background: var(--kt-white-10);
+  transition: background-color var(--kt-medium) var(--kt-ease);
+}
+
+.shortcut:hover {
+  background: var(--kt-white-20);
+}
+
+.shortcutHit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.shortcutArt {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.shortcutTitle {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding-right: var(--kt-space-2);
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shortcutPlay {
+  position: relative;
+  z-index: 1;
+  margin-right: var(--kt-space-2);
+  opacity: 0;
+  transition: opacity var(--kt-medium) var(--kt-ease);
+}
+
+.shortcut:hover .shortcutPlay,
+.shortcut:focus-within .shortcutPlay {
+  opacity: 1;
+}
+
+@media (min-width: 768px) {
+  .shortcut {
+    height: 64px;
+  }
+
+  .shortcutArt {
+    width: 64px;
+    height: 64px;
+  }
+
+  .shortcutTitle {
+    font-size: var(--kt-text-md);
+  }
+}
+
+@media (hover: none) {
+  .shortcutPlay {
+    display: none;
+  }
+}
