@@ -21,6 +21,8 @@ import { orderUpNext, shiftPins, type StoredItem } from "../queue";
 export const ENDED_TTL_MS = 60 * 60 * 1000;
 /** Each member may send one reaction per this many ms. */
 export const REACTION_INTERVAL_MS = 500;
+/** An open party with nobody connected for this long ends itself. */
+export const IDLE_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_NICKNAME = 24;
 
 /** Kept on each socket with `serializeAttachment`, so it survives hibernation. */
@@ -67,6 +69,9 @@ export class Room extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
+    // Heartbeat: clients send "ping" and get "pong" without waking the object, so a socket left half-open by a
+    // sleeping laptop or phone is noticed and replaced.
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS members (
@@ -143,34 +148,83 @@ export class Room extends DurableObject<Env> {
     } catch {
       // already closed
     }
-    if (attachment(ws).memberId) this.broadcastState(ws);
+    await this.onSocketGone(ws);
   }
 
   async webSocketError(ws: WebSocket) {
-    if (attachment(ws).memberId) this.broadcastState(ws);
+    await this.onSocketGone(ws);
+  }
+
+  /** A member's socket closed: update `connected`, and start the idle clock when nobody is left. */
+  private async onSocketGone(ws: WebSocket) {
+    if (!attachment(ws).memberId) return;
+    this.broadcastState(ws);
+    const anyoneLeft = this.ctx.getWebSockets().some((s) => s !== ws && attachment(s).memberId);
+    if (!anyoneLeft && this.getMeta("code") !== null && this.status() === "open") {
+      this.setMeta("idleSince", Date.now());
+      await this.scheduleAlarm();
+    }
   }
 
   // ── Alarm ──────────────────────────────────────────────────────────────
+  // One alarm per Durable Object, so it serves three deadlines: the get-ready countdown, the idle expiry
+  // of an abandoned party, and deleting storage after the party ended. `scheduleAlarm` sets the earliest.
 
   async alarm() {
+    const now = Date.now();
     if (this.status() === "ended") {
       const endedAt = this.getMeta<number>("endedAt") ?? 0;
-      if (Date.now() >= endedAt + ENDED_TTL_MS) {
+      if (now >= endedAt + ENDED_TTL_MS) {
         for (const ws of this.ctx.getWebSockets()) ws.close(1000, "room deleted");
         await this.ctx.storage.deleteAlarm();
         await this.ctx.storage.deleteAll();
-      } else {
-        await this.ctx.storage.setAlarm(endedAt + ENDED_TTL_MS);
+        return;
       }
+      await this.scheduleAlarm();
       return;
     }
-    await this.onAlarm();
+    // The get-ready countdown is over: tell the player to load the song.
+    if (this.getMeta<boolean>("countdownPending")) {
+      this.setMeta("countdownPending", false);
+      const item = this.nowPlayingItem();
+      if (item && this.playback().state === "get_ready") this.sendPlay(item);
+    }
+    // Nobody has been connected for IDLE_TTL_MS: the party was abandoned.
+    const idleSince = this.getMeta<number>("idleSince");
+    const anyone = this.ctx.getWebSockets().some((s) => attachment(s).memberId);
+    if (idleSince && !anyone && now >= idleSince + IDLE_TTL_MS) {
+      console.log("[room] ending an abandoned party");
+      await this.endRoom();
+      return;
+    }
+    await this.scheduleAlarm();
   }
 
-  /** The get-ready countdown is over: tell the player to load the song. */
-  private async onAlarm() {
-    const item = this.nowPlayingItem();
-    if (item && this.playback().state === "get_ready") this.sendPlay(item);
+  /** Sets the alarm to the earliest pending deadline, or clears it. */
+  private async scheduleAlarm() {
+    const times: number[] = [];
+    if (this.status() === "ended") {
+      times.push((this.getMeta<number>("endedAt") ?? Date.now()) + ENDED_TTL_MS);
+    } else {
+      const pb = this.playback();
+      if (this.getMeta<boolean>("countdownPending") && pb.state === "get_ready" && pb.countdownEndsAt) times.push(pb.countdownEndsAt);
+      const idleSince = this.getMeta<number>("idleSince");
+      if (idleSince) times.push(idleSince + IDLE_TTL_MS);
+    }
+    if (times.length) await this.ctx.storage.setAlarm(Math.min(...times));
+    else await this.ctx.storage.deleteAlarm();
+  }
+
+  /** End the party: status ended, tell everyone, delete storage after ENDED_TTL_MS. */
+  private async endRoom() {
+    const now = Date.now();
+    this.setMeta("status", "ended");
+    this.setMeta("endedAt", now);
+    this.setMeta("countdownPending", false);
+    this.setPlayback(idlePlayback(now));
+    await this.scheduleAlarm();
+    this.broadcastState();
+    this.broadcast({ type: "ended" });
   }
 
   // ── Message handling ───────────────────────────────────────────────────
@@ -273,14 +327,13 @@ export class Room extends DurableObject<Env> {
       }
       case "end_party": {
         if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can end the party.");
-        const now = Date.now();
-        this.setMeta("status", "ended");
-        this.setMeta("endedAt", now);
-        this.setMeta("playback", idlePlayback(now));
-        await this.ctx.storage.setAlarm(now + ENDED_TTL_MS);
-        this.broadcastState();
-        this.broadcast({ type: "ended" });
+        await this.endRoom();
         return;
+      }
+      case "player_status": {
+        if (!this.isPlayer(ws)) throw new RoomError("not_allowed", "Only the party's player can send this.");
+        this.setMeta("playerTabOpen", msg.tabOpen);
+        break;
       }
       case "react": {
         if (!this.settings().reactions) throw new RoomError("not_allowed", "Reactions are off.");
@@ -378,6 +431,7 @@ export class Room extends DurableObject<Env> {
     const now = Date.now();
     if (!next) {
       this.setPlayback(idlePlayback(now));
+      this.setMeta("countdownPending", false);
       return;
     }
     this.setItem(next.id, { status: "playing", startedAt: now, pinIndex: null });
@@ -386,9 +440,11 @@ export class Room extends DurableObject<Env> {
     if (getReadyCard && countdownSec > 0) {
       const countdownEndsAt = now + countdownSec * 1000;
       this.setPlayback({ state: "get_ready", positionSec: 0, updatedAt: now, countdownEndsAt });
-      await this.ctx.storage.setAlarm(countdownEndsAt);
+      this.setMeta("countdownPending", true);
+      await this.scheduleAlarm();
     } else {
       this.setPlayback({ state: "playing", positionSec: 0, updatedAt: now, countdownEndsAt: null });
+      this.setMeta("countdownPending", false);
       this.sendPlay({ ...next, status: "playing" });
     }
   }
@@ -426,6 +482,14 @@ export class Room extends DurableObject<Env> {
     this.attach(ws, memberId);
     this.send(ws, { type: "welcome", memberId, key, state: this.state() });
     this.broadcastState(undefined, ws);
+    await this.markActive();
+  }
+
+  /** Someone is connected again: stop the idle clock. */
+  private async markActive() {
+    if (this.getMeta<number>("idleSince") === null) return;
+    this.setMeta("idleSince", null);
+    await this.scheduleAlarm();
   }
 
   private async onRejoin(ws: WebSocket, memberId: string, key: string) {
@@ -434,6 +498,7 @@ export class Room extends DurableObject<Env> {
     this.attach(ws, memberId);
     this.send(ws, { type: "welcome", memberId, key, state: this.state() });
     this.broadcastState(undefined, ws);
+    await this.markActive();
     await this.afterRejoin(ws);
   }
 
@@ -486,10 +551,12 @@ export class Room extends DurableObject<Env> {
   /** `closing` is a socket that's going away: its member doesn't count as connected through it. */
   private state(closing?: WebSocket): RoomState {
     const connected = new Set<string>();
+    let playerAttached = false;
     for (const ws of this.ctx.getWebSockets()) {
       if (ws === closing) continue;
-      const id = attachment(ws).memberId;
-      if (id) connected.add(id);
+      const att = attachment(ws);
+      if (att.memberId) connected.add(att.memberId);
+      if (att.player) playerAttached = true;
     }
     const members: Member[] = this.memberRows().map((m) => ({
       id: m.id,
@@ -508,6 +575,7 @@ export class Room extends DurableObject<Env> {
       upNext: this.upNext().map(publicItem),
       playback: this.playback(),
       settings: this.settings(),
+      playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
     };
   }
 
@@ -743,6 +811,9 @@ export function parseClientMessage(text: string): ClientMessage {
     case "resume":
     case "restart":
     case "end_party":
+      break;
+    case "player_status":
+      ok(typeof m.tabOpen === "boolean");
       break;
     case "set_role":
       ok(isStr(m.memberId, 64) && (m.role === "cohost" || m.role === "guest"));

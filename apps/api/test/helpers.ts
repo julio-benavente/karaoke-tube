@@ -18,9 +18,16 @@ export class TestClient {
   readonly messages: ServerMessage[] = [];
   private waiters: Array<() => void> = [];
   closed = false;
+  /** Heartbeat replies ("pong"), which aren't JSON. */
+  pongs = 0;
 
   private constructor(readonly ws: WebSocket) {
     ws.addEventListener("message", (e) => {
+      if (e.data === "pong") {
+        this.pongs++;
+        for (const w of this.waiters.splice(0)) w();
+        return;
+      }
       this.messages.push(JSON.parse(e.data as string));
       for (const w of this.waiters.splice(0)) w();
     });
