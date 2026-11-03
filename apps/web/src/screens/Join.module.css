@@ -1,0 +1,106 @@
+.page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 var(--kt-space-4) var(--kt-space-10);
+  background: linear-gradient(180deg, rgba(255, 79, 139, 0.22) 0%, var(--kt-base) 360px);
+}
+
+.top {
+  width: 100%;
+  max-width: 440px;
+  padding: var(--kt-space-6) 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-5);
+  width: 100%;
+  max-width: 440px;
+}
+
+@media (min-width: 640px) {
+  .page {
+    justify-content: center;
+    background: linear-gradient(180deg, var(--kt-hover) 0%, var(--kt-base) 100%);
+  }
+
+  .top {
+    max-width: 520px;
+  }
+
+  .card {
+    max-width: 520px;
+    padding: var(--kt-space-10) var(--kt-space-12);
+    border-radius: var(--kt-radius-md);
+    background: var(--kt-base);
+  }
+}
+
+.title {
+  font-size: var(--kt-text-3xl);
+  font-weight: var(--kt-weight-black);
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.lead {
+  margin-top: calc(-1 * var(--kt-space-3));
+  color: var(--kt-text-2);
+  text-align: center;
+}
+
+.avatarBox {
+  position: relative;
+  align-self: center;
+}
+
+.reroll {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-text);
+  color: var(--kt-base);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform var(--kt-fast) var(--kt-ease);
+}
+
+.reroll:hover {
+  transform: scale(1.08) rotate(-12deg);
+}
+
+.reroll:active {
+  transform: scale(0.95);
+}
+
+.code input {
+  font-size: var(--kt-text-xl);
+  font-weight: var(--kt-weight-bold);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.formError {
+  padding: var(--kt-space-3) var(--kt-space-4);
+  border-radius: var(--kt-radius-xs);
+  background: var(--kt-danger);
+  color: var(--kt-base);
+  font-weight: var(--kt-weight-medium);
+}
+
+.hint {
+  color: var(--kt-text-3);
+  font-size: var(--kt-text-sm);
+  text-align: center;
+}
+
+.hint b {
+  color: var(--kt-text-2);
+}

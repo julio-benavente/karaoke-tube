@@ -1,0 +1,150 @@
+import { ChevronDown, RotateCcw, SkipForward } from "lucide-react";
+import { useEffect, useState } from "react";
+import { REACTIONS, REACTION_EMOJI, type Reaction } from "@karaoke-tube/shared";
+import {
+  Artwork,
+  Avatar,
+  IconButton,
+  PlayButton,
+  ProgressBar,
+  Sheet,
+  hueOf,
+  singerNames,
+  songParts,
+  useCountdown,
+  usePlaybackPosition,
+  useReactions,
+  useRoom,
+} from "@karaoke-tube/ui";
+import css from "./NowSinging.module.css";
+
+/** G6: full-screen now singing: big artwork, progress, five reactions, host controls. */
+export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { state } = useRoom();
+  const item = state?.nowPlaying;
+  const hue = item ? hueOf(item.song.videoId) : 330;
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      label="Now singing"
+      size="full"
+      style={{ background: `linear-gradient(180deg, hsl(${hue} 45% 32%) 0%, hsl(${hue} 40% 14%) 55%, var(--kt-base) 100%)` }}
+    >
+      <NowSingingBody onClose={onClose} />
+    </Sheet>
+  );
+}
+
+function NowSingingBody({ onClose }: { onClose: () => void }) {
+  const { state, me, isHost, send } = useRoom();
+  const { recent } = useReactions(2600);
+  const item = state?.nowPlaying;
+  const playback = state?.playback;
+  const position = usePlaybackPosition(playback, item?.song.durationSec);
+  const countdown = useCountdown(playback?.state === "get_ready" ? playback.countdownEndsAt : null);
+  const [cooldown, setCooldown] = useState(false);
+  const [popped, setPopped] = useState<Reaction | null>(null);
+
+  useEffect(() => {
+    if (!popped) return;
+    const t = setTimeout(() => setPopped(null), 300);
+    return () => clearTimeout(t);
+  }, [popped]);
+
+  if (!state || !item || !playback || !me) return null;
+  const parts = songParts(item.song);
+  const singer = state.members.find((m) => m.id === item.singerIds[0]);
+  const playing = playback.state === "playing";
+  const reactionsOn = state.settings.reactions;
+
+  const react = (r: Reaction) => {
+    if (cooldown) return;
+    send({ type: "react", reaction: r });
+    setPopped(r);
+    setCooldown(true);
+    setTimeout(() => setCooldown(false), 500); // the room limits 1 per 500 ms
+  };
+
+  return (
+    <div className={css.body}>
+      <header className={css.top}>
+        <IconButton label="Close" onClick={onClose}>
+          <ChevronDown size={28} />
+        </IconButton>
+        <div className={css.topText}>
+          <span className={css.kicker}>Now singing</span>
+          <span className={css.code}>Party {state.code}</span>
+        </div>
+        <span style={{ width: 40 }} />
+      </header>
+
+      <div className={css.artBox}>
+        <Artwork src={item.song.thumbnailUrl} label={item.song.title} radius="md" shadow className={css.art} />
+        {playback.state === "get_ready" && (
+          <div className={css.getReady}>
+            <span>Get ready</span>
+            <b>{countdown}</b>
+          </div>
+        )}
+        <div className={css.floating} aria-hidden>
+          {recent.map((r) => (
+            <span key={r.id} className={css.float} style={{ left: `${10 + ((r.id * 37) % 80)}%` }}>
+              {REACTION_EMOJI[r.reaction]}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className={css.meta}>
+        <div className={css.titleBlock}>
+          <h2 className={css.title}>{parts.title}</h2>
+          <p className={css.artist}>{parts.artist}</p>
+        </div>
+      </div>
+      <div className={css.singer}>
+        {singer && <Avatar seed={singer.avatarSeed} size={28} />}
+        <span>
+          🎤 <b>{item.singerIds.includes(me.id) ? "You" : singerNames(item, state.members)}</b>
+          {playback.state === "paused" && <span className={css.paused}> · Paused</span>}
+        </span>
+      </div>
+
+      <ProgressBar value={position} max={item.song.durationSec} showTimes className={css.progress} />
+
+      {isHost && (
+        <div className={css.controls}>
+          <IconButton label="Restart song" size="lg" onClick={() => send({ type: "restart" })}>
+            <RotateCcw size={26} />
+          </IconButton>
+          <PlayButton
+            playing={playing}
+            size={64}
+            className={css.play}
+            onClick={() => send({ type: playing ? "pause" : "resume" })}
+            label={playing ? "Pause" : "Resume"}
+          />
+          <IconButton label="Skip song" size="lg" onClick={() => send({ type: "skip" })}>
+            <SkipForward size={30} fill="currentColor" />
+          </IconButton>
+        </div>
+      )}
+
+      <div className={css.reactions} role="group" aria-label="Send a reaction">
+        {REACTIONS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={`${css.reaction} ${popped === r ? css.popped : ""}`}
+            onClick={() => react(r)}
+            disabled={!reactionsOn}
+            aria-label={`React ${r}`}
+          >
+            {REACTION_EMOJI[r]}
+          </button>
+        ))}
+      </div>
+      {!reactionsOn && <p className={css.off}>The host turned reactions off.</p>}
+    </div>
+  );
+}

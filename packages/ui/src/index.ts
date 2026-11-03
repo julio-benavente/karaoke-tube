@@ -3,6 +3,8 @@
 // TV overlay components: "@karaoke-tube/ui/tv" (shadow-root safe).
 
 export * from "./hooks/room";
+export * from "./hooks/add-song";
+export * from "./browse";
 export * from "./avatar";
 export * from "./format";
 

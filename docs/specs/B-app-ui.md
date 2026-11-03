@@ -46,7 +46,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
   Add a "simulate" helper that sends a random reaction every few seconds and finishes the current song early, for testing.
 - Components: `Avatar`, `Pill`/`Chip`, `Tile`, `Card`, `SongRow`, `QueueRow`, `ProgressBar`, `PlayerBar`, `MiniPlayer`, `BottomTabs`, `Toggle`, `Toast`, `Sheet` (bottom sheet), `EmptyState`.
 
-### B2. Guest phone app (`apps/web`)
+### B2. Guest phone app (`apps/web`) ✅
 - React Router with routes `/join/:code?`, `/r/:code` (Home), `/r/:code/search`, `/r/:code/queue`, `/r/:code/party`, plus the full-screen now-singing sheet.
 - Screens G1–G6 from the plan:
   - **Join (G1)**: code (filled from the URL), avatar with re-roll, nickname, Join. Errors for unknown, locked or ended rooms.

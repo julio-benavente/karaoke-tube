@@ -97,7 +97,8 @@ export function useRoomErrors(fn: (e: { code: ErrorCode; message: string }) => v
 
 export type UseSearch = {
   query: string;
-  setQuery: (q: string) => void;
+  /** Set the text and search after the debounce. `{ run: false }` only sets the text. */
+  setQuery: (q: string, opts?: { run?: boolean }) => void;
   /** Run a query immediately (no debounce). */
   run: (q: string) => void;
   results: Song[];
@@ -153,9 +154,10 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   );
 
   const setQuery = useCallback(
-    (q: string) => {
+    (q: string, opts?: { run?: boolean }) => {
       setQueryState(q);
       if (timer.current) clearTimeout(timer.current);
+      if (opts?.run === false) return;
       timer.current = setTimeout(() => run(q), debounceMs);
     },
     [run, debounceMs],

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref } from "react";
 import css from "./Misc.module.css";
 
 export function EmptyState({
@@ -62,12 +62,13 @@ export function TextField({
   hideLabel,
   error,
   className,
+  ref,
   ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; hideLabel?: boolean; error?: string | null }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; hideLabel?: boolean; error?: string | null; ref?: Ref<HTMLInputElement> }) {
   return (
     <label className={clsx(css.field, className)}>
       <span className={clsx(css.fieldLabel, hideLabel && "kt-sr-only")}>{label}</span>
-      <input {...rest} className={clsx(css.input, error && css.inputError)} aria-invalid={!!error || undefined} />
+      <input {...rest} ref={ref} className={clsx(css.input, error && css.inputError)} aria-invalid={!!error || undefined} />
       {error && <span className={css.fieldError}>{error}</span>}
     </label>
   );

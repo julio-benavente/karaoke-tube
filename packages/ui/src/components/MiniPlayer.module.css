@@ -12,6 +12,13 @@
   transition: background-color var(--kt-slow) var(--kt-ease);
 }
 
+@media (min-width: 1056px) {
+  .mini {
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+}
+
 .hit {
   position: absolute;
   inset: 0;

@@ -37,12 +37,12 @@ export function createMockSearchApi(): SearchApi {
       if (ranked.length < 4 && words.length) {
         // Make up a few plausible results for the query.
         const base = titleCase(query.replace(/karaoke/gi, "").trim());
-        const fillers = ["(Karaoke Version)", "(Karaoke with Lyrics)", "- Instrumental Karaoke"];
+        const fillers = ["- Greatest Hits Medley (Karaoke)", "- Best Of (Karaoke Version)", "- Acoustic Session (Karaoke)"];
         fillers.forEach((suffix, i) => {
           const like = SAMPLE_SONGS[(base.length * 7 + i * 5) % SAMPLE_SONGS.length]!;
           ranked.push({
             ...like,
-            videoId: `${like.videoId}`,
+            videoId: `${like.videoId.slice(0, 9)}f${i}`,
             title: `${base} ${suffix}`,
             channel: ["SingAlong Studio", "Karaoke Hits", "Lyric Lounge"][i]!,
           });
