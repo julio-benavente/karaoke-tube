@@ -8,6 +8,7 @@ export * from "./hooks/turn-alert";
 export * from "./browse";
 export * from "./avatar";
 export * from "./format";
+export * from "./i18n";
 
 export { createMockRoomClient, errorText } from "./mock/mock-room-client";
 export type { MockRoomClient, MockRoomOptions, MockControls, SimulateOptions } from "./mock/mock-room-client";

@@ -1,3 +1,4 @@
+import { detectLang, translate } from "../i18n/core";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import {
   DEFAULT_SETTINGS,
@@ -560,22 +561,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
 }
 
 export function errorText(code: ErrorCode): string {
-  switch (code) {
-    case "room_not_found":
-      return "We couldn't find that party. Check the code and try again.";
-    case "room_locked":
-      return "This party is locked. Ask the host to unlock it.";
-    case "room_ended":
-      return "This party has ended.";
-    case "bad_key":
-      return "Your session expired. Join again.";
-    case "not_allowed":
-      return "Only the host can do that.";
-    case "queue_limit":
-      return "You've hit the song limit. Wait for one of yours to play.";
-    case "invalid_message":
-      return "Something went wrong. Try again.";
-  }
+  return translate(detectLang(), `error.${code}`);
 }
 
 function shuffle<T>(xs: readonly T[]): T[] {
