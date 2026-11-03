@@ -6,8 +6,10 @@ import {
   type CreateRoomRequest,
   type CreateRoomResponse,
   type RoomInfoResponse,
+  type RoomSettings,
 } from "@karaoke-tube/shared";
 import type { Context, Next } from "hono";
+import { userFromRequest } from "./account";
 import { ADJECTIVES, NOUNS } from "../words";
 
 /** Unbiased random integer in [0, n). */
@@ -55,9 +57,16 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
     const avatarSeed = typeof body?.avatarSeed === "string" ? body.avatarSeed : "";
     if (!nickname || nickname.length > 100) return c.json({ error: "nickname is required" }, 400);
 
+    // Signed-in hosts get their saved room settings; guests (no token) get the defaults.
+    let settings: Partial<RoomSettings> | undefined;
+    if (c.req.header("Authorization")) {
+      const user = await userFromRequest(c.env, c.req.raw).catch(() => null);
+      if (user?.room_settings) settings = JSON.parse(user.room_settings) as Partial<RoomSettings>;
+    }
+
     for (let attempt = 0; attempt < 20; attempt++) {
       const code = randomCode();
-      const created = await roomStub(c.env, code).init(code, nickname, avatarSeed);
+      const created = await roomStub(c.env, code).init(code, nickname, avatarSeed, settings);
       if (created) return c.json(created satisfies CreateRoomResponse, 201);
     }
     return c.json({ error: "Couldn't find a free room code, try again" }, 503);

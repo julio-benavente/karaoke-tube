@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { accountRoutes } from "./routes/account";
 import { healthRoutes } from "./routes/health";
 import { recapRoutes } from "./routes/recaps";
 import { roomRoutes } from "./routes/rooms";
@@ -16,6 +17,7 @@ app.use("*", cors());
 
 const routes = app
   .route("/health", healthRoutes)
+  .route("/account", accountRoutes)
   .route("/rooms", roomRoutes)
   .route("/recaps", recapRoutes)
   .route("/", searchRoutes);

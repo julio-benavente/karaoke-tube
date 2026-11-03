@@ -4,6 +4,8 @@
 interface __BaseEnv_Env {
 	SEARCH_CACHE: KVNamespace;
 	RECAPS: KVNamespace;
+	DB: D1Database;
+	AUTH_LIMITER: RateLimit;
 	ROOM_LOOKUP_LIMITER: RateLimit;
 	ROOM_CREATE_LIMITER: RateLimit;
 	ROOM: DurableObjectNamespace<import("./src/index").Room>;
