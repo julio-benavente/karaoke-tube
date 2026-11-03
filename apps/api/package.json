@@ -7,7 +7,8 @@
     "dev": "wrangler dev --port 8787",
     "deploy": "pnpm --filter @karaoke-tube/web build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p . && tsc -p test",
+    "test": "vitest run"
   },
   "dependencies": {
     "@karaoke-tube/shared": "workspace:*",

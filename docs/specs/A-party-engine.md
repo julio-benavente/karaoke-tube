@@ -18,7 +18,7 @@ Read `docs/specs/README.md` first, then `packages/shared/src/protocol.ts`, which
 
 ## Tasks (in order)
 
-### A1. Room engine (Durable Object)
+### A1. Room engine (Durable Object) ✅
 Rewrite `apps/api/src/durable-objects/room.ts` to implement the contract.
 - Store state in the DO's SQLite storage (`ctx.storage.sql`) so it survives hibernation. Keep the WebSocket Hibernation API.
   Tag each socket with its member id (`ctx.acceptWebSocket(ws, [memberId])` or `serializeAttachment`).

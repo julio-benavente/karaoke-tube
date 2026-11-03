@@ -1,53 +1,506 @@
 import { DurableObject } from "cloudflare:workers";
-import type { RoomMessage } from "@karaoke-tube/shared";
+import {
+  DEFAULT_SETTINGS,
+  REACTIONS,
+  type ClientMessage,
+  type CreateRoomResponse,
+  type ErrorCode,
+  type Member,
+  type Playback,
+  type QueueItem,
+  type Role,
+  type RoomInfoResponse,
+  type RoomSettings,
+  type RoomState,
+  type ServerMessage,
+  type Song,
+} from "@karaoke-tube/shared";
+import { orderUpNext, shiftPins, type StoredItem } from "../queue";
+
+/** Storage is deleted this long after the party ends. */
+export const ENDED_TTL_MS = 60 * 60 * 1000;
+/** Each member may send one reaction per this many ms. */
+export const REACTION_INTERVAL_MS = 500;
+const MAX_NICKNAME = 24;
+
+/** Kept on each socket with `serializeAttachment`, so it survives hibernation. */
+type Attachment = { memberId: string | null; wantsPlayer: boolean; player: boolean };
+
+type MemberRow = {
+  id: string;
+  nickname: string;
+  avatar_seed: string;
+  role: Role;
+  joined_at: number;
+  key_hash: string;
+};
+
+type ItemRow = {
+  id: string;
+  song: string;
+  singer_ids: string;
+  added_by: string;
+  status: QueueItem["status"];
+  added_at: number;
+  started_at: number | null;
+  pin_index: number | null;
+};
+
+export class RoomError extends Error {
+  constructor(
+    readonly code: ErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 /**
- * One instance per room. Uses the WebSocket Hibernation API, so idle rooms
- * cost (almost) nothing while sockets stay connected.
+ * One instance per room. State lives in the DO's SQLite storage and sockets use the
+ * WebSocket Hibernation API, so idle rooms cost (almost) nothing.
  */
 export class Room extends DurableObject<Env> {
-  async fetch(_request: Request): Promise<Response> {
+  private sql: SqlStorage;
+  /** Last reaction time per member. In memory only: losing it on hibernation is harmless. */
+  private lastReaction = new Map<string, number>();
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.sql = ctx.storage.sql;
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS members (
+        id TEXT PRIMARY KEY, nickname TEXT NOT NULL, avatar_seed TEXT NOT NULL, role TEXT NOT NULL,
+        joined_at INTEGER NOT NULL, key_hash TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS items (
+        id TEXT PRIMARY KEY, song TEXT NOT NULL, singer_ids TEXT NOT NULL, added_by TEXT NOT NULL,
+        status TEXT NOT NULL, added_at INTEGER NOT NULL, started_at INTEGER, pin_index INTEGER
+      );
+    `);
+  }
+
+  // ── RPC from the Worker ────────────────────────────────────────────────
+
+  /** Sets up a new room with its host. Returns null when the code is already in use. */
+  async init(code: string, nickname: string, avatarSeed: string): Promise<CreateRoomResponse | null> {
+    if (this.getMeta("code") !== null) return null;
+    this.setMeta("code", code);
+    this.setMeta("status", "open");
+    this.setMeta("settings", DEFAULT_SETTINGS);
+    this.setMeta("playback", idlePlayback());
+    const { memberId, key } = await this.addMember(nickname, avatarSeed, "host");
+    return { code, memberId, key };
+  }
+
+  async info(): Promise<RoomInfoResponse> {
+    const code = this.getMeta<string>("code");
+    if (code === null) return { code: "", exists: false, locked: false, status: null };
+    return { code, exists: true, locked: this.settings().locked, status: this.status() };
+  }
+
+  // ── WebSocket ──────────────────────────────────────────────────────────
+
+  async fetch(request: Request): Promise<Response> {
+    if (request.headers.get("Upgrade") !== "websocket") {
+      return new Response("Expected a WebSocket upgrade", { status: 426 });
+    }
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
-
-    const members = this.ctx.getWebSockets().length;
-    console.log(`[room] socket connected, members=${members}`);
-    this.broadcast({ type: "system", text: "someone joined", members });
-
+    const wantsPlayer = new URL(request.url).searchParams.get("player") === "1";
+    server.serializeAttachment({ memberId: null, wantsPlayer, player: false } satisfies Attachment);
+    if (this.getMeta("code") === null) {
+      this.send(server, { type: "error", code: "room_not_found", message: "This room doesn't exist." });
+      server.close(4004, "room_not_found");
+    }
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
-    const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
-    console.log(`[room] message: ${text}`);
-
-    let msg: RoomMessage;
+    let msg: ClientMessage;
     try {
-      msg = JSON.parse(text);
-    } catch {
-      ws.send(JSON.stringify({ type: "system", text: "invalid JSON", members: 0 }));
+      msg = parseClientMessage(typeof raw === "string" ? raw : new TextDecoder().decode(raw));
+    } catch (e) {
+      this.send(ws, { type: "error", code: "invalid_message", message: e instanceof Error ? e.message : "Invalid message" });
       return;
     }
-    // For now: echo every message to everyone in the room.
-    this.broadcast(msg);
+    try {
+      await this.handle(ws, msg);
+    } catch (e) {
+      if (e instanceof RoomError) {
+        this.send(ws, { type: "error", code: e.code, message: e.message });
+      } else {
+        console.error("[room] handler failed", e);
+        this.send(ws, { type: "error", code: "invalid_message", message: "Something went wrong" });
+      }
+    }
   }
 
   async webSocketClose(ws: WebSocket, code: number) {
-    // 1005/1006 are "reserved" codes a client can report but we can't send back.
     try {
+      // 1005/1006 are reserved codes a client can report but we can't send back.
       ws.close(code === 1005 || code === 1006 ? 1000 : code, "bye");
     } catch {
       // already closed
     }
-    const members = this.ctx.getWebSockets().filter((s) => s !== ws).length;
-    console.log(`[room] socket closed (code ${code}), members=${members}`);
-    this.broadcast({ type: "system", text: "someone left", members }, ws);
+    if (attachment(ws).memberId) this.broadcastState(ws);
   }
 
-  private broadcast(msg: RoomMessage, except?: WebSocket) {
+  async webSocketError(ws: WebSocket) {
+    if (attachment(ws).memberId) this.broadcastState(ws);
+  }
+
+  // ── Alarm ──────────────────────────────────────────────────────────────
+
+  async alarm() {
+    if (this.status() === "ended") {
+      const endedAt = this.getMeta<number>("endedAt") ?? 0;
+      if (Date.now() >= endedAt + ENDED_TTL_MS) {
+        for (const ws of this.ctx.getWebSockets()) ws.close(1000, "room deleted");
+        await this.ctx.storage.deleteAlarm();
+        await this.ctx.storage.deleteAll();
+      } else {
+        await this.ctx.storage.setAlarm(endedAt + ENDED_TTL_MS);
+      }
+      return;
+    }
+    await this.onAlarm();
+  }
+
+  /** Room alarms other than end-of-party cleanup (the get-ready countdown, A2). */
+  protected async onAlarm() {}
+
+  // ── Message handling ───────────────────────────────────────────────────
+
+  private async handle(ws: WebSocket, msg: ClientMessage) {
+    if (msg.type === "join") return this.onJoin(ws, msg.nickname, msg.avatarSeed);
+    if (msg.type === "rejoin") return this.onRejoin(ws, msg.memberId, msg.key);
+
+    const me = this.currentMember(ws);
+    if (this.status() === "ended") throw new RoomError("room_ended", "The party has ended.");
+    const isHost = me.role === "host" || me.role === "cohost";
+    const requireHost = () => {
+      if (!isHost) throw new RoomError("not_allowed", "Only hosts can do that.");
+    };
+
+    switch (msg.type) {
+      case "add_song": {
+        const settings = this.settings();
+        if (settings.hostsOnlyAdd) requireHost();
+        const members = new Set(this.memberRows().map((m) => m.id));
+        const singerIds = msg.singerIds && msg.singerIds.length > 0 ? [...new Set(msg.singerIds)] : [me.id];
+        if (singerIds.some((id) => !members.has(id))) throw new RoomError("not_allowed", "Unknown singer.");
+        if (!isHost && !singerIds.includes(me.id)) throw new RoomError("not_allowed", "You can only add songs you sing in.");
+        if (!isHost) {
+          const waiting = this.itemRows().filter((i) => i.status === "waiting" && i.singerIds.includes(me.id)).length;
+          if (waiting >= settings.maxWaitingPerMember) {
+            throw new RoomError("queue_limit", `You already have ${waiting} song${waiting === 1 ? "" : "s"} waiting.`);
+          }
+        }
+        const s = msg.song;
+        const song: Song = { videoId: s.videoId, title: s.title, channel: s.channel, durationSec: s.durationSec, thumbnailUrl: s.thumbnailUrl };
+        this.sql.exec(
+          "INSERT INTO items (id, song, singer_ids, added_by, status, added_at, started_at, pin_index) VALUES (?, ?, ?, ?, 'waiting', ?, NULL, NULL)",
+          crypto.randomUUID(),
+          JSON.stringify(song),
+          JSON.stringify(singerIds),
+          me.id,
+          this.nextAddedAt(),
+        );
+        await this.afterQueueChange();
+        break;
+      }
+      case "remove_song": {
+        const upNext = this.upNext();
+        const index = upNext.findIndex((i) => i.id === msg.itemId);
+        if (index === -1) throw new RoomError("not_allowed", "That song isn't waiting in the queue.");
+        const item = upNext[index]!;
+        if (!isHost && item.addedBy !== me.id && !item.singerIds.includes(me.id)) {
+          throw new RoomError("not_allowed", "You can only remove your own songs.");
+        }
+        this.sql.exec("DELETE FROM items WHERE id = ?", item.id);
+        this.applyPinShift(upNext, index);
+        break;
+      }
+      case "move_song": {
+        requireHost();
+        const upNext = this.upNext();
+        const moved = upNext.find((i) => i.id === msg.itemId);
+        if (!moved) throw new RoomError("not_allowed", "That song isn't waiting in the queue.");
+        const toIndex = Math.max(0, Math.min(Math.trunc(msg.toIndex), upNext.length - 1));
+        // Freeze the order the host sees, then move the item: each waiting item keeps its place until it plays.
+        const order = upNext.filter((i) => i !== moved);
+        order.splice(toIndex, 0, moved);
+        order.forEach((item, index) => this.sql.exec("UPDATE items SET pin_index = ? WHERE id = ?", index, item.id));
+        break;
+      }
+      case "set_role": {
+        if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can change roles.");
+        const target = this.memberRow(msg.memberId);
+        if (!target || target.role === "host") throw new RoomError("not_allowed", "Can't change that member's role.");
+        this.sql.exec("UPDATE members SET role = ? WHERE id = ?", msg.role, target.id);
+        break;
+      }
+      case "kick": {
+        requireHost();
+        const target = this.memberRow(msg.memberId);
+        if (!target || target.role === "host" || target.id === me.id) throw new RoomError("not_allowed", "Can't remove that member.");
+        if (me.role === "cohost" && target.role === "cohost") throw new RoomError("not_allowed", "Only the host can remove a co-host.");
+        const upNext = this.upNext();
+        this.sql.exec("DELETE FROM members WHERE id = ?", target.id);
+        // Drop their waiting songs (a duet stays if another singer is left).
+        for (const item of upNext) {
+          if (!item.singerIds.includes(target.id)) continue;
+          const rest = item.singerIds.filter((id) => id !== target.id);
+          if (rest.length === 0) this.sql.exec("DELETE FROM items WHERE id = ?", item.id);
+          else this.sql.exec("UPDATE items SET singer_ids = ? WHERE id = ?", JSON.stringify(rest), item.id);
+        }
+        this.normalisePins();
+        for (const sock of this.socketsOf(target.id)) {
+          this.send(sock, { type: "kicked" });
+          sock.serializeAttachment({ memberId: null, wantsPlayer: false, player: false } satisfies Attachment);
+          sock.close(4000, "kicked");
+        }
+        break;
+      }
+      case "update_settings": {
+        requireHost();
+        this.setMeta("settings", { ...this.settings(), ...sanitizeSettings(msg.settings) });
+        break;
+      }
+      case "end_party": {
+        if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can end the party.");
+        const now = Date.now();
+        this.setMeta("status", "ended");
+        this.setMeta("endedAt", now);
+        this.setMeta("playback", idlePlayback(now));
+        await this.ctx.storage.setAlarm(now + ENDED_TTL_MS);
+        this.broadcastState();
+        this.broadcast({ type: "ended" });
+        return;
+      }
+      case "react": {
+        if (!this.settings().reactions) throw new RoomError("not_allowed", "Reactions are off.");
+        const now = Date.now();
+        if (now - (this.lastReaction.get(me.id) ?? 0) < REACTION_INTERVAL_MS) return; // dropped
+        this.lastReaction.set(me.id, now);
+        this.broadcast({ type: "reaction", memberId: me.id, reaction: msg.reaction });
+        return;
+      }
+      default: {
+        await this.handlePlayback(ws, me, isHost, msg);
+        return;
+      }
+    }
+    this.broadcastState();
+  }
+
+  /** Playback messages (skip/pause/resume/restart/player_event), implemented in A2. */
+  protected async handlePlayback(_ws: WebSocket, _me: Member, isHost: boolean, msg: ClientMessage) {
+    if (msg.type !== "player_event" && !isHost) throw new RoomError("not_allowed", "Only hosts can do that.");
+    throw new RoomError("invalid_message", "Not supported yet.");
+  }
+
+  /** Runs after a song is added (A2 starts playback from here). */
+  protected async afterQueueChange() {}
+
+  /** Runs after a socket rejoins (A2 resends `play` to a reconnecting player). */
+  protected async afterRejoin(_ws: WebSocket) {}
+
+  private async onJoin(ws: WebSocket, nickname: string, avatarSeed: string) {
+    if (attachment(ws).memberId) throw new RoomError("invalid_message", "Already joined.");
+    if (this.status() === "ended") throw new RoomError("room_ended", "The party has ended.");
+    if (this.settings().locked) throw new RoomError("room_locked", "The host has locked this room.");
+    const { memberId, key } = await this.addMember(nickname, avatarSeed, "guest");
+    this.attach(ws, memberId);
+    this.send(ws, { type: "welcome", memberId, key, state: this.state() });
+    this.broadcastState(undefined, ws);
+  }
+
+  private async onRejoin(ws: WebSocket, memberId: string, key: string) {
+    const member = this.memberRow(memberId);
+    if (!member || member.key_hash !== (await sha256(key))) throw new RoomError("bad_key", "Can't rejoin; join again.");
+    this.attach(ws, memberId);
+    this.send(ws, { type: "welcome", memberId, key, state: this.state() });
+    this.broadcastState(undefined, ws);
+    await this.afterRejoin(ws);
+  }
+
+  private attach(ws: WebSocket, memberId: string) {
+    const att = attachment(ws);
+    const player = att.wantsPlayer && this.memberRow(memberId)?.role === "host";
+    if (player) {
+      // Only one player: the newest one wins.
+      for (const other of this.ctx.getWebSockets()) {
+        const o = attachment(other);
+        if (other !== ws && o.player) other.serializeAttachment({ ...o, player: false } satisfies Attachment);
+      }
+    }
+    ws.serializeAttachment({ memberId, wantsPlayer: att.wantsPlayer, player } satisfies Attachment);
+  }
+
+  private async addMember(nickname: string, avatarSeed: string, role: Role) {
+    const memberId = crypto.randomUUID();
+    const key = randomKey();
+    this.sql.exec(
+      "INSERT INTO members (id, nickname, avatar_seed, role, joined_at, key_hash) VALUES (?, ?, ?, ?, ?, ?)",
+      memberId,
+      this.uniqueNickname(nickname),
+      avatarSeed.slice(0, 64),
+      role,
+      Date.now(),
+      await sha256(key),
+    );
+    return { memberId, key };
+  }
+
+  private uniqueNickname(raw: string): string {
+    const base = raw.trim().replace(/\s+/g, " ").slice(0, MAX_NICKNAME) || "Singer";
+    const taken = new Set(this.memberRows().map((m) => m.nickname.toLowerCase()));
+    if (!taken.has(base.toLowerCase())) return base;
+    for (let n = 2; ; n++) {
+      const candidate = `${base} ${n}`;
+      if (!taken.has(candidate.toLowerCase())) return candidate;
+    }
+  }
+
+  /** `addedAt` for a new item: now, but always after the last item so the order is stable within a millisecond. */
+  private nextAddedAt(): number {
+    const last = this.sql.exec<{ t: number | null }>("SELECT MAX(added_at) AS t FROM items").one().t ?? 0;
+    return Math.max(Date.now(), last + 1);
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────
+
+  /** `closing` is a socket that's going away: its member doesn't count as connected through it. */
+  protected state(closing?: WebSocket): RoomState {
+    const connected = new Set<string>();
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws === closing) continue;
+      const id = attachment(ws).memberId;
+      if (id) connected.add(id);
+    }
+    const members: Member[] = this.memberRows().map((m) => ({
+      id: m.id,
+      nickname: m.nickname,
+      avatarSeed: m.avatar_seed,
+      role: m.role,
+      connected: connected.has(m.id),
+      joinedAt: m.joined_at,
+    }));
+    const playing = this.nowPlayingItem();
+    return {
+      code: this.getMeta<string>("code") ?? "",
+      status: this.status(),
+      members,
+      nowPlaying: playing ? publicItem(playing) : null,
+      upNext: this.upNext().map(publicItem),
+      playback: this.playback(),
+      settings: this.settings(),
+    };
+  }
+
+  protected nowPlayingItem(): StoredItem | undefined {
+    return this.itemRows().find((i) => i.status === "playing");
+  }
+
+  protected upNext(): StoredItem[] {
+    return orderUpNext(this.itemRows(), this.settings().queueMode);
+  }
+
+  /** Keeps pinned items moving up when the item at `index` leaves `upNext`. */
+  protected applyPinShift(upNext: StoredItem[], index: number) {
+    for (const [id, pin] of shiftPins(upNext, index)) this.sql.exec("UPDATE items SET pin_index = ? WHERE id = ?", pin, id);
+  }
+
+  /** After items vanish from the middle of the queue, renumber pins to match the current order. */
+  private normalisePins() {
+    this.upNext().forEach((item, index) => {
+      if (item.pinIndex !== null) this.sql.exec("UPDATE items SET pin_index = ? WHERE id = ?", index, item.id);
+    });
+  }
+
+  protected setItem(id: string, fields: { status?: QueueItem["status"]; startedAt?: number; pinIndex?: null }) {
+    if (fields.status !== undefined) this.sql.exec("UPDATE items SET status = ? WHERE id = ?", fields.status, id);
+    if (fields.startedAt !== undefined) this.sql.exec("UPDATE items SET started_at = ? WHERE id = ?", fields.startedAt, id);
+    if (fields.pinIndex === null) this.sql.exec("UPDATE items SET pin_index = NULL WHERE id = ?", id);
+  }
+
+  protected playback(): Playback {
+    return this.getMeta<Playback>("playback") ?? idlePlayback();
+  }
+
+  protected setPlayback(playback: Playback) {
+    this.setMeta("playback", playback);
+  }
+
+  protected settings(): RoomSettings {
+    return { ...DEFAULT_SETTINGS, ...(this.getMeta<RoomSettings>("settings") ?? {}) };
+  }
+
+  protected status(): "open" | "ended" {
+    return this.getMeta<"open" | "ended">("status") ?? "open";
+  }
+
+  private memberRows(): MemberRow[] {
+    return this.sql.exec<MemberRow>("SELECT * FROM members ORDER BY joined_at, id").toArray();
+  }
+
+  private memberRow(id: string): MemberRow | undefined {
+    return this.sql.exec<MemberRow>("SELECT * FROM members WHERE id = ?", id).toArray()[0];
+  }
+
+  protected itemRows(): StoredItem[] {
+    return this.sql.exec<ItemRow>("SELECT * FROM items ORDER BY added_at, id").toArray().map(rowToItem);
+  }
+
+  private getMeta<T>(key: string): T | null {
+    const row = this.sql.exec<{ value: string }>("SELECT value FROM meta WHERE key = ?", key).toArray()[0];
+    return row ? (JSON.parse(row.value) as T) : null;
+  }
+
+  private setMeta(key: string, value: unknown) {
+    this.sql.exec(
+      "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+      key,
+      JSON.stringify(value),
+    );
+  }
+
+  private currentMember(ws: WebSocket): Member {
+    const id = attachment(ws).memberId;
+    const row = id ? this.memberRow(id) : undefined;
+    if (!row) throw new RoomError("not_allowed", "Join the room first.");
+    return { id: row.id, nickname: row.nickname, avatarSeed: row.avatar_seed, role: row.role, connected: true, joinedAt: row.joined_at };
+  }
+
+  // ── Sending ────────────────────────────────────────────────────────────
+
+  private socketsOf(memberId: string): WebSocket[] {
+    return this.ctx.getWebSockets().filter((ws) => attachment(ws).memberId === memberId);
+  }
+
+  protected playerSocket(): WebSocket | undefined {
+    return this.ctx.getWebSockets().find((ws) => attachment(ws).player);
+  }
+
+  protected isPlayer(ws: WebSocket): boolean {
+    return attachment(ws).player;
+  }
+
+  protected send(ws: WebSocket, msg: ServerMessage) {
+    try {
+      ws.send(JSON.stringify(msg));
+    } catch {
+      // socket already closing; ignore
+    }
+  }
+
+  /** Sends to every joined socket except `except`. */
+  protected broadcast(msg: ServerMessage, except?: WebSocket) {
     const data = JSON.stringify(msg);
     for (const ws of this.ctx.getWebSockets()) {
-      if (ws === except) continue;
+      if (ws === except || !attachment(ws).memberId) continue;
       try {
         ws.send(data);
       } catch {
@@ -55,4 +508,147 @@ export class Room extends DurableObject<Env> {
       }
     }
   }
+
+  /** Broadcasts the full state. `closing` is left out of `connected`; neither it nor `except` gets the message. */
+  protected broadcastState(closing?: WebSocket, except?: WebSocket) {
+    const data = JSON.stringify({ type: "state", state: this.state(closing) } satisfies ServerMessage);
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws === closing || ws === except || !attachment(ws).memberId) continue;
+      try {
+        ws.send(data);
+      } catch {
+        // socket already closing; ignore
+      }
+    }
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function attachment(ws: WebSocket): Attachment {
+  return (ws.deserializeAttachment() as Attachment | null) ?? { memberId: null, wantsPlayer: false, player: false };
+}
+
+export function idlePlayback(now = Date.now()): Playback {
+  return { state: "idle", positionSec: 0, updatedAt: now, countdownEndsAt: null };
+}
+
+function rowToItem(row: ItemRow): StoredItem {
+  return {
+    id: row.id,
+    song: JSON.parse(row.song) as Song,
+    singerIds: JSON.parse(row.singer_ids) as string[],
+    addedBy: row.added_by,
+    status: row.status,
+    addedAt: row.added_at,
+    startedAt: row.started_at,
+    pinIndex: row.pin_index,
+  };
+}
+
+function publicItem(item: StoredItem): QueueItem {
+  const { startedAt: _s, pinIndex: _p, ...rest } = item;
+  return rest;
+}
+
+function randomKey(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
+  const out: Partial<RoomSettings> = {};
+  if (input.queueMode === "rotation" || input.queueMode === "fifo") out.queueMode = input.queueMode;
+  if (typeof input.maxWaitingPerMember === "number" && Number.isFinite(input.maxWaitingPerMember)) {
+    out.maxWaitingPerMember = Math.max(1, Math.min(20, Math.trunc(input.maxWaitingPerMember)));
+  }
+  if (typeof input.countdownSec === "number" && Number.isFinite(input.countdownSec)) {
+    out.countdownSec = Math.max(0, Math.min(30, Math.trunc(input.countdownSec)));
+  }
+  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard"] as const) {
+    if (typeof input[key] === "boolean") out[key] = input[key];
+  }
+  return out;
+}
+
+const isStr = (v: unknown, max = 500): v is string => typeof v === "string" && v.length > 0 && v.length <= max;
+
+function isSong(v: unknown): v is Song {
+  if (!v || typeof v !== "object") return false;
+  const s = v as Record<string, unknown>;
+  return (
+    isStr(s.videoId, 64) &&
+    typeof s.title === "string" &&
+    typeof s.channel === "string" &&
+    typeof s.durationSec === "number" &&
+    typeof s.thumbnailUrl === "string"
+  );
+}
+
+/** Parses and checks a client message's shape. Throws with a short reason. */
+export function parseClientMessage(text: string): ClientMessage {
+  let m: Record<string, unknown>;
+  try {
+    m = JSON.parse(text);
+  } catch {
+    throw new Error("Invalid JSON");
+  }
+  if (!m || typeof m !== "object" || typeof m.type !== "string") throw new Error("Missing type");
+  const ok = (cond: boolean) => {
+    if (!cond) throw new Error(`Bad ${m.type} message`);
+  };
+  switch (m.type) {
+    case "join":
+      ok(isStr(m.nickname, 100) && typeof m.avatarSeed === "string");
+      break;
+    case "rejoin":
+      ok(isStr(m.memberId, 64) && isStr(m.key, 128));
+      break;
+    case "add_song":
+      ok(
+        isSong(m.song) &&
+          (m.singerIds === undefined ||
+            (Array.isArray(m.singerIds) && m.singerIds.length <= 4 && m.singerIds.every((id) => isStr(id, 64)))),
+      );
+      break;
+    case "remove_song":
+      ok(isStr(m.itemId, 64));
+      break;
+    case "move_song":
+      ok(isStr(m.itemId, 64) && typeof m.toIndex === "number" && Number.isFinite(m.toIndex));
+      break;
+    case "skip":
+    case "pause":
+    case "resume":
+    case "restart":
+    case "end_party":
+      break;
+    case "set_role":
+      ok(isStr(m.memberId, 64) && (m.role === "cohost" || m.role === "guest"));
+      break;
+    case "kick":
+      ok(isStr(m.memberId, 64));
+      break;
+    case "update_settings":
+      ok(!!m.settings && typeof m.settings === "object");
+      break;
+    case "react":
+      ok((REACTIONS as readonly unknown[]).includes(m.reaction));
+      break;
+    case "player_event":
+      ok(
+        ["started", "progress", "ended", "error"].includes(m.event as string) &&
+          isStr(m.itemId, 64) &&
+          (m.positionSec === undefined || typeof m.positionSec === "number"),
+      );
+      break;
+    default:
+      throw new Error(`Unknown message type: ${m.type}`);
+  }
+  return m as ClientMessage;
 }
