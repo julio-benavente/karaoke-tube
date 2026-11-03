@@ -51,4 +51,7 @@ export const en = {
   "party.removeCohost": "Remove co-host",
   "party.makeCohost": "Make co-host",
   "party.removeGuest": "Remove from party",
+  "watch.on": "Watch here",
+  "watch.off": "Show cover",
+  "watch.hint": "Not at the TV? Watch the karaoke video on this device, in step with the party.",
 } as const;

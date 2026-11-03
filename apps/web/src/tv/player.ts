@@ -1,7 +1,7 @@
 import type { QueueItem } from "@karaoke-tube/shared";
 
 /** Minimal typing for the bits of the YouTube IFrame Player API we use. */
-type YTPlayer = {
+export type YTPlayer = {
   loadVideoById(o: { videoId: string; startSeconds?: number }): void;
   playVideo(): void;
   pauseVideo(): void;
@@ -9,6 +9,10 @@ type YTPlayer = {
   seekTo(s: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
+  cueVideoById(o: { videoId: string; startSeconds?: number }): void;
+  mute(): void;
+  unMute(): void;
+  getPlayerState(): number;
   destroy(): void;
 };
 type YTGlobal = {
@@ -36,7 +40,7 @@ const PAUSED = 2;
 const BUFFERING = 3;
 
 let apiPromise: Promise<YTGlobal> | null = null;
-function loadApi(): Promise<YTGlobal> {
+export function loadApi(): Promise<YTGlobal> {
   if (window.YT?.Player) return Promise.resolve(window.YT);
   apiPromise ??= new Promise((resolve, reject) => {
     const prev = window.onYouTubeIframeAPIReady;

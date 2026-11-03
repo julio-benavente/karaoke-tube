@@ -226,3 +226,36 @@
   font-size: var(--kt-text-sm);
   text-align: center;
 }
+
+/* "Watch here": the synced karaoke video instead of the cover. Wider than the square cover. */
+.watchBox {
+  width: 100%;
+}
+
+.watchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  align-self: center;
+  height: 36px;
+  padding: 0 var(--kt-space-4);
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-white-10);
+  color: var(--kt-text);
+  font-size: var(--kt-text-md);
+  font-weight: var(--kt-weight-bold);
+}
+
+.watchBtn[aria-pressed="true"] {
+  background: var(--kt-accent);
+  color: var(--kt-accent-ink);
+}
+
+.watchHint {
+  align-self: center;
+  max-width: 320px;
+  margin: calc(-1 * var(--kt-space-2)) 0 0;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  text-align: center;
+}

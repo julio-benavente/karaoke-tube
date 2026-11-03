@@ -54,4 +54,7 @@ export const es: Dict = {
   "party.removeCohost": "Quitar coanfitrión",
   "party.makeCohost": "Hacer coanfitrión",
   "party.removeGuest": "Sacar de la fiesta",
+  "watch.on": "Ver aquí",
+  "watch.off": "Mostrar portada",
+  "watch.hint": "¿No estás frente a la tele? Mira el video de karaoke en este dispositivo, sincronizado con la fiesta.",
 };

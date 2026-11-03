@@ -1,5 +1,5 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { ChevronDown, RotateCcw, SkipForward } from "lucide-react";
+import { ChevronDown, MonitorPlay, RotateCcw, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REACTIONS, REACTION_EMOJI, type Reaction } from "@karaoke-tube/shared";
 import {
@@ -16,7 +16,10 @@ import {
   usePlaybackPosition,
   useReactions,
   useRoom,
+  useT,
 } from "@karaoke-tube/ui";
+import { RemoteVideo } from "../watch/RemoteVideo";
+import { useWatchPref } from "../watch/pref";
 import css from "./NowSinging.module.css";
 
 /** G6: full-screen now singing: big artwork, progress, five reactions, host controls. */
@@ -44,6 +47,8 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
   const playback = state?.playback;
   const position = usePlaybackPosition(playback, item?.song.durationSec);
   const countdown = useCountdown(playback?.state === "get_ready" ? playback.countdownEndsAt : null);
+  const t = useT();
+  const [watching, setWatching] = useWatchPref();
   const [cooldown, setCooldown] = useState(false);
   const [popped, setPopped] = useState<Reaction | null>(null);
 
@@ -80,8 +85,12 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         <span style={{ width: 40 }} />
       </header>
 
-      <div className={css.artBox}>
-        <Artwork src={item.song.thumbnailUrl} label={item.song.title} radius="md" shadow className={css.art} />
+      <div className={`${css.artBox} ${watching ? css.watchBox : ""}`}>
+        {watching ? (
+          <RemoteVideo item={item} playback={playback} />
+        ) : (
+          <Artwork src={item.song.thumbnailUrl} label={item.song.title} radius="md" shadow className={css.art} />
+        )}
         {playback.state === "get_ready" && (
           <div className={css.getReady}>
             <span>Get ready</span>
@@ -96,6 +105,12 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
+
+      <button type="button" className={css.watchBtn} aria-pressed={watching} onClick={() => setWatching(!watching)}>
+        <MonitorPlay size={18} />
+        {watching ? t("watch.off") : t("watch.on")}
+      </button>
+      {!watching && <p className={css.watchHint}>{t("watch.hint")}</p>}
 
       <div className={css.meta}>
         <div className={css.titleBlock}>
