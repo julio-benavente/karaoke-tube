@@ -1,0 +1,15 @@
+[
+  {"key": "sing-king", "id": "UCwTRjvjVge51X-ILJ4i22ew", "title": "Sing King", "order": "artist-song", "priority": 100},
+  {"key": "karafun", "id": "UCbqcG1rdt9LMwOJN4PyGTKg", "title": "KaraFun", "order": "song-artist", "priority": 95},
+  {"key": "party-tyme", "id": "UCWLqO9ztz16a_Ko4YB9PnFQ", "title": "Party Tyme Karaoke", "order": "artist-song", "priority": 90},
+  {"key": "curtainup", "id": "UCj7S40KeV1AHEz9CEGNJ34w", "title": "CurtainUp Karaoke", "order": "song-artist", "priority": 90},
+  {"key": "stingray", "id": "UCYi9TC1HC_U2kaRAK6I4FSQ", "title": "Stingray Karaoke", "order": "mixed", "priority": 85, "colonSplit": true},
+  {"key": "vocal-star", "id": "UCgTrJ_j4rlHyBUlAnU1cHYg", "title": "Vocal Star Karaoke", "order": "mixed", "priority": 80},
+  {"key": "karaoke-instrumental", "id": "UCaGFjBlA0cR6SREc_TFfMWw", "title": "Karaoke Instrumental", "order": "artist-song", "priority": 70},
+  {"key": "my-all-time-karaoke", "id": "UCwU0jKwBA9pDysMi2uewNMw", "title": "My All Time Karaoke", "order": "song-artist", "priority": 60, "tidyCase": true},
+  {"key": "karaokemedia", "id": "UCmV_ZCnAAj5DbkUqpBC_CDg", "title": "KaraokeMedia", "order": "mixed", "priority": 55},
+  {"key": "karaoke-all-keys", "id": "UCi-2SWwS0zvyO8tzp3JAC8w", "title": "Karaoke All Keys", "order": "mixed", "priority": 50, "karaokeSplit": true},
+  {"key": "sing2piano", "id": "UCIk6z4gxI5ADYK7HmNiJvNg", "title": "Sing2Piano", "order": "mixed", "priority": 20},
+  {"key": "piano-karaoke", "id": "UCxFoINrmEZxOgWMofuWsQcg", "title": "Piano Karaoke", "order": "song-artist", "priority": 20},
+  {"key": "kids-karaoke-songs", "id": "UC065OFwExGz84peyI5DGtSg", "title": "Kids Karaoke Songs", "order": "mixed", "priority": 10, "exclude": "cartoon episodes, not karaoke tracks"}
+]
