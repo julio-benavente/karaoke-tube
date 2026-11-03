@@ -16,6 +16,7 @@ import {
   useRoom,
   useRoomErrors,
   useToast,
+  useT,
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
 import { AwardPrompt } from "./AwardPrompt";
@@ -61,6 +62,7 @@ export function RoomShell() {
 }
 
 function Shell({ code, retry }: { code: string; retry: () => void }) {
+  const t = useT();
   const { state, me, status, closeReason, isHost, send } = useRoom();
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,15 +168,15 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
           active={tab}
           onSelect={(k) => navigate(k === "home" ? `/r/${code}` : `/r/${code}/${k}`)}
           tabs={[
-            { key: "home", label: "Home", icon: <Home strokeWidth={tab === "home" ? 2.6 : 2} /> },
-            { key: "search", label: "Search", icon: <Search strokeWidth={tab === "search" ? 2.8 : 2} /> },
+            { key: "home", label: t("tab.home"), icon: <Home strokeWidth={tab === "home" ? 2.6 : 2} /> },
+            { key: "search", label: t("tab.search"), icon: <Search strokeWidth={tab === "search" ? 2.8 : 2} /> },
             {
               key: "queue",
-              label: "Queue",
+              label: t("tab.queue"),
               icon: <ListMusic strokeWidth={tab === "queue" ? 2.6 : 2} />,
               badge: mine || undefined,
             },
-            { key: "party", label: "Party", icon: <PartyPopper strokeWidth={tab === "party" ? 2.4 : 2} /> },
+            { key: "party", label: t("tab.party"), icon: <PartyPopper strokeWidth={tab === "party" ? 2.4 : 2} /> },
           ]}
         >
           {state.nowPlaying && (

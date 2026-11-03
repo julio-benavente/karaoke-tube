@@ -1,3 +1,4 @@
+import { useT } from "@karaoke-tube/ui";
 import { formatRoomCode } from "@karaoke-tube/shared";
 import { Check, Copy, Crown, LogOut, MoreHorizontal, Share2, ShieldCheck, UserMinus } from "lucide-react";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import css from "./Party.module.css";
 
 /** Party tab: room code, guests list, leave. */
 export function PartyScreen() {
+  const t = useT();
   const { state, me, isHost, send } = useRoom();
   const { code, leave } = useShell();
   const [copied, setCopied] = useState(false);
@@ -39,16 +41,16 @@ export function PartyScreen() {
 
   return (
     <div className={css.page}>
-      <h1 className={css.title}>Your party</h1>
+      <h1 className={css.title}>{t("party.title")}</h1>
 
       <section className={css.codeCard}>
-        <span className={css.codeLabel}>Party code</span>
+        <span className={css.codeLabel}>{t("party.code")}</span>
         <span className={css.code} aria-label={`Code ${formatRoomCode(code)}`}>
           {formatRoomCode(code)}
         </span>
         <p className={css.codeHint}>Friends join at {location.host}/join with this code.</p>
         <Button variant="light" size="sm" icon={copied ? <Check size={16} /> : canShare ? <Share2 size={16} /> : <Copy size={16} />} onClick={share}>
-          {copied ? "Link copied" : "Invite friends"}
+          {copied ? t("party.copied") : t("party.invite")}
         </Button>
       </section>
 
@@ -63,16 +65,16 @@ export function PartyScreen() {
               <div className={css.memberText}>
                 <span className={css.name}>
                   {m.nickname}
-                  {m.id === me.id && <span className={css.you}> (you)</span>}
+                  {m.id === me.id && <span className={css.you}> {t("party.you")}</span>}
                 </span>
-                <span className={css.status}>{m.connected ? "Here" : "Away"}</span>
+                <span className={css.status}>{m.connected ? t("party.here") : t("party.away")}</span>
               </div>
               {m.role === "host" && (
                 <Pill tone="accent">
                   <Crown size={11} /> Host
                 </Pill>
               )}
-              {m.role === "cohost" && <Pill>Co-host</Pill>}
+              {m.role === "cohost" && <Pill>{t("party.cohost")}</Pill>}
               {isHost && m.id !== me.id && m.role !== "host" && (
                 <button type="button" className={css.more} onClick={() => setMenu(m)} aria-label={`Options for ${m.nickname}`}>
                   <MoreHorizontal />
@@ -87,20 +89,20 @@ export function PartyScreen() {
         Leave party
       </Button>
 
-      <Sheet open={confirmLeave} onClose={() => setConfirmLeave(false)} label="Leave party">
+      <Sheet open={confirmLeave} onClose={() => setConfirmLeave(false)} label={t("party.leaveLabel")}>
         <div className={css.confirm}>
-          <h2 className={css.h2}>Leave the party?</h2>
+          <h2 className={css.h2}>{t("party.leaveTitle")}</h2>
           <p className={css.muted}>Your songs stay in the queue. You can join again with code {code}.</p>
           <div className={css.confirmButtons}>
             <Button variant="secondary" onClick={() => setConfirmLeave(false)}>
               Stay
             </Button>
-            <Button onClick={leave}>Leave</Button>
+            <Button onClick={leave}>{t("party.leave")}</Button>
           </div>
         </div>
       </Sheet>
 
-      <Sheet open={!!menu} onClose={() => setMenu(null)} label="Guest options">
+      <Sheet open={!!menu} onClose={() => setMenu(null)} label={t("party.guestOptions")}>
         {menu && (
           <>
             <div className={css.menuHead}>
@@ -114,13 +116,13 @@ export function PartyScreen() {
                       menu.role === "cohost"
                         ? {
                             key: "role",
-                            label: "Remove co-host",
+                            label: t("party.removeCohost"),
                             icon: <ShieldCheck />,
                             onClick: () => send({ type: "set_role", memberId: menu.id, role: "guest" }),
                           }
                         : {
                             key: "role",
-                            label: "Make co-host",
+                            label: t("party.makeCohost"),
                             icon: <ShieldCheck />,
                             onClick: () => send({ type: "set_role", memberId: menu.id, role: "cohost" }),
                           },
@@ -128,7 +130,7 @@ export function PartyScreen() {
                   : []),
                 {
                   key: "kick",
-                  label: "Remove from party",
+                  label: t("party.removeGuest"),
                   icon: <UserMinus />,
                   danger: true,
                   onClick: () => send({ type: "kick", memberId: menu.id }),

@@ -1,3 +1,4 @@
+import { useT } from "@karaoke-tube/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { Song } from "@karaoke-tube/shared";
@@ -26,6 +27,7 @@ const GENRES = BROWSE_PRESETS.filter((p) => p.chip);
 
 /** G2: greeting, genre chips, 6 shortcut tiles, "Popular in this room". */
 export function HomeScreen() {
+  const t = useT();
   const { state, me } = useRoom();
   const navigate = useNavigate();
   const { code } = useShell();
@@ -76,7 +78,7 @@ export function HomeScreen() {
   return (
     <div className={css.home} style={{ ["--tint" as string]: tint }}>
       <header className={css.header}>
-        <button type="button" className={css.me} onClick={() => navigate(`/r/${code}/party`)} aria-label="Party">
+        <button type="button" className={css.me} onClick={() => navigate(`/r/${code}/party`)} aria-label={t("tab.party")}>
           <Avatar seed={me.avatarSeed} size={32} />
         </button>
         <ChipRow className={css.chips}>
@@ -117,7 +119,7 @@ export function HomeScreen() {
               ))}
             </div>
           )}
-          <Shelf title={`More ${preset.title}`}>{genreSearch.results.slice(6).map(card)}</Shelf>
+          <Shelf title={t("home.more", { title: preset.title })}>{genreSearch.results.slice(6).map(card)}</Shelf>
         </section>
       ) : (
         <section className={css.section}>
@@ -130,12 +132,12 @@ export function HomeScreen() {
                 image={s.thumbnailUrl}
                 onClick={() => setSheetSong(s)}
                 onPlay={() => add(s)}
-                playLabel={pending.includes(s.videoId) ? "Adding…" : "Add to queue"}
+                playLabel={pending.includes(s.videoId) ? t("home.adding") : t("home.add")}
               />
             ))}
           </div>
-          {roomSongs.length > 0 && <Shelf title="Popular in this room">{roomSongs.slice(0, 12).map(card)}</Shelf>}
-          {classics.results.length > 0 && <Shelf title="Party classics">{classics.results.map(card)}</Shelf>}
+          {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
+          {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
         </section>
       )}
 

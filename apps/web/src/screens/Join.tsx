@@ -1,3 +1,4 @@
+import { LanguageSwitcher, useT } from "@karaoke-tube/ui";
 import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
@@ -27,6 +28,7 @@ export function JoinScreen() {
 }
 
 function JoinForm() {
+  const t = useT();
   const params = useParams();
   const navigate = useNavigate();
   const initial = loadIdentity();
@@ -51,7 +53,7 @@ function JoinForm() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const name = nickname.trim();
-    if (!isRoomCode(code.replace(/-+$/, ""))) return setError({ field: "code", text: `Party codes look like ${ROOM_CODE_EXAMPLE}.` });
+    if (!isRoomCode(code.replace(/-+$/, ""))) return setError({ field: "code", text: t("join.codeHint", { example: ROOM_CODE_EXAMPLE }) });
     if (!name) return nickRef.current?.focus();
     setError(null);
     setBusy(true);
@@ -61,7 +63,7 @@ function JoinForm() {
       if (info.status === "ended") return fail("room_ended");
       if (info.locked) return fail("room_locked");
     } catch {
-      return fail("invalid_message", "Can't reach the party right now. Check your connection.");
+      return fail("invalid_message", t("join.unreachable"));
     }
     const identity = { nickname: name, avatarSeed: seed };
     saveIdentity(identity);
@@ -85,7 +87,7 @@ function JoinForm() {
     const timer = setTimeout(() => {
       done(false);
       dropRoomClient(code);
-      fail("invalid_message", "Joining is taking too long. Try again.");
+      fail("invalid_message", t("join.slow"));
     }, 12000);
     cleanup.current = () => {
       offState();
@@ -101,13 +103,13 @@ function JoinForm() {
         <Logo size={32} />
       </header>
       <form className={css.card} onSubmit={submit} noValidate>
-        <h1 className={css.title}>Join the party</h1>
-        <p className={css.lead}>Pick a look and a name. Everyone will see them on the TV.</p>
+        <h1 className={css.title}>{t("join.title")}</h1>
+        <p className={css.lead}>{t("join.lead")}</p>
 
         <AvatarPicker value={seed} onChange={setSeed} />
 
         <TextField
-          label="Party code"
+          label={t("join.code")}
           value={code}
           onChange={(e) => {
             setCode(normalizeCode(e.target.value));
@@ -123,10 +125,10 @@ function JoinForm() {
         />
         <TextField
           ref={nickRef}
-          label="Nickname"
+          label={t("join.nickname")}
           value={nickname}
           onChange={(e) => setNickname(e.target.value.slice(0, 20))}
-          placeholder="What should we call you?"
+          placeholder={t("join.nicknamePlaceholder")}
           autoComplete="nickname"
           enterKeyHint="go"
         />
@@ -138,7 +140,7 @@ function JoinForm() {
         )}
 
         <Button type="submit" size="lg" block disabled={busy || !nickname.trim() || !isRoomCode(code.replace(/-+$/, ""))}>
-          {busy ? "Joining…" : "Join"}
+          {busy ? t("join.joining") : t("join.submit")}
         </Button>
         {USE_MOCK && (
           <p className={css.hint}>
@@ -147,8 +149,9 @@ function JoinForm() {
         )}
       </form>
       <p className={css.hint}>
-        Want to run the music? <Link to="/host/new">Host a party</Link>
+        {t("join.host")} <Link to="/host/new">{t("join.hostLink")}</Link>
       </p>
+      <LanguageSwitcher />
     </div>
   );
 }
