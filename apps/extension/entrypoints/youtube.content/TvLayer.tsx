@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import type { Reaction, RoomState } from "@karaoke-tube/shared";
+import { LANG_STORAGE_KEY, detectLang, isLang, makeT, type Lang } from "@karaoke-tube/ui";
 import { AwardsShow, GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
 import { WEB_URL } from "@/utils/api";
 
@@ -8,6 +9,18 @@ export type ReactionFeed = (listener: (e: { memberId: string; reaction: Reaction
 
 /** B's TV overlay, fed by the room state the background forwards. Rendered inside a shadow root over `#movie_player`. */
 export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: ReactionFeed }) {
+  // Language: the popup saves it in extension storage (the page's own localStorage is YouTube's).
+  const [lang, setLang] = useState<Lang>(detectLang);
+  useEffect(() => {
+    const apply = (v: unknown) => isLang(v) && setLang(v);
+    browser.storage.local.get(LANG_STORAGE_KEY).then((r) => apply(r[LANG_STORAGE_KEY]), () => {});
+    const onChange = (changes: Record<string, { newValue?: unknown }>, area: string) => {
+      if (area === "local" && changes[LANG_STORAGE_KEY]) apply(changes[LANG_STORAGE_KEY].newValue);
+    };
+    browser.storage.onChanged.addListener(onChange);
+    return () => browser.storage.onChanged.removeListener(onChange);
+  }, []);
+  const t = makeT(lang);
   const [qr, setQr] = useState<string>();
   const [reactions, setReactions] = useState<TvReaction[]>([]);
   const seq = useRef(0);
@@ -56,9 +69,10 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
       <style>{tvCss}</style>
       {state.recap ? (
         // The party is over: the awards show replaces the normal overlay until the background lets the TV go.
-        <AwardsShow recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
+        <AwardsShow t={t} recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
       ) : playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
         <GetReadyCard
+          t={t}
           item={nowPlaying}
           members={state.members}
           countdownEndsAt={playback.countdownEndsAt}
@@ -66,6 +80,7 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
         />
       ) : (
         <TvOverlay
+          t={t}
           nowPlaying={nowPlaying}
           upNext={state.upNext}
           members={state.members}

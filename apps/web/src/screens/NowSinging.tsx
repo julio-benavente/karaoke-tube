@@ -16,11 +16,14 @@ import {
   usePlaybackPosition,
   useReactions,
   useRoom,
+  useT,
+  reactionName,
 } from "@karaoke-tube/ui";
 import css from "./NowSinging.module.css";
 
 /** G6: full-screen now singing: big artwork, progress, five reactions, host controls. */
 export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   const { state } = useRoom();
   const item = state?.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
@@ -28,7 +31,7 @@ export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () 
     <Sheet
       open={open}
       onClose={onClose}
-      label="Now singing"
+      label={t("queue.nowSinging")}
       size="full"
       style={{ background: `linear-gradient(180deg, hsl(${hue} 45% 32%) 0%, hsl(${hue} 40% 14%) 55%, var(--kt-base) 100%)` }}
     >
@@ -39,6 +42,7 @@ export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () 
 
 function NowSingingBody({ onClose }: { onClose: () => void }) {
   const { state, me, isHost, send } = useRoom();
+  const t = useT();
   const { recent } = useReactions(2600);
   const item = state?.nowPlaying;
   const playback = state?.playback;
@@ -70,12 +74,12 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
   return (
     <div className={css.body}>
       <header className={css.top}>
-        <IconButton label="Close" onClick={onClose}>
+        <IconButton label={t("common.close")} onClick={onClose}>
           <ChevronDown size={28} />
         </IconButton>
         <div className={css.topText}>
-          <span className={css.kicker}>Now singing</span>
-          <span className={css.code}>Party {formatRoomCode(state.code)}</span>
+          <span className={css.kicker}>{t("queue.nowSinging")}</span>
+          <span className={css.code}>{t("now.party", { code: formatRoomCode(state.code) })}</span>
         </div>
         <span style={{ width: 40 }} />
       </header>
@@ -84,7 +88,7 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         <Artwork src={item.song.thumbnailUrl} label={item.song.title} radius="md" shadow className={css.art} />
         {playback.state === "get_ready" && (
           <div className={css.getReady}>
-            <span>Get ready</span>
+            <span>{t("now.getReady")}</span>
             <b>{countdown}</b>
           </div>
         )}
@@ -106,8 +110,8 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
       <div className={css.singer}>
         {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={28} />}
         <span>
-          🎤 <b>{singerLabel(item, state.members, me.id)}</b>
-          {playback.state === "paused" && <span className={css.paused}> · Paused</span>}
+          🎤 <b>{singerLabel(item, state.members, me.id, t)}</b>
+          {playback.state === "paused" && <span className={css.paused}> · {t("now.paused")}</span>}
         </span>
       </div>
 
@@ -115,7 +119,7 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
 
       {isHost && (
         <div className={css.controls}>
-          <IconButton label="Restart song" size="lg" onClick={() => send({ type: "restart" })}>
+          <IconButton label={t("player.restart")} size="lg" onClick={() => send({ type: "restart" })}>
             <RotateCcw size={26} />
           </IconButton>
           <PlayButton
@@ -123,15 +127,15 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
             size={64}
             className={css.play}
             onClick={() => send({ type: playing ? "pause" : "resume" })}
-            label={playing ? "Pause" : "Resume"}
+            label={playing ? t("player.pause") : t("player.resume")}
           />
-          <IconButton label="Skip song" size="lg" onClick={() => send({ type: "skip" })}>
+          <IconButton label={t("player.skip")} size="lg" onClick={() => send({ type: "skip" })}>
             <SkipForward size={30} fill="currentColor" />
           </IconButton>
         </div>
       )}
 
-      <div className={css.reactions} role="group" aria-label="Send a reaction">
+      <div className={css.reactions} role="group" aria-label={t("now.reactions")}>
         {REACTIONS.map((r) => (
           <button
             key={r}
@@ -139,13 +143,13 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
             className={`${css.reaction} ${popped === r ? css.popped : ""}`}
             onClick={() => react(r)}
             disabled={!reactionsOn}
-            aria-label={`React ${r}`}
+            aria-label={t("now.react", { name: reactionName(t, r) })}
           >
             {REACTION_EMOJI[r]}
           </button>
         ))}
       </div>
-      {!reactionsOn && <p className={css.off}>The host turned reactions off.</p>}
+      {!reactionsOn && <p className={css.off}>{t("now.reactionsOff")}</p>}
     </div>
   );
 }

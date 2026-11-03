@@ -3,6 +3,8 @@ import { GripVertical, X } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
 import { singerLabel, songParts } from "../format";
+import { useT } from "../i18n/context";
+import type { TFn } from "../i18n/core";
 import { Artwork } from "./Artwork";
 import { AvatarStack } from "./Avatar";
 import css from "./Rows.module.css";
@@ -27,8 +29,8 @@ export type QueueRowProps = {
   compact?: boolean;
 };
 
-export function singerNames(item: QueueItem, members: Member[]): string {
-  return singerLabel(item, members);
+export function singerNames(item: QueueItem, members: Member[], t?: TFn): string {
+  return singerLabel(item, members, undefined, t);
 }
 
 /** A song in the queue with its singer. */
@@ -45,12 +47,13 @@ export function QueueRow({
   dragging,
   compact,
 }: QueueRowProps) {
+  const t = useT();
   const { title, artist } = songParts(item.song);
   const singers = item.singerIds.map((id) => members.find((m) => m.id === id));
   return (
     <div className={clsx(css.row, compact && css.compact, dragging && css.dragging)}>
       {dragHandle && (
-        <button type="button" className={css.handle} aria-label={`Move ${title}`} {...dragHandle}>
+        <button type="button" className={css.handle} aria-label={t("queue.moveNamed", { title })} {...dragHandle}>
           <GripVertical />
         </button>
       )}
@@ -71,14 +74,14 @@ export function QueueRow({
           ) : (
             <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={16} />
           )}
-          <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId) : "You") : singerNames(item, members)}</span>
+          <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId, t) : t("singer.you")) : singerNames(item, members, t)}</span>
           <span className={css.dotSep}>·</span>
           <span className={css.artist}>{artist}</span>
         </div>
       </div>
       {actions}
       {onRemove && (
-        <button type="button" className={css.action} onClick={onRemove} aria-label={`Remove ${title}`} title="Remove">
+        <button type="button" className={css.action} onClick={onRemove} aria-label={t("queue.removeNamed", { title })} title={t("queue.remove")}>
           <X />
         </button>
       )}

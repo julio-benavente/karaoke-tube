@@ -4,6 +4,7 @@ import { createRoomClient } from "@karaoke-tube/client";
 import type { QueueItem, RoomClient, ServerMessage } from "@karaoke-tube/shared";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import { useParams } from "react-router";
+import { useT } from "@karaoke-tube/ui";
 import { adoptHostLink, hasCredentials } from "../host/client";
 import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
@@ -24,6 +25,7 @@ function fullscreen() {
 
 /** /tv/:code: the party's TV screen. Plays the queue with the YouTube IFrame API; the host app remote-controls it. */
 export function TvScreen() {
+  const t = useT();
   const code = normalizeRoomCode(useParams().code ?? "");
   // Before creating the client: it rejoins with the credentials the host app's link carries (#m=..&k=..).
   const allowed = useMemo(() => {
@@ -33,10 +35,10 @@ export function TvScreen() {
   if (!allowed) {
     return (
       <div style={center}>
-        <h1>This screen isn't linked to a party</h1>
-        <p>Open it from the host app with "Open TV screen".</p>
+        <h1>{t("tv.notLinked")}</h1>
+        <p>{t("tv.notLinkedHint")}</p>
         <a style={{ color: "#ff4f8b" }} href={`/host/${code}`}>
-          Go to the host app
+          {t("tv.goHost")}
         </a>
       </div>
     );
@@ -45,6 +47,7 @@ export function TvScreen() {
 }
 
 function Tv({ code }: { code: string }) {
+  const t = useT();
   const [started, setStarted] = useState(false);
   const clientRef = useRef<RoomClient | null>(null);
   const playerRef = useRef<TvPlayer | null>(null);
@@ -151,10 +154,10 @@ function Tv({ code }: { code: string }) {
   if (closeReason === "kicked" || (status === "closed" && !ended)) {
     return (
       <div style={center}>
-        <h1>Can't reach this party</h1>
-        <p>It may have ended or been removed.</p>
+        <h1>{t("host.cantReach")}</h1>
+        <p>{t("tv.cantReachHint")}</p>
         <button style={bigBtn} onClick={() => location.reload()}>
-          Try again
+          {t("common.tryAgain")}
         </button>
       </div>
     );
@@ -162,8 +165,8 @@ function Tv({ code }: { code: string }) {
   if (ended && showFinal) {
     return (
       <div style={center}>
-        <h1 style={{ fontSize: 56, margin: 0 }}>The party has ended</h1>
-        <p style={{ opacity: 0.7, fontSize: 24 }}>Thanks for singing!</p>
+        <h1 style={{ fontSize: 56, margin: 0 }}>{t("host.ended")}</h1>
+        <p style={{ opacity: 0.7, fontSize: 24 }}>{t("tv.thanksSinging")}</p>
       </div>
     );
   }
@@ -190,20 +193,20 @@ function Tv({ code }: { code: string }) {
                   fullscreen();
                 }}
               >
-                Start party
+                {t("tv.start")}
               </button>
             )
           }
           hint={
-            !started && <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? "Connected. Drag this window to the TV, then press Start." : "Connecting…"}</p>
+            !started && <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
           }
         />
       )}
       {started && (
         <button
           onClick={fullscreen}
-          title="Full screen (F)"
-          aria-label="Full screen"
+          title={t("tv.fullscreen")}
+          aria-label={t("tv.fullscreenLabel")}
           style={{ position: "absolute", right: 12, bottom: 12, zIndex: 70, opacity: 0.25, background: "#000a", color: "#fff", border: 0, borderRadius: 8, padding: 8, cursor: "pointer" }}
         >
           <Maximize size={18} />

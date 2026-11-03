@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import { useT } from "../i18n/context";
 import css from "./BottomTabs.module.css";
 
 export type Tab = { key: string; label: string; icon: ReactNode; activeIcon?: ReactNode; badge?: number };
@@ -17,25 +18,26 @@ export function BottomTabs({
   /** Rendered above the tabs, e.g. the MiniPlayer. */
   children?: ReactNode;
 }) {
+  const t = useT();
   return (
     <div className={css.dock}>
       {children}
-      <nav className={css.tabs} aria-label="Main">
-        {tabs.map((t) => {
-          const on = t.key === active;
+      <nav className={css.tabs} aria-label={t("nav.main")}>
+        {tabs.map((tab) => {
+          const on = tab.key === active;
           return (
             <button
-              key={t.key}
+              key={tab.key}
               type="button"
               className={clsx(css.tab, on && css.on)}
               aria-current={on ? "page" : undefined}
-              onClick={() => onSelect(t.key)}
+              onClick={() => onSelect(tab.key)}
             >
               <span className={css.icon}>
-                {on && t.activeIcon ? t.activeIcon : t.icon}
-                {!!t.badge && <span className={css.badge}>{t.badge}</span>}
+                {on && tab.activeIcon ? tab.activeIcon : tab.icon}
+                {!!tab.badge && <span className={css.badge}>{tab.badge}</span>}
               </span>
-              <span className={css.label}>{t.label}</span>
+              <span className={css.label}>{tab.label}</span>
             </button>
           );
         })}

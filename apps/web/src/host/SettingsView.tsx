@@ -1,44 +1,54 @@
 import { Minus, Plus, QrCode } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
-import { Button, Toggle, useRoom } from "@karaoke-tube/ui";
+import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
 import css from "./host.module.css";
 
-const JOIN_OPTIONS: Array<[JoinInfoMode, string]> = [
-  ["between", "Between songs (recommended)"],
-  ["always", "Always on screen"],
-  ["start", "Only at the start"],
+const JOIN_OPTIONS: Array<[JoinInfoMode, TKey]> = [
+  ["between", "settings.joinBetween"],
+  ["always", "settings.joinAlways"],
+  ["start", "settings.joinStart"],
 ];
 
 /** H2: every RoomSettings field, applied live. */
 export function SettingsView() {
   const { state, send } = useRoom();
+  const t = useT();
   if (!state) return null;
   const s = state.settings;
   const set = (patch: Partial<RoomSettings>) => send({ type: "update_settings", settings: patch });
 
   return (
     <div className={css.view}>
-      <h1 className={css.pageTitle}>Settings</h1>
+      <h1 className={css.pageTitle}>{t("nav.settings")}</h1>
 
       <section className={css.settingsGroup}>
-        <h2 className={css.h2}>Queue</h2>
         <div className={css.settingRow}>
           <div className={css.settingText}>
-            <span className={css.settingLabel}>Queue order</span>
+            <span className={css.settingLabel}>{t("lang.label")}</span>
+          </div>
+          <LanguageSwitcher />
+        </div>
+      </section>
+
+      <section className={css.settingsGroup}>
+        <h2 className={css.h2}>{t("settings.queue")}</h2>
+        <div className={css.settingRow}>
+          <div className={css.settingText}>
+            <span className={css.settingLabel}>{t("settings.queueOrder")}</span>
             <span className={css.settingDesc}>
               {s.queueMode === "rotation"
-                ? "Rotation: everyone gets one song per round, so nobody waits forever."
+                ? t("settings.rotationDesc")
                 : s.queueMode === "fifo"
-                  ? "First come, first served: songs play in the order they were added."
-                  : "Host picks: guests' songs wait for your OK before they join the queue."}
+                  ? t("settings.fifoDesc")
+                  : t("settings.approvalDesc")}
             </span>
           </div>
-          <div className={css.segmented} role="radiogroup" aria-label="Queue order">
+          <div className={css.segmented} role="radiogroup" aria-label={t("settings.queueOrder")}>
             {(
               [
-                ["rotation", "Rotation"],
-                ["fifo", "First come"],
-                ["approval", "Host picks"],
+                ["rotation", t("settings.rotation")],
+                ["fifo", t("settings.fifo")],
+                ["approval", t("settings.approval")],
               ] as Array<[QueueMode, string]>
             ).map(([mode, label]) => (
               <button
@@ -55,110 +65,112 @@ export function SettingsView() {
           </div>
         </div>
         <Stepper
-          label="Songs waiting per guest"
-          description="How many songs each guest can have in the queue at once. Hosts aren't limited."
+          t={t}
+          label={t("settings.maxWaiting")}
+          description={t("settings.maxWaitingDesc")}
           value={s.maxWaitingPerMember}
           min={1}
           max={10}
           onChange={(v) => set({ maxWaitingPerMember: v })}
         />
         <Toggle
-          label="Only hosts add songs"
-          description="Guests can browse and react, but only you and co-hosts can add."
+          label={t("settings.hostsOnly")}
+          description={t("settings.hostsOnlyDesc")}
           checked={s.hostsOnlyAdd}
           onChange={(v) => set({ hostsOnlyAdd: v })}
         />
       </section>
 
       <section className={css.settingsGroup}>
-        <h2 className={css.h2}>Party</h2>
+        <h2 className={css.h2}>{t("settings.party")}</h2>
         <Toggle
-          label="Lock the party"
-          description="No new guests can join. People already here stay."
+          label={t("settings.lock")}
+          description={t("settings.lockDesc")}
           checked={s.locked}
           onChange={(v) => set({ locked: v })}
         />
         <div className={css.settingRow}>
           <div className={css.settingText}>
-            <span className={css.settingLabel}>Join code on the TV</span>
-            <span className={css.settingDesc}>Choose when guests can see the QR code and party code.</span>
+            <span className={css.settingLabel}>{t("settings.joinTv")}</span>
+            <span className={css.settingDesc}>{t("settings.joinTvDesc")}</span>
           </div>
           <select
             className={css.select}
-            aria-label="Join code on the TV"
+            aria-label={t("settings.joinTv")}
             value={s.joinInfo}
             onChange={(e) => set({ joinInfo: e.target.value as JoinInfoMode })}
           >
             {JOIN_OPTIONS.map(([mode, label]) => (
               <option key={mode} value={mode}>
-                {label}
+                {t(label)}
               </option>
             ))}
           </select>
         </div>
         <div className={css.settingRow}>
           <div className={css.settingText}>
-            <span className={css.settingLabel}>Show code on TV</span>
-            <span className={css.settingDesc}>Flashes the code for 15 seconds, for anyone who arrives late.</span>
+            <span className={css.settingLabel}>{t("settings.showCode")}</span>
+            <span className={css.settingDesc}>{t("settings.showCodeDesc")}</span>
           </div>
           <Button
             size="sm"
             variant="secondary"
             icon={<QrCode size={16} />}
             disabled={!state.playerConnected}
-            title={state.playerConnected ? undefined : "Open the TV screen first"}
+            title={state.playerConnected ? undefined : t("settings.openTvFirst")}
             onClick={() => send({ type: "show_join" })}
           >
-            Show code
+            {t("settings.showCodeBtn")}
           </Button>
         </div>
         <Toggle
-          label="Reactions"
-          description="Guests can send emoji that float over the video on the TV."
+          label={t("settings.reactions")}
+          description={t("settings.reactionsDesc")}
           checked={s.reactions}
           onChange={(v) => set({ reactions: v })}
         />
       </section>
 
       <section className={css.settingsGroup}>
-        <h2 className={css.h2}>Party fun</h2>
+        <h2 className={css.h2}>{t("settings.fun")}</h2>
         <Toggle
-          label="Duets & group songs"
-          description="Guests can sing with partners, or start a song for everyone."
+          label={t("settings.duets")}
+          description={t("settings.duetsDesc")}
           checked={s.duets}
           onChange={(v) => set({ duets: v })}
         />
         <Toggle
-          label="Turn alerts"
-          description="Phones say “You're up in 2 songs” and “You're up next!”."
+          label={t("settings.turnAlerts")}
+          description={t("settings.turnAlertsDesc")}
           checked={s.turnAlerts}
           onChange={(v) => set({ turnAlerts: v })}
         />
         <Toggle
-          label="Awards"
-          description="After each song, the audience can give Nailed it, Great vibes, Crowd pleaser or Brave pick."
+          label={t("settings.awards")}
+          description={t("settings.awardsDesc")}
           checked={s.awards}
           onChange={(v) => set({ awards: v })}
         />
         <Toggle
-          label="End-of-night titles"
-          description="When you end the party, everyone gets fun titles like Showstopper and Biggest Fan."
+          label={t("settings.titles")}
+          description={t("settings.titlesDesc")}
           checked={s.titles}
           onChange={(v) => set({ titles: v })}
         />
       </section>
 
       <section className={css.settingsGroup}>
-        <h2 className={css.h2}>Between songs</h2>
+        <h2 className={css.h2}>{t("settings.between")}</h2>
         <Toggle
-          label="Get-ready card"
-          description="Show who's up next on the TV with a countdown before each song."
+          label={t("settings.getReady")}
+          description={t("settings.getReadyDesc")}
           checked={s.getReadyCard}
           onChange={(v) => set({ getReadyCard: v })}
         />
         <Stepper
-          label="Countdown"
-          description="Seconds on the get-ready card."
+          t={t}
+          label={t("settings.countdown")}
+          description={t("settings.countdownDesc")}
           value={s.countdownSec}
           min={3}
           max={30}
@@ -172,6 +184,7 @@ export function SettingsView() {
 }
 
 function Stepper(props: {
+  t: TFn;
   label: string;
   description: string;
   value: number;
@@ -181,7 +194,7 @@ function Stepper(props: {
   disabled?: boolean;
   onChange: (v: number) => void;
 }) {
-  const { label, description, value, min, max, unit = "", disabled, onChange } = props;
+  const { t, label, description, value, min, max, unit = "", disabled, onChange } = props;
   return (
     <div className={`${css.settingRow} ${disabled ? css.settingDisabled : ""}`}>
       <div className={css.settingText}>
@@ -189,14 +202,14 @@ function Stepper(props: {
         <span className={css.settingDesc}>{description}</span>
       </div>
       <div className={css.stepper}>
-        <button type="button" aria-label={`Less ${label}`} disabled={disabled || value <= min} onClick={() => onChange(value - 1)}>
+        <button type="button" aria-label={t("settings.less", { label })} disabled={disabled || value <= min} onClick={() => onChange(value - 1)}>
           <Minus size={16} />
         </button>
         <span className={css.stepValue} aria-live="polite">
           {value}
           {unit}
         </span>
-        <button type="button" aria-label={`More ${label}`} disabled={disabled || value >= max} onClick={() => onChange(value + 1)}>
+        <button type="button" aria-label={t("settings.more", { label })} disabled={disabled || value >= max} onClick={() => onChange(value + 1)}>
           <Plus size={16} />
         </button>
       </div>

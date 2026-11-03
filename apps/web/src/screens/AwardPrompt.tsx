@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AWARDS, AWARD_INFO, type Award } from "@karaoke-tube/shared";
-import { Avatar, singerLabel, songParts, useCountdown, useRoom } from "@karaoke-tube/ui";
+import { Avatar, awardLabel, singerLabel, songParts, useCountdown, useRoom, useT } from "@karaoke-tube/ui";
 import css from "./Alerts.module.css";
 
 /**
@@ -10,6 +10,7 @@ import css from "./Alerts.module.css";
  */
 export function AwardPrompt() {
   const { state, me, send } = useRoom();
+  const t = useT();
   const win = state?.awardWindow ?? null;
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [sent, setSent] = useState<{ itemId: string; award: Award } | null>(null);
@@ -32,7 +33,7 @@ export function AwardPrompt() {
       <div className={css.awardWrap}>
         <div className={css.award} role="status">
           <span className={css.thanks}>
-            {info.emoji} {info.label} sent. Thanks for cheering!
+            {info.emoji} {t("award.sent", { label: awardLabel(t, sent.award) })}
           </span>
         </div>
       </div>
@@ -41,23 +42,23 @@ export function AwardPrompt() {
   if (!eligible || dismissed === item.id) return null;
 
   const singer = state.members.find((m) => m.id === item.singerIds[0]);
-  const who = singerLabel(item, state.members);
+  const who = singerLabel(item, state.members, undefined, t);
   return (
     <div className={css.awardWrap}>
-      <section className={css.award} aria-label="Give an award" data-testid="award-prompt">
+      <section className={css.award} aria-label={t("award.give")} data-testid="award-prompt">
         <header className={css.awardHead}>
           {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={32} />}
           <div className={css.awardTitle}>
             <span className={css.awardLine}>
-              <b>{who}</b> just sang <b>{songParts(item.song).title}</b>
+              <b>{who}</b> {t("award.justSang")} <b>{songParts(item.song).title}</b>
             </span>
-            <span className={css.awardSub}>Give an award · {secondsLeft}s</span>
+            <span className={css.awardSub}>{t("award.giveIn", { n: secondsLeft })}</span>
           </div>
-          <button type="button" className={css.close} onClick={() => setDismissed(item.id)} aria-label="Not now">
+          <button type="button" className={css.close} onClick={() => setDismissed(item.id)} aria-label={t("award.notNow")}>
             <X size={18} />
           </button>
         </header>
-        <div className={css.awardButtons} role="group" aria-label="Awards">
+        <div className={css.awardButtons} role="group" aria-label={t("award.group")}>
           {AWARDS.map((a) => (
             <button
               key={a}
@@ -71,7 +72,7 @@ export function AwardPrompt() {
               <span className={css.awardEmoji} aria-hidden>
                 {AWARD_INFO[a].emoji}
               </span>
-              <span>{AWARD_INFO[a].label}</span>
+              <span>{awardLabel(t, a)}</span>
             </button>
           ))}
         </div>

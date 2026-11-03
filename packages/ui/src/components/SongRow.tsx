@@ -3,6 +3,7 @@ import { CircleCheck, CirclePlus, LoaderCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import { formatTime, songParts } from "../format";
+import { useT } from "../i18n/context";
 import { Artwork } from "./Artwork";
 import css from "./Rows.module.css";
 
@@ -21,10 +22,11 @@ export type SongRowProps = {
 
 /** Search result / song list row: artwork, title, artist, ⊕ add. */
 export function SongRow({ song, onAdd, added, adding, onClick, showDuration = true, index, trailing }: SongRowProps) {
+  const t = useT();
   const { title, artist } = songParts(song);
   return (
     <div className={css.row}>
-      <button type="button" className={css.hit} onClick={onClick ?? onAdd} aria-label={`${title} by ${artist}`} />
+      <button type="button" className={css.hit} onClick={onClick ?? onAdd} aria-label={t("song.by", { title, artist })} />
       {index !== undefined && <span className={css.index}>{index}</span>}
       <Artwork src={song.thumbnailUrl} label={song.title} size={48} className={css.art} />
       <div className={css.text}>
@@ -39,8 +41,8 @@ export function SongRow({ song, onAdd, added, adding, onClick, showDuration = tr
           className={clsx(css.action, added && css.added)}
           onClick={onAdd}
           disabled={adding}
-          aria-label={added ? `Add ${title} again` : `Add ${title} to queue`}
-          title={added ? "In the queue" : "Add to queue"}
+          aria-label={added ? t("song.addAgain", { title }) : t("song.addNamed", { title })}
+          title={added ? t("song.inQueue") : t("home.add")}
         >
           {adding ? <LoaderCircle className={css.spin} /> : added ? <CircleCheck /> : <CirclePlus />}
         </button>

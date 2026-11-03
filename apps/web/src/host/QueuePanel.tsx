@@ -12,12 +12,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { Check, ListMusic, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
-import { EmptyState, IconButton, QueueRow, songParts, useRoom } from "@karaoke-tube/ui";
+import { EmptyState, IconButton, QueueRow, songParts, useRoom, useT } from "@karaoke-tube/ui";
 import css from "./host.module.css";
 
 /** Right panel: now singing + next up, drag to reorder. */
 export function QueuePanel({ onClose }: { onClose: () => void }) {
   const { state, send } = useRoom();
+  const t = useT();
   const upNext = state?.upNext ?? [];
   // Optimistic order while the room confirms the move.
   const [order, setOrder] = useState<string[] | null>(null);
@@ -48,18 +49,18 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <aside className={`${css.panel} ${css.queue}`} aria-label="Queue">
+    <aside className={`${css.panel} ${css.queue}`} aria-label={t("host.queueAria")}>
       <header className={css.queueHead}>
-        <h2 className={css.queueTitle}>Queue</h2>
-        <IconButton label="Close queue" size="sm" onClick={onClose}>
+        <h2 className={css.queueTitle}>{t("tab.queue")}</h2>
+        <IconButton label={t("host.closeQueue")} size="sm" onClick={onClose}>
           <X size={18} />
         </IconButton>
       </header>
       <div className={css.queueScroll}>
         {(state.pending?.length ?? 0) > 0 && (
-          <section className={css.pendingBox} aria-label="Songs waiting for your OK" data-testid="host-pending">
+          <section className={css.pendingBox} aria-label={t("host.waitingAria")} data-testid="host-pending">
             <h3 className={css.queueSub}>
-              Waiting for your OK <span className={css.muted}>{state.pending!.length}</span>
+              {t("host.waitingOk")} <span className={css.muted}>{state.pending!.length}</span>
             </h3>
             <ul className={css.queueList}>
               {state.pending!.map((q) => (
@@ -73,8 +74,8 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                         <button
                           type="button"
                           className={css.pendingBtn}
-                          aria-label={`Decline ${songParts(q.song).title}`}
-                          title="Decline"
+                          aria-label={t("queue.decline", { title: songParts(q.song).title })}
+                          title={t("host.decline")}
                           onClick={() => send({ type: "decline_song", itemId: q.id })}
                         >
                           <X size={16} />
@@ -82,8 +83,8 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                         <button
                           type="button"
                           className={`${css.pendingBtn} ${css.pendingApprove}`}
-                          aria-label={`Approve ${songParts(q.song).title}`}
-                          title="Approve"
+                          aria-label={t("queue.approve", { title: songParts(q.song).title })}
+                          title={t("host.approve")}
                           onClick={() => send({ type: "approve_song", itemId: q.id })}
                         >
                           <Check size={16} />
@@ -96,18 +97,18 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
             </ul>
           </section>
         )}
-        <h3 className={css.queueSub}>Now singing</h3>
+        <h3 className={css.queueSub}>{t("queue.nowSinging")}</h3>
         {state.nowPlaying ? (
           <QueueRow item={state.nowPlaying} members={state.members} playing compact />
         ) : (
-          <p className={css.muted}>Nothing yet.</p>
+          <p className={css.muted}>{t("host.nothingYet")}</p>
         )}
         <h3 className={css.queueSub}>
-          Next up <span className={css.muted}>{items.length}</span>
+          {t("queue.nextUp")} <span className={css.muted}>{items.length}</span>
         </h3>
         {items.length === 0 ? (
-          <EmptyState icon={<ListMusic />} title="Queue is empty">
-            Guests add songs from their phones. You can add from Search too.
+          <EmptyState icon={<ListMusic />} title={t("host.queueEmpty")}>
+            {t("host.queueEmptyHint")}
           </EmptyState>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

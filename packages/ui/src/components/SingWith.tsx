@@ -2,6 +2,7 @@ import { Check, PartyPopper, User, Users } from "lucide-react";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { AddSingers } from "../hooks/add-song";
 import { useRoom } from "../hooks/room";
+import { useT } from "../i18n/context";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Sheet } from "./Sheet";
@@ -39,13 +40,14 @@ export function useSingWith(): UseSingWith {
   const ctx = useContext(SingWithContext);
   if (!ctx) throw new Error("useSingWith needs <SingWithProvider>");
   const { state, me } = useRoom();
+  const t = useT();
   const { choice, setChoice } = ctx;
   const members = state?.members ?? [];
   const partnerIds = choice.partnerIds.filter((id) => id !== me?.id && members.some((m) => m.id === id));
   const enabled = !!state?.settings.duets && members.some((m) => m.id !== me?.id);
   const on = enabled && choice.everyone;
   const partners = enabled ? partnerIds : [];
-  const names = partners.map((id) => members.find((m) => m.id === id)?.nickname ?? "someone");
+  const names = partners.map((id) => members.find((m) => m.id === id)?.nickname ?? t("singer.someone"));
 
   return {
     enabled,
@@ -64,7 +66,7 @@ export function useSingWith(): UseSingWith {
       return undefined;
     },
     reset: () => setChoice({ everyone: false, partnerIds: [] }),
-    label: on ? "Everyone sings" : names.length ? `With ${names.join(" & ")}` : "Just me",
+    label: on ? t("singwith.everyone") : names.length ? t("singwith.with", { names: names.join(` ${t("singer.and")} `) }) : t("singwith.justMe"),
   };
 }
 
@@ -72,17 +74,18 @@ export function useSingWith(): UseSingWith {
 export function SingWithPicker({ className }: { className?: string }) {
   const { state, me } = useRoom();
   const sw = useSingWith();
+  const t = useT();
   if (!state || !me || !sw.enabled) return null;
   const solo = !sw.everyone && sw.partnerIds.length === 0;
   const others = [...state.members].filter((m) => m.id !== me.id).sort((a, b) => Number(b.connected) - Number(a.connected));
   return (
-    <div className={className} role="group" aria-label="Who sings?">
+    <div className={className} role="group" aria-label={t("singwith.who")}>
       <div className={css.chips}>
         <button type="button" className={css.opt} aria-pressed={solo} onClick={sw.solo}>
-          <User size={16} /> Just me
+          <User size={16} /> {t("singwith.justMe")}
         </button>
         <button type="button" className={css.opt} aria-pressed={sw.everyone} onClick={() => sw.setEveryone(!sw.everyone)}>
-          <PartyPopper size={16} /> Everyone sings
+          <PartyPopper size={16} /> {t("singwith.everyone")}
         </button>
         {others.map((m) => (
           <button
@@ -91,7 +94,7 @@ export function SingWithPicker({ className }: { className?: string }) {
             className={css.opt}
             aria-pressed={sw.partnerIds.includes(m.id)}
             onClick={() => sw.toggleMember(m.id)}
-            title={m.connected ? undefined : "Away right now"}
+            title={m.connected ? undefined : t("singwith.away")}
           >
             <Avatar seed={m.avatarSeed} size={20} />
             <span className={css.name}>{m.nickname}</span>
@@ -106,6 +109,7 @@ export function SingWithPicker({ className }: { className?: string }) {
 /** A pill showing who sings the next song; tap opens the "Sing with…" sheet. Renders nothing when duets are off. */
 export function SingWithButton({ className }: { className?: string }) {
   const sw = useSingWith();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   if (!sw.enabled) return null;
@@ -119,15 +123,15 @@ export function SingWithButton({ className }: { className?: string }) {
         aria-haspopup="dialog"
       >
         <Users size={16} />
-        <span>{solo ? "Sing with…" : sw.label}</span>
+        <span>{solo ? t("singwith.title") : sw.label}</span>
       </button>
-      <Sheet open={open} onClose={close} label="Sing with">
+      <Sheet open={open} onClose={close} label={t("singwith.title")}>
         <div className={css.sheet}>
-          <h2 className={css.sheetTitle}>Sing with…</h2>
-          <p className={css.sheetText}>Pick partners for a duet, or let the whole room sing. It applies to the next song you add.</p>
+          <h2 className={css.sheetTitle}>{t("singwith.title")}</h2>
+          <p className={css.sheetText}>{t("singwith.text")}</p>
           <SingWithPicker />
           <Button block onClick={close}>
-            Done
+            {t("common.done")}
           </Button>
         </div>
       </Sheet>

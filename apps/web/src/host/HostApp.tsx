@@ -5,6 +5,7 @@ import {
   Button,
   EmptyState,
   IconButton,
+  LanguageSwitcher,
   Logo,
   PlayerBar,
   PlayerBarDivider,
@@ -19,7 +20,10 @@ import {
   useReactions,
   useRoom,
   useRoomErrors,
+  useT,
   useToast,
+  awardLabel,
+  type TFn,
 } from "@karaoke-tube/ui";
 import { useParams } from "react-router";
 import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "./client";
@@ -34,6 +38,7 @@ export type View = "home" | "search" | "settings";
 
 /** H1: the host app, full tab. Sidebar | main | queue, player bar at the bottom. */
 export function HostApp() {
+  const t = useT();
   const code = normalizeRoomCode(useParams().code ?? "");
   const isMock = new URLSearchParams(location.search).get("mock") === "1";
   // Before creating the client: it rejoins with the saved host credentials.
@@ -45,9 +50,9 @@ export function HostApp() {
   if (!clients) {
     return (
       <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title="No party saved on this device" action={<Button onClick={() => (location.href = "/host/new")}>Host a party</Button>}>
-          Start a party from this browser, or open the host link you started it with. Joining as a guest?{" "}
-          <a href={`/join/${code}`}>Join {code}</a>.
+        <EmptyState icon={<CircleSlash />} title={t("host.noParty")} action={<Button onClick={() => (location.href = "/host/new")}>{t("host.hostParty")}</Button>}>
+          {t("host.noPartyHint")}{" "}
+          <a href={`/join/${code}`}>{t("host.joinCode", { code })}</a>.
         </EmptyState>
       </div>
     );
@@ -66,6 +71,7 @@ export function HostApp() {
 function Host() {
   const { state, me, status, closeReason, send } = useRoom();
   const toast = useToast();
+  const t = useT();
   const [view, setView] = useState<View>("home");
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [queueOpen, setQueueOpen] = useState(true);
@@ -75,8 +81,8 @@ function Host() {
   if (state?.status === "ended" || closeReason === "ended") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => (location.href = "/host/new")}>Start a new party</Button>}>
-          Thanks for hosting! Want another round? Start a new party anytime.
+        <EmptyState icon={<Power />} title={t("host.ended")} action={<Button onClick={() => (location.href = "/host/new")}>{t("host.startNew")}</Button>}>
+          {t("host.endedHint")}
         </EmptyState>
       </div>
     );
@@ -86,17 +92,17 @@ function Host() {
       <div className={css.center}>
         <EmptyState
           icon={<CircleSlash />}
-          title="Can't reach this party"
+          title={t("host.cantReach")}
           action={
             <>
-              <Button onClick={() => location.reload()}>Try again</Button>
+              <Button onClick={() => location.reload()}>{t("common.tryAgain")}</Button>
               <Button variant="secondary" onClick={() => (location.href = "/")}>
-                Done
+                {t("common.done")}
               </Button>
             </>
           }
         >
-          The party may have ended or been removed. If it's still running, check your connection and try again.
+          {t("host.cantReachHint")}
         </EmptyState>
       </div>
     );
@@ -104,8 +110,8 @@ function Host() {
   if (me && me.role === "guest") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title="This is the host's screen" action={<Button onClick={() => (location.href = `/r/${state?.code ?? ""}`)}>Go to the party</Button>}>
-          You're a guest in this party.
+        <EmptyState icon={<CircleSlash />} title={t("host.hostScreen")} action={<Button onClick={() => (location.href = `/r/${state?.code ?? ""}`)}>{t("host.goToParty")}</Button>}>
+          {t("host.youAreGuest")}
         </EmptyState>
       </div>
     );
@@ -123,15 +129,15 @@ function Host() {
 
   return (
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
-      {status === "reconnecting" && <div className={css.reconnecting}>Reconnecting to the party…</div>}
+      {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
       {status === "open" && state.playerConnected === false && (
         <div className={css.tvClosed} role="alert" data-testid="tv-banner">
           <span>
-            No TV screen connected
-            <span className={css.tvHint}> Open the TV screen, drag that window to the TV and press Start.</span>
+            {t("host.noTv")}
+            <span className={css.tvHint}> {t("host.noTvHint")}</span>
           </span>
-          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code)}>
-            Open TV screen
+          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
+            {t("host.openTv")}
           </Button>
         </div>
       )}
@@ -157,16 +163,16 @@ function Host() {
               <ReactionCount />
               <PlayerBarDivider />
               <IconButton
-                label={locked ? "Unlock party (let new guests join)" : "Lock party (no new guests)"}
+                label={locked ? t("host.unlock") : t("host.lock")}
                 active={locked}
                 onClick={() => {
                   send({ type: "update_settings", settings: { locked: !locked } });
-                  toast.show(locked ? "Party unlocked. New guests can join." : "Party locked. No new guests can join.");
+                  toast.show(locked ? t("host.unlocked") : t("host.lockedToast"));
                 }}
               >
                 {locked ? <Lock size={18} /> : <LockOpen size={18} />}
               </IconButton>
-              <IconButton label={queueOpen ? "Hide queue" : "Show queue"} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
+              <IconButton label={queueOpen ? t("host.hideQueue") : t("host.showQueue")} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
                 <QueueIcon />
               </IconButton>
               {state.playerConnected && (
@@ -176,30 +182,31 @@ function Host() {
                   icon={<QrCode size={16} />}
                   onClick={() => {
                     send({ type: "show_join" });
-                    toast.show("Showing the code on the TV for 15 seconds.");
+                    toast.show(t("host.showCodeToast"));
                   }}
                 >
-                  Show code on TV
+                  {t("host.showCode")}
                 </Button>
               )}
-              <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code)}>
-                Open TV screen
+              <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
+                {t("host.openTv")}
               </Button>
               <Button size="sm" variant="ghost" icon={<Power size={16} />} onClick={() => setConfirmEnd(true)}>
-                End
+                {t("host.end")}
               </Button>
+              <LanguageSwitcher />
             </>
           }
         />
       </div>
 
-      <Sheet open={confirmEnd} onClose={() => setConfirmEnd(false)} label="End party">
+      <Sheet open={confirmEnd} onClose={() => setConfirmEnd(false)} label={t("host.endLabel")}>
         <div className={css.confirm}>
-          <h2 className={css.confirmTitle}>End the party?</h2>
-          <p className={css.muted}>Everyone will be disconnected and the queue will be cleared. This can't be undone.</p>
+          <h2 className={css.confirmTitle}>{t("host.endTitle")}</h2>
+          <p className={css.muted}>{t("host.endText")}</p>
           <div className={css.confirmButtons}>
             <Button variant="secondary" onClick={() => setConfirmEnd(false)}>
-              Keep singing
+              {t("host.keepSinging")}
             </Button>
             <Button
               variant="danger"
@@ -208,7 +215,7 @@ function Host() {
                 send({ type: "end_party" });
               }}
             >
-              End party
+              {t("host.endLabel")}
             </Button>
           </div>
         </div>
@@ -218,10 +225,11 @@ function Host() {
 }
 
 function ReactionCount() {
+  const t = useT();
   const { recent, total } = useReactions(1500);
   const last = recent[recent.length - 1];
   return (
-    <span className={css.reactions} title="Reactions this session" aria-live="off">
+    <span className={css.reactions} title={t("host.reactionsSession")} aria-live="off">
       <span key={last?.id} className={css.reactionPop}>
         {last ? REACTION_EMOJI[last.reaction] : <Flame size={16} />}
       </span>
@@ -233,6 +241,7 @@ function ReactionCount() {
 /** C3: award counts for the song that just ended, while members can still give them. */
 function AwardCounts() {
   const { state } = useRoom();
+  const t = useT();
   const win = state?.awardWindow ?? null;
   const left = useCountdown(win?.closesAt);
   if (!state || !win || !state.settings.awards || left <= 0) return null;
@@ -240,16 +249,16 @@ function AwardCounts() {
   return (
     <span
       className={css.awards}
-      title={`Awards for ${songParts(win.item.song).title}, open for ${left}s`}
+      title={t("host.awardsFor", { title: songParts(win.item.song).title, n: left })}
       data-testid="award-counts"
       aria-live="polite"
     >
-      <span className={css.awardsLabel}>Awards</span>
+      <span className={css.awardsLabel}>{t("host.awards")}</span>
       {given.length === 0 ? (
         <span className={css.awardsIdle}>{left}s</span>
       ) : (
         given.map((a) => (
-          <span key={a} className={css.awardCount} title={AWARD_INFO[a].label}>
+          <span key={a} className={css.awardCount} title={awardLabel(t, a)}>
             {AWARD_INFO[a].emoji} {win.counts[a]}
           </span>
         ))
@@ -268,6 +277,6 @@ function QueueIcon() {
 }
 
 /** Opens the TV screen window; the party plays there. */
-function showOnTv(show: (m: string, o?: { tone: "error" }) => void, code: string) {
-  if (!openTvScreen(code)) show("Couldn't open the TV screen. Allow pop-ups for this site and try again.", { tone: "error" });
+function showOnTv(show: (m: string, o?: { tone: "error" }) => void, code: string, t: TFn) {
+  if (!openTvScreen(code)) show(t("host.tvPopup"), { tone: "error" });
 }

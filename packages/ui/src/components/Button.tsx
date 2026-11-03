@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useT } from "../i18n/context";
 import css from "./Button.module.css";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -59,14 +60,15 @@ export function PlayButton({
   label?: string;
   className?: string;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       className={clsx(css.play, className)}
       style={{ width: size, height: size }}
       onClick={onClick}
-      aria-label={label ?? (playing ? "Pause" : "Play")}
-      title={label ?? (playing ? "Pause" : "Play")}
+      aria-label={label ?? (playing ? t("player.pause") : t("player.play"))}
+      title={label ?? (playing ? t("player.pause") : t("player.play"))}
     >
       {playing ? (
         <svg viewBox="0 0 24 24" width={size * 0.42} height={size * 0.42} fill="currentColor" aria-hidden>
