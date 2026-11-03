@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
 import { ActionList, AddGuestSheet, Avatar, Button, Pill, Sheet, useRoom, useSingWith } from "@karaoke-tube/ui";
+import { RecoveryLink } from "./RecoveryLink";
 import { useShell } from "./RoomShell";
 import css from "./Party.module.css";
 
@@ -57,6 +58,8 @@ export function PartyScreen() {
           {copied ? t("party.copied") : t("party.invite")}
         </Button>
       </section>
+
+      <RecoveryLink code={code} role={me.role} />
 
       <section>
         <h2 className={css.h2}>

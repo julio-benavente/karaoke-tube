@@ -249,6 +249,9 @@ class WebSocketRoomClient extends BaseRoomClient {
             this.ws?.send(JSON.stringify({ type: "join", ...this.opts.identity } satisfies ClientMessage));
             return;
           }
+          // No identity to join again with (a rejoin from saved credentials): tell the UI so it can offer a way out.
+          this.closeAs("forgotten");
+          return;
         }
         if (msg.code === "room_not_found" || ((msg.code === "room_locked" || msg.code === "room_ended") && !this.joined)) {
           // Nothing to retry: stop here.
@@ -275,7 +278,7 @@ class WebSocketRoomClient extends BaseRoomClient {
   }
 
   /** The server ended our membership: stop for good, no reconnect. */
-  private closeAs(reason: "kicked" | "ended") {
+  private closeAs(reason: "kicked" | "ended" | "forgotten") {
     this.closeReason = reason;
     this.setStatus("closed");
     this.ws?.close(1000, reason);

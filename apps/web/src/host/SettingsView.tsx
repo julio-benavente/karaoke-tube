@@ -1,6 +1,7 @@
 import { Minus, Plus, QrCode } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
 import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { RecoveryLink } from "../screens/RecoveryLink";
 import css from "./host.module.css";
 
 const JOIN_OPTIONS: Array<[JoinInfoMode, TKey]> = [
@@ -20,6 +21,8 @@ export function SettingsView() {
   return (
     <div className={css.view}>
       <h1 className={css.pageTitle}>{t("nav.settings")}</h1>
+
+      <RecoveryLink code={state.code} role="host" />
 
       <section className={css.settingsGroup}>
         <div className={css.settingRow}>

@@ -88,16 +88,7 @@ export function HostApp() {
       </div>
     );
   }
-  if (!clients) {
-    return (
-      <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title={t("host.noParty")} action={<Button onClick={() => (location.href = "/host/new")}>{t("host.hostParty")}</Button>}>
-          {t("host.noPartyHint")}{" "}
-          <a href={`/join/${code}`}>{t("host.joinCode", { code })}</a>.
-        </EmptyState>
-      </div>
-    );
-  }
+  if (!clients) return <NoParty code={code} />;
   return (
     <RoomProvider client={clients.room} search={clients.search}>
       <ToastProvider offset={96}>
@@ -109,7 +100,21 @@ export function HostApp() {
   );
 }
 
+/** This device holds no (valid) host credentials for the party. */
+function NoParty({ code }: { code: string }) {
+  const t = useT();
+  return (
+    <div className={css.center}>
+      <EmptyState icon={<CircleSlash />} title={t("host.noParty")} action={<Button onClick={() => (location.href = "/host/new")}>{t("host.hostParty")}</Button>}>
+        {t("host.noPartyHint")}{" "}
+        <a href={`/join/${code}`}>{t("host.joinCode", { code })}</a>.
+      </EmptyState>
+    </div>
+  );
+}
+
 function Host() {
+  const routeCode = normalizeRoomCode(useParams().code ?? "");
   const { state, me, status, closeReason, send } = useRoom();
   useLogParty(state?.code ?? "", !!me && !!state, state?.status === "ended");
   const toast = useToast();
@@ -121,6 +126,25 @@ function Host() {
 
   useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
 
+  // Once per party: point at the rejoin link, the only way back for a host without an account who switches device.
+  const code = state?.code;
+  useEffect(() => {
+    if (!code || !me) return;
+    const key = `kt:tip:rejoin:${code}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    toast.show(t("recovery.tip"), { duration: 9000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, !!me]);
+
+  if (closeReason === "forgotten") {
+    markHosting(routeCode, false);
+    return <NoParty code={routeCode} />;
+  }
   if (state?.status === "ended" || closeReason === "ended") {
     return (
       <div className={css.center}>

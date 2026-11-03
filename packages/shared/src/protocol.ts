@@ -340,10 +340,11 @@ export interface RoomClient {
   readonly state: RoomState | null;
   readonly me: Member | null;
   /**
-   * Why status became "closed": the server sent `kicked` or `ended`, or the UI called `close()` ("left").
+   * Why status became "closed": the server sent `kicked` or `ended`, the UI called `close()` ("left"), or the saved
+   * membership is no longer valid ("forgotten": wrong or expired key, e.g. an old rejoin link).
    * Null while open. Optional so older clients still compile; the UI treats undefined as unknown.
    */
-  readonly closeReason?: "kicked" | "ended" | "left" | null;
+  readonly closeReason?: "kicked" | "ended" | "left" | "forgotten" | null;
   send(msg: ClientMessage): void;
   /** Called on every state or status change. Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void;

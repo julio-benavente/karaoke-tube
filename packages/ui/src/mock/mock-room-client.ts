@@ -83,7 +83,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
   const settings: RoomSettings = { ...DEFAULT_SETTINGS, ...options.settings };
 
   let status: ConnectionStatus = "connecting";
-  let closeReason: "kicked" | "ended" | "left" | null = null;
+  let closeReason: "kicked" | "ended" | "left" | "forgotten" | null = null;
   let meId: string | null = null;
   let roomState: RoomState = buildInitialState();
   /** The state the UI sees: null until joined. */

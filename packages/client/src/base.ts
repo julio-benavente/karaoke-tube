@@ -1,6 +1,6 @@
 import type { ClientMessage, ConnectionStatus, ErrorCode, Member, Reaction, RoomClient, RoomState } from "@karaoke-tube/shared";
 
-export type CloseReason = "kicked" | "ended" | "left" | null;
+export type CloseReason = "kicked" | "ended" | "left" | "forgotten" | null;
 type ReactionEvent = { memberId: string; reaction: Reaction };
 type ErrorEvent = { code: ErrorCode; message: string };
 

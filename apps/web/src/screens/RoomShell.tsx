@@ -104,6 +104,27 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   const ctx = useMemo(() => ({ openNowSinging, code, leave }), [openNowSinging, code, leave]);
 
   // ── end states ──
+  if (closeReason === "forgotten") {
+    // The saved spot (or an old rejoin link) isn't valid any more: forget it and offer to join again.
+    return (
+      <EndScreen
+        icon={<CircleSlash />}
+        title={t("shell.forgotten")}
+        text={t("shell.forgottenText")}
+        action={
+          <Button
+            onClick={() => {
+              markJoined(code, false);
+              dropRoomClient(code);
+              navigate(`/join/${code}`, { replace: true });
+            }}
+          >
+            {t("shell.joinAgain")}
+          </Button>
+        }
+      />
+    );
+  }
   if (closeReason === "kicked") {
     return (
       <EndScreen
