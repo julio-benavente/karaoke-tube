@@ -16,6 +16,7 @@ import {
   saveIdentity,
   USE_MOCK,
 } from "../session";
+import { useAccount } from "../account/AccountContext";
 import css from "./Join.module.css";
 
 /** G1: code, avatar with re-roll, nickname, Join. Already a member (closed the tab, came back)? Straight back in. */
@@ -31,7 +32,9 @@ function JoinForm() {
   const t = useT();
   const params = useParams();
   const navigate = useNavigate();
-  const initial = loadIdentity();
+  const { account } = useAccount();
+  // Signed in: the account's name and avatar. Guests: whatever they used last time.
+  const initial = account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity();
   const [code, setCode] = useState(normalizeCode(params.code ?? ""));
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
@@ -150,6 +153,9 @@ function JoinForm() {
       </form>
       <p className={css.hint}>
         {t("join.host")} <Link to="/host/new">{t("join.hostLink")}</Link>
+      </p>
+      <p className={css.hint}>
+        <Link to="/account">{account ? t("acct.linkIn", { name: account.displayName }) : t("acct.link")}</Link>
       </p>
       <LanguageSwitcher />
     </div>

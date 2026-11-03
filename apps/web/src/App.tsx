@@ -8,6 +8,8 @@ import { SearchScreen } from "./screens/Search";
 import { QueueScreen } from "./screens/Queue";
 import { PartyScreen } from "./screens/Party";
 import { RecapPage } from "./screens/RecapPage";
+import { AccountProvider } from "./account/AccountContext";
+import { AccountPage } from "./account/AccountPage";
 
 const Gallery = lazy(() => import("./dev/Gallery").then((m) => ({ default: m.Gallery })));
 const HostApp = lazy(() => import("./host/HostApp").then((m) => ({ default: m.HostApp })));
@@ -18,6 +20,7 @@ const TvPreview = lazy(() => import("./dev/TvPreview").then((m) => ({ default: m
 
 export function App() {
   return (
+    <AccountProvider>
     <BrowserRouter>
       <Suspense fallback={<Spinner />}>
         <Routes>
@@ -29,6 +32,7 @@ export function App() {
             <Route path="queue" element={<QueueScreen />} />
             <Route path="party" element={<PartyScreen />} />
           </Route>
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/recap/:id" element={<RecapPage />} />
           <Route path="/host/new" element={<NewParty />} />
           <Route path="/tv/:code" element={<TvScreen />} />
@@ -40,5 +44,6 @@ export function App() {
         </Routes>
       </Suspense>
     </BrowserRouter>
+    </AccountProvider>
   );
 }

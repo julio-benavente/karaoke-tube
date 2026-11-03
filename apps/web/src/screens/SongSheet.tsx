@@ -1,6 +1,7 @@
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, Heart } from "lucide-react";
 import type { Song } from "@karaoke-tube/shared";
 import { ActionList, Artwork, Sheet, SingWithPicker, formatTime, songParts, useSingWith, useT } from "@karaoke-tube/ui";
+import { useFavorites } from "../account/AccountContext";
 import css from "./SongSheet.module.css";
 
 /** Song details + "Add to queue", opened from Home tiles and cards. */
@@ -8,6 +9,8 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
   const parts = song ? songParts(song) : null;
   const sing = useSingWith();
   const t = useT();
+  const fav = useFavorites();
+  const isFav = !!song && fav.ids.has(song.videoId);
   return (
     <Sheet open={!!song} onClose={onClose} label={parts ? t("song.sheetTitle", { title: parts.title }) : t("song.sheet")}>
       {song && parts && (
@@ -38,6 +41,17 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
                   onClose();
                 },
               },
+              // Favorites are an account feature: guests don't see the row.
+              ...(fav.signedIn
+                ? [
+                    {
+                      key: "fav",
+                      label: isFav ? t("acct.favorites.remove") : t("acct.favorites.add"),
+                      icon: <Heart fill={isFav ? "currentColor" : "none"} />,
+                      onClick: () => void fav.toggle(song),
+                    },
+                  ]
+                : []),
             ]}
           />
         </>

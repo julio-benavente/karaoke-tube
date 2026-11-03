@@ -1,3 +1,4 @@
+import { useLogParty } from "../account/AccountContext";
 import { CircleSlash, Lock, LockOpen, Tv, Power, Flame, QrCode } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
@@ -70,6 +71,7 @@ export function HostApp() {
 
 function Host() {
   const { state, me, status, closeReason, send } = useRoom();
+  useLogParty(state?.code ?? "", !!me && !!state, state?.status === "ended");
   const toast = useToast();
   const t = useT();
   const [view, setView] = useState<View>("home");

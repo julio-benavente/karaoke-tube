@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { localStorageCredentials } from "@karaoke-tube/client";
 import { normalizeRoomCode, type CreateRoomResponse } from "@karaoke-tube/shared";
 import { AvatarPicker, Button, LanguageSwitcher, Logo, TextField, randomSeed, useT } from "@karaoke-tube/ui";
+import { useAccount } from "../account/AccountContext";
 import css from "../screens/Join.module.css";
 
 const ID_KEY = "kt:identity";
@@ -21,7 +22,8 @@ function loadIdentity(): { nickname: string; avatarSeed: string } {
 export function NewParty() {
   const nav = useNavigate();
   const t = useT();
-  const [initial] = useState(loadIdentity);
+  const { account, api } = useAccount();
+  const [initial] = useState(() => (account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity()));
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
   const [busy, setBusy] = useState(false);
@@ -41,7 +43,8 @@ export function NewParty() {
     try {
       const res = await fetch("/api/rooms", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        // A signed-in host also sends the token so the room starts with their saved settings (guests send nothing).
+        headers: { "content-type": "application/json", ...(api.token() ? { Authorization: `Bearer ${api.token()}` } : {}) },
         body: JSON.stringify({ nickname: name, avatarSeed: seed }),
       });
       if (!res.ok) throw new Error(t("newparty.errorStatus", { status: res.status }));

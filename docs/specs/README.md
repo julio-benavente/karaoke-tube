@@ -75,3 +75,4 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
   reports whether its YouTube window is open; the room exposes `playerConnected` (player socket attached and window
   open) so the host app can offer "Reopen TV window".
 - `RoomSettings.joinInfo` (`"between" | "always" | "start"`, default `"between"`), `ClientMessage` `show_join` (hosts) and `ServerMessage` `join_flash` (`contract: joinInfo setting + show_join`): the TV shows the join QR + code in the lobby / when idle and on the get-ready card, not during songs, unless the host picks "always"; `show_join` makes the TV show it for ~15 s.
+- Accounts (`contract: optional accounts`, see [D-accounts.md](D-accounts.md)): `accounts.ts` types for optional sign-in, profile, favorites, friends and the party log; `Room.init(..., settings?)` and `Room.memberSummary()` RPCs. Guests are unaffected.

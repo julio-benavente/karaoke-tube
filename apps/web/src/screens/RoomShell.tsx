@@ -19,6 +19,7 @@ import {
   useT,
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
+import { useLogParty } from "../account/AccountContext";
 import { AwardPrompt } from "./AwardPrompt";
 import { EndStory } from "./EndStory";
 import { NowSingingSheet } from "./NowSinging";
@@ -69,6 +70,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   const [search, setSearch] = useSearchParams();
   const toast = useToast();
   const nowOpen = search.get("now") === "1";
+  useLogParty(code, !!me, state?.status === "ended");
 
   useRoomErrors((e) => {
     if (e.code === "queue_limit") {
