@@ -59,3 +59,6 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 
 - `ApiErrorCode` / `ApiErrorResponse` (A3): the JSON body of every non-2xx `/api` response. A 503 with
   `search_unavailable` means YouTube search is out of quota; the real `SearchApi` rejects with an `ApiError` carrying it.
+- `RoomClient.closeReason?: "kicked" | "ended" | "left" | null` (B, `contract: RoomClient.closeReason`). The UI needs to
+  tell "you were removed" apart from "party ended" and a dropped connection. A's clients should set it when the server
+  sends `kicked` / `ended`, or when `close()` is called.

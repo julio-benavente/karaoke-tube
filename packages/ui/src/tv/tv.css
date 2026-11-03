@@ -1,0 +1,412 @@
+/*
+ * TV overlay styles. Shadow-root safe: everything is scoped under .kt-tv (no element or :root selectors),
+ * and tokens are redeclared here because document-level variables don't reach every host page.
+ * Sizes use container query units (cqw/cqh) so the overlay scales with the player, including full screen.
+ * Font: Figtree if the page has loaded it (see Spec A request), otherwise the system UI font.
+ */
+.kt-tv {
+  --tv-accent: #ff4f8b;
+  --tv-ink: #1f0711;
+  --tv-base: #070609;
+  --tv-text: #ffffff;
+  --tv-text-2: #b0a8b8;
+  --tv-glass: rgba(7, 6, 9, 0.72);
+  --tv-radius: 1.1cqw;
+  --tv-ease: cubic-bezier(0.3, 0, 0, 1);
+
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  container-type: size;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--tv-text);
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+.kt-tv *,
+.kt-tv *::before,
+.kt-tv *::after {
+  box-sizing: border-box;
+}
+
+.kt-tv img {
+  display: block;
+}
+
+/* ── Chips ─────────────────────────────────────────────── */
+.kt-tv-chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  max-width: 46cqw;
+  padding: 0.8cqw 1.6cqw 0.8cqw 0.8cqw;
+  border-radius: 999px;
+  background: var(--tv-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0.6cqw 2cqw rgba(0, 0, 0, 0.35);
+  animation: kt-tv-in 500ms var(--tv-ease) both;
+}
+
+.kt-tv-now {
+  top: 3cqh;
+  left: 2cqw;
+}
+
+.kt-tv-next {
+  left: 2cqw;
+  bottom: 12cqh; /* clear of YouTube's controls */
+  padding-left: 1.6cqw;
+  background: rgba(7, 6, 9, 0.6);
+}
+
+.kt-tv-avatar {
+  flex: none;
+  width: 4.2cqw;
+  height: 4.2cqw;
+  border-radius: 50%;
+  background: #221d27;
+  box-shadow: 0 0 0 0.25cqw var(--tv-accent);
+}
+
+.kt-tv-next .kt-tv-avatar {
+  width: 2.6cqw;
+  height: 2.6cqw;
+  box-shadow: none;
+}
+
+.kt-tv-chiptext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kt-tv-kicker {
+  color: var(--tv-accent);
+  font-size: 0.95cqw;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.kt-tv-singer {
+  font-size: 1.9cqw;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tv-song {
+  color: var(--tv-text-2);
+  font-size: 1.25cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tv-nextline {
+  font-size: 1.3cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kt-tv-nextline b {
+  font-weight: 800;
+}
+
+.kt-tv-nextline span {
+  color: var(--tv-text-2);
+}
+
+/* ── Join card (QR + code) ─────────────────────────────── */
+.kt-tv-join {
+  position: absolute;
+  top: 3cqh;
+  right: 2cqw;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  padding: 0.8cqw;
+  border-radius: var(--tv-radius);
+  background: var(--tv-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: kt-tv-in 500ms var(--tv-ease) 120ms both;
+}
+
+.kt-tv-qr {
+  width: 7.5cqw;
+  height: 7.5cqw;
+  padding: 0.35cqw;
+  border-radius: 0.6cqw;
+  background: #fff;
+}
+
+.kt-tv-qr img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.kt-tv-jointext {
+  display: flex;
+  flex-direction: column;
+  padding-right: 0.6cqw;
+}
+
+.kt-tv-joinlabel {
+  color: var(--tv-text-2);
+  font-size: 0.95cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kt-tv-code {
+  font-size: 3cqw;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+}
+
+.kt-tv-url {
+  color: var(--tv-text-2);
+  font-size: 1cqw;
+}
+
+/* ── Floating reactions ───────────────────────────────── */
+.kt-tv-reactions {
+  position: absolute;
+  right: 3cqw;
+  bottom: 12cqh;
+  width: 16cqw;
+  height: 60cqh;
+}
+
+.kt-tv-float {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3cqw;
+  animation: kt-tv-float 3000ms var(--tv-ease) forwards;
+}
+
+.kt-tv-emoji {
+  font-size: 4.2cqw;
+  line-height: 1;
+  filter: drop-shadow(0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.4));
+}
+
+.kt-tv-who {
+  padding: 0.15cqw 0.6cqw;
+  border-radius: 999px;
+  background: var(--tv-glass);
+  font-size: 0.9cqw;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes kt-tv-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-4cqh) scale(1.15);
+  }
+  20% {
+    transform: translateY(-9cqh) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-56cqh) translateX(var(--kt-tv-drift, 0)) rotate(var(--kt-tv-tilt, 0deg));
+  }
+}
+
+@keyframes kt-tv-in {
+  from {
+    opacity: 0;
+    transform: translateY(-1cqh);
+  }
+}
+
+/* ── Get-ready card (T2) ──────────────────────────────── */
+.kt-tv-ready {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--tv-base);
+  pointer-events: none;
+  animation: kt-tv-fade 400ms ease-out both;
+}
+
+.kt-tv-ready-bg {
+  position: absolute;
+  inset: -10%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) saturate(1.4);
+  opacity: 0.55;
+  transform: scale(1.1);
+}
+
+.kt-tv-ready-shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(7, 6, 9, 0.2) 0%, rgba(7, 6, 9, 0.85) 75%);
+}
+
+.kt-tv-ready-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4cqw;
+  max-width: 84cqw;
+}
+
+.kt-tv-ready-avatar {
+  flex: none;
+  width: 22cqw;
+  height: 22cqw;
+  border-radius: 50%;
+  background: #221d27;
+  box-shadow: 0 0 0 0.6cqw var(--tv-accent), 0 2cqw 5cqw rgba(0, 0, 0, 0.5);
+  animation: kt-tv-pop 700ms var(--tv-ease) 100ms both;
+}
+
+.kt-tv-ready-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqw;
+  min-width: 0;
+}
+
+.kt-tv-ready-kicker {
+  color: var(--tv-accent);
+  font-size: 1.6cqw;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.kt-tv-ready-name {
+  font-size: 6.4cqw;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.kt-tv-ready-song {
+  font-size: 2.4cqw;
+  font-weight: 700;
+}
+
+.kt-tv-ready-artist {
+  color: var(--tv-text-2);
+  font-size: 1.8cqw;
+}
+
+.kt-tv-count {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 9cqw;
+  height: 9cqw;
+  margin-top: 1.6cqw;
+}
+
+.kt-tv-count svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.kt-tv-count circle {
+  fill: none;
+  stroke-width: 6;
+}
+
+.kt-tv-count .kt-tv-track {
+  stroke: rgba(255, 255, 255, 0.15);
+}
+
+.kt-tv-count .kt-tv-ring {
+  stroke: var(--tv-accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 250ms linear;
+}
+
+.kt-tv-count b {
+  font-size: 4.2cqw;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.kt-tv-count b.kt-tv-tick {
+  animation: kt-tv-tick 1s ease-out;
+}
+
+@keyframes kt-tv-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes kt-tv-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes kt-tv-tick {
+  0% {
+    transform: scale(1.35);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kt-tv *,
+  .kt-tv-ready,
+  .kt-tv-ready * {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+
+  .kt-tv-float {
+    animation: kt-tv-fadeonly 3000ms linear forwards !important;
+    bottom: 20cqh;
+  }
+
+  @keyframes kt-tv-fadeonly {
+    0%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}

@@ -36,7 +36,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 
 ## Tasks (in order)
 
-### B1. `packages/ui` foundation
+### B1. `packages/ui` foundation ✅
 - New workspace package `@karaoke-tube/ui` (React 19, TypeScript, exports from `src/index.ts`, consumed as source like `shared`).
 - `tokens.css`, base reset, Figtree.
 - Hooks: `RoomProvider` (takes a `RoomClient`), `useRoom()` (state, me, status, send), `useReactions()`, `useSearch()` (takes a `SearchApi`).
@@ -46,7 +46,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
   Add a "simulate" helper that sends a random reaction every few seconds and finishes the current song early, for testing.
 - Components: `Avatar`, `Pill`/`Chip`, `Tile`, `Card`, `SongRow`, `QueueRow`, `ProgressBar`, `PlayerBar`, `MiniPlayer`, `BottomTabs`, `Toggle`, `Toast`, `Sheet` (bottom sheet), `EmptyState`.
 
-### B2. Guest phone app (`apps/web`)
+### B2. Guest phone app (`apps/web`) ✅
 - React Router with routes `/join/:code?`, `/r/:code` (Home), `/r/:code/search`, `/r/:code/queue`, `/r/:code/party`, plus the full-screen now-singing sheet.
 - Screens G1–G6 from the plan:
   - **Join (G1)**: code (filled from the URL), avatar with re-roll, nickname, Join. Errors for unknown, locked or ended rooms.
@@ -60,7 +60,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 - States: connecting, reconnecting banner, kicked, party ended (simple "Thanks for singing" screen for now).
 - Choose the client by env: `VITE_USE_MOCK=1` uses the mock; otherwise `@karaoke-tube/client` (see Integration).
 
-### B3. Host app (`apps/extension/entrypoints/host/`)
+### B3. Host app (`apps/extension/entrypoints/host/`) ✅
 - A WXT unlisted page `host.html`, full-tab desktop layout H1: sidebar (mark, Home, Search, "Your party" with code, QR from `qrcode`, guests),
   main area (Home / Search / Settings views), right Queue panel with drag to reorder (`@dnd-kit/sortable`), bottom player bar
   (restart, pause/resume, skip, progress, reaction count, lock, "Show on TV", End party with an in-page confirm).
@@ -68,11 +68,11 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 - **Settings (H2)**: every `RoomSettings` field, live.
 - Uses the mock until A's `createExtensionRoomClient()` exists at `apps/extension/utils/room-client.ts`.
 
-### B4. Popup (`apps/extension/entrypoints/popup/`)
+### B4. Popup (`apps/extension/entrypoints/popup/`) ✅
 Small Spotify-style card. No party: nickname + avatar + "Start a party" (sends `{ type: "START_PARTY", nickname, avatarSeed }` to the background).
 Party running: code, guest count, "Open host app", "End party" (`END_PARTY`), and `GET_PARTY` on open.
 
-### B5. TV overlay components
+### B5. TV overlay components ✅
 Presentational only, props in and nothing else, exported from `packages/ui/src/tv/`:
 `TvOverlay` (T1: now-singing chip, up-next chip, QR + code, floating reactions), `GetReadyCard` (T2: avatar, name, song, countdown from `countdownEndsAt`).
 They must render inside a shadow root: no global CSS and no `document`-level styles, and the CSS must be importable as a string.
@@ -90,4 +90,22 @@ Titles and awards screens (G7, T3), duets UI, turn alerts, rating, avatar builde
 and nothing in the UI uses Spotify's name, logo, green or font.
 
 ## Requests for the other track
-- (none yet)
+- **Set `RoomClient.closeReason`** (new optional field, see README "Contract changes") in `createRoomClient` and
+  `createExtensionRoomClient`: `"kicked"` on the `kicked` message, `"ended"` on `ended`, `"left"` after `close()`.
+- **`SHOW_ON_TV` message** (background): the host app's "Show on TV" button sends `{ type: "SHOW_ON_TV" }`. Please focus the
+  party's YouTube window and make the player full screen if you can, and reply `{ ok: true }`. Without a reply the host app
+  shows a hint ("drag the YouTube window onto the TV, press F").
+- **Popup message replies** (background), as the popup reads them (`apps/extension/entrypoints/popup/party.ts`):
+  `START_PARTY` → `{ ok: true, code }` or `{ ok: false, error }`; `GET_PARTY` → `{ ok: true, party: { code, guestCount } | null }`;
+  `END_PARTY` → `{ ok: true }`. Until `GET_PARTY` replies with an `ok` boolean, the popup runs in a local "Demo" mode.
+  "Open host app" opens or focuses `host.html` itself.
+- **TV overlay mount** (content script): `import { TvOverlay, GetReadyCard, tvCss, TV_REACTION_MS } from "@karaoke-tube/ui/tv"`.
+  Put `<style>{tvCss}</style>` and the React root in a shadow root on a host element that covers `#movie_player`
+  (`position: absolute; inset: 0`). Show `GetReadyCard` while `playback.state === "get_ready"`, otherwise `TvOverlay`.
+  Keep each reaction in `reactions` for `TV_REACTION_MS`, then drop it. Make the QR with `qrcode`'s `toDataURL(joinUrl)`.
+  `apps/web/src/dev/TvPreview.tsx` shows the exact wiring.
+- **Figtree on the TV**: `@font-face` doesn't work inside a shadow root, so the overlay falls back to the system font
+  unless the content script adds Figtree at document level: list the `@fontsource/figtree` woff2 files (400/700/800) in
+  `web_accessible_resources` and inject `@font-face` rules that use `browser.runtime.getURL(...)`.
+- **`WXT_WEB_URL`** in `apps/extension/.env.example` (and `wxt.config.ts` if needed): the guest web app's origin. The host
+  app's QR code and invite link use `${WXT_WEB_URL}/join/<CODE>`; it falls back to `http://localhost:5173`.

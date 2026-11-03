@@ -1,0 +1,56 @@
+.root {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.wide {
+  aspect-ratio: 16 / 9;
+}
+
+.round {
+  border-radius: var(--kt-radius-full) !important;
+}
+
+.r_none {
+  border-radius: 0;
+}
+
+.r_xs {
+  border-radius: var(--kt-radius-xs);
+}
+
+.r_sm {
+  border-radius: var(--kt-radius-sm);
+}
+
+.r_md {
+  border-radius: var(--kt-radius-md);
+}
+
+.shadow {
+  box-shadow: var(--kt-shadow-card);
+}
+
+.img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* YouTube hqdefault has black bars top and bottom; scale past them for the square crop. */
+  object-fit: cover;
+  transform: scale(1.34);
+}
+
+.wide .img {
+  transform: scale(1.01);
+}
+
+.icon {
+  width: 40%;
+  height: 40%;
+  color: rgba(255, 255, 255, 0.7);
+}

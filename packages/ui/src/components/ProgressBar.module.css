@@ -1,0 +1,82 @@
+.solo,
+.withTimes {
+  width: 100%;
+}
+
+.withTimes {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+}
+
+.time {
+  min-width: 40px;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.time:first-child {
+  text-align: right;
+}
+
+.track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-white-30);
+}
+
+/* Bigger hit area for hover without changing the look. */
+.track::before {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+}
+
+.fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--kt-text);
+  transition: width 250ms linear;
+}
+
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: left 250ms linear, opacity var(--kt-fast) var(--kt-ease);
+}
+
+.track:hover .fill {
+  background: var(--kt-accent);
+}
+
+.track:hover .knob {
+  opacity: 1;
+}
+
+.thin {
+  height: 2px;
+  background: var(--kt-white-20);
+}
+
+.thin .fill,
+.thin:hover .fill {
+  background: var(--kt-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill,
+  .knob {
+    transition: none;
+  }
+}

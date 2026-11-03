@@ -1,0 +1,83 @@
+.app {
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+.main {
+  /* Room for the mini player + tabs dock. */
+  padding-bottom: calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-12) + env(safe-area-inset-bottom));
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.reconnecting {
+  position: sticky;
+  top: 0;
+  z-index: var(--kt-z-sticky);
+  padding: var(--kt-space-2);
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.splash {
+  height: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kt-space-6);
+}
+
+.splashText {
+  color: var(--kt-text-2);
+}
+
+.end {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.thanks {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--kt-space-6);
+  background: linear-gradient(160deg, var(--kt-accent) 0%, #7a1d52 45%, var(--kt-base) 100%);
+  text-align: center;
+}
+
+.thanksInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--kt-space-4);
+  animation: rise 600ms var(--kt-ease-out);
+}
+
+.confetti {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.thanksTitle {
+  font-size: var(--kt-text-4xl);
+  font-weight: var(--kt-weight-black);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.thanksText {
+  max-width: 300px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--kt-text-base);
+  margin-bottom: var(--kt-space-4);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}

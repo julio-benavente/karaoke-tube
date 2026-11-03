@@ -1,0 +1,96 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-4);
+  padding: var(--kt-space-4);
+  min-height: 100vh;
+}
+
+.wait {
+  padding: var(--kt-space-6);
+  color: var(--kt-text-2);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kt-space-4);
+}
+
+.title {
+  font-size: var(--kt-text-xl);
+  font-weight: var(--kt-weight-bold);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-2);
+}
+
+.player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--kt-radius-md);
+  background: #000;
+}
+
+.small {
+  width: min(100%, 640px);
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, hsl(var(--h) 50% 20%), hsl(calc(var(--h) + 40) 60% 35%), hsl(var(--h) 40% 15%));
+  background-size: 300% 300%;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+
+.thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.75;
+}
+
+/* Rough stand-in for YouTube's control bar, to check the overlay clears it. */
+.ytControls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+}
+
+.ytControls span {
+  position: absolute;
+  left: 1.5%;
+  right: 1.5%;
+  top: 20%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.shadowHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.note {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+}
+
+@keyframes drift {
+  to {
+    background-position: 100% 100%;
+  }
+}

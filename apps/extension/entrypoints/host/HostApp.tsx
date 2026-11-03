@@ -1,0 +1,183 @@
+import { CircleSlash, Lock, LockOpen, Tv, Power, Flame } from "lucide-react";
+import { useMemo, useState } from "react";
+import { REACTION_EMOJI } from "@karaoke-tube/shared";
+import {
+  Button,
+  EmptyState,
+  IconButton,
+  Logo,
+  PlayerBar,
+  PlayerBarDivider,
+  RoomProvider,
+  Sheet,
+  Spinner,
+  ToastProvider,
+  errorText,
+  useReactions,
+  useRoom,
+  useRoomErrors,
+  useToast,
+} from "@karaoke-tube/ui";
+import { createHostClients } from "./client";
+import { Sidebar } from "./Sidebar";
+import { QueuePanel } from "./QueuePanel";
+import { HomeView } from "./HomeView";
+import { SearchView } from "./SearchView";
+import { SettingsView } from "./SettingsView";
+import css from "./host.module.css";
+
+export type View = "home" | "search" | "settings";
+
+/** H1: the host app, full tab. Sidebar | main | queue, player bar at the bottom. */
+export function HostApp() {
+  const clients = useMemo(() => createHostClients(), []);
+  return (
+    <RoomProvider client={clients.room} search={clients.search}>
+      <ToastProvider offset={96}>
+        <Host />
+      </ToastProvider>
+    </RoomProvider>
+  );
+}
+
+function Host() {
+  const { state, me, status, closeReason, send } = useRoom();
+  const toast = useToast();
+  const [view, setView] = useState<View>("home");
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(true);
+
+  useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
+
+  if (state?.status === "ended" || closeReason === "ended") {
+    return (
+      <div className={css.center}>
+        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => window.close()}>Close tab</Button>}>
+          Thanks for hosting! Start a new party from the Karaoke Tube button in your toolbar.
+        </EmptyState>
+      </div>
+    );
+  }
+  if (status === "closed") {
+    return (
+      <div className={css.center}>
+        <EmptyState icon={<CircleSlash />} title="Not connected" action={<Button onClick={() => location.reload()}>Reconnect</Button>}>
+          The host app lost its connection to the party.
+        </EmptyState>
+      </div>
+    );
+  }
+  if (!state || !me) {
+    return (
+      <div className={css.center}>
+        <Logo size={40} />
+        <Spinner />
+      </div>
+    );
+  }
+
+  const locked = state.settings.locked;
+
+  return (
+    <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
+      {status === "reconnecting" && <div className={css.reconnecting}>Reconnecting to the party…</div>}
+      <Sidebar view={view} onView={setView} />
+      <main className={css.main}>
+        {view === "home" && <HomeView onSearch={() => setView("search")} />}
+        {view === "search" && <SearchView />}
+        {view === "settings" && <SettingsView />}
+      </main>
+      {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
+      <div className={css.player}>
+        <PlayerBar
+          item={state.nowPlaying}
+          playback={state.playback}
+          members={state.members}
+          onPause={() => send({ type: "pause" })}
+          onResume={() => send({ type: "resume" })}
+          onSkip={() => send({ type: "skip" })}
+          onRestart={() => send({ type: "restart" })}
+          right={
+            <>
+              <ReactionCount />
+              <PlayerBarDivider />
+              <IconButton
+                label={locked ? "Unlock party (let new guests join)" : "Lock party (no new guests)"}
+                active={locked}
+                onClick={() => {
+                  send({ type: "update_settings", settings: { locked: !locked } });
+                  toast.show(locked ? "Party unlocked. New guests can join." : "Party locked. No new guests can join.");
+                }}
+              >
+                {locked ? <Lock size={18} /> : <LockOpen size={18} />}
+              </IconButton>
+              <IconButton label={queueOpen ? "Hide queue" : "Show queue"} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
+                <QueueIcon />
+              </IconButton>
+              <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show)}>
+                Show on TV
+              </Button>
+              <Button size="sm" variant="ghost" icon={<Power size={16} />} onClick={() => setConfirmEnd(true)}>
+                End
+              </Button>
+            </>
+          }
+        />
+      </div>
+
+      <Sheet open={confirmEnd} onClose={() => setConfirmEnd(false)} label="End party">
+        <div className={css.confirm}>
+          <h2 className={css.confirmTitle}>End the party?</h2>
+          <p className={css.muted}>Everyone will be disconnected and the queue will be cleared. This can't be undone.</p>
+          <div className={css.confirmButtons}>
+            <Button variant="secondary" onClick={() => setConfirmEnd(false)}>
+              Keep singing
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setConfirmEnd(false);
+                send({ type: "end_party" });
+              }}
+            >
+              End party
+            </Button>
+          </div>
+        </div>
+      </Sheet>
+    </div>
+  );
+}
+
+function ReactionCount() {
+  const { recent, total } = useReactions(1500);
+  const last = recent[recent.length - 1];
+  return (
+    <span className={css.reactions} title="Reactions this session" aria-live="off">
+      <span key={last?.id} className={css.reactionPop}>
+        {last ? REACTION_EMOJI[last.reaction] : <Flame size={16} />}
+      </span>
+      <span className={css.reactionNum}>{total}</span>
+    </span>
+  );
+}
+
+function QueueIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M3 6h13M3 12h13M3 18h8" />
+      <path d="M17 15v6l4-3z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Ask the background to bring the YouTube window forward; it goes full screen on the TV. */
+async function showOnTv(show: (m: string) => void) {
+  try {
+    const res = (await browser.runtime.sendMessage({ type: "SHOW_ON_TV" })) as { ok?: boolean } | undefined;
+    if (res?.ok) return;
+  } catch {
+    // background doesn't handle it yet
+  }
+  show("Drag the YouTube window onto the TV, then press F for full screen.");
+}

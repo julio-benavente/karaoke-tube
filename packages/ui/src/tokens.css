@@ -1,0 +1,115 @@
+/* Karaoke Tube design tokens. Every colour, radius, spacing step and font size lives here. */
+:root,
+:host {
+  /* Colour */
+  --kt-base: #070609;
+  --kt-panel: #131016;
+  --kt-card: #221d27;
+  --kt-hover: #2c2632;
+  --kt-press: #353039;
+  --kt-elevated: #1b171f;
+  --kt-border: #3a3340;
+  --kt-text: #ffffff;
+  --kt-text-2: #b0a8b8;
+  --kt-text-3: #7d7586;
+  --kt-accent: #ff4f8b;
+  --kt-accent-hover: #ff6f9f;
+  --kt-accent-press: #e8437b;
+  --kt-accent-ink: #1f0711;
+  --kt-accent-soft: rgba(255, 79, 139, 0.16);
+  --kt-danger: #ff5c5c;
+  --kt-warning: #ffb547;
+  --kt-overlay: rgba(0, 0, 0, 0.6);
+  --kt-scrim: rgba(7, 6, 9, 0.85);
+  --kt-white-10: rgba(255, 255, 255, 0.1);
+  --kt-white-20: rgba(255, 255, 255, 0.2);
+  --kt-white-30: rgba(255, 255, 255, 0.3);
+
+  /* Browse tile colours */
+  --kt-tile-1: #e13300;
+  --kt-tile-2: #8d67ab;
+  --kt-tile-3: #1e3264;
+  --kt-tile-4: #e8115b;
+  --kt-tile-5: #148a08;
+  --kt-tile-6: #bc5900;
+  --kt-tile-7: #477d95;
+  --kt-tile-8: #af2896;
+  --kt-tile-9: #503750;
+  --kt-tile-10: #0d73ec;
+  --kt-tile-11: #8c1932;
+  --kt-tile-12: #509bf5;
+
+  /* Spacing (4 px grid) */
+  --kt-space-1: 4px;
+  --kt-space-2: 8px;
+  --kt-space-3: 12px;
+  --kt-space-4: 16px;
+  --kt-space-5: 20px;
+  --kt-space-6: 24px;
+  --kt-space-8: 32px;
+  --kt-space-10: 40px;
+  --kt-space-12: 48px;
+  --kt-space-16: 64px;
+
+  /* Radius */
+  --kt-radius-xs: 4px;
+  --kt-radius-sm: 6px;
+  --kt-radius-md: 8px;
+  --kt-radius-lg: 12px;
+  --kt-radius-xl: 16px;
+  --kt-radius-full: 9999px;
+
+  /* Type */
+  --kt-font: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --kt-text-xs: 11px;
+  --kt-text-sm: 12px;
+  --kt-text-md: 14px;
+  --kt-text-base: 16px;
+  --kt-text-lg: 18px;
+  --kt-text-xl: 20px;
+  --kt-text-2xl: 24px;
+  --kt-text-3xl: 32px;
+  --kt-text-4xl: 48px;
+  --kt-text-5xl: 72px;
+  --kt-weight-regular: 400;
+  --kt-weight-medium: 500;
+  --kt-weight-bold: 700;
+  --kt-weight-black: 800;
+
+  /* Sizes */
+  --kt-tabs-height: 56px;
+  --kt-mini-height: 56px;
+  --kt-player-height: 72px;
+  --kt-sidebar-width: 280px;
+  --kt-queue-width: 340px;
+  --kt-row-height: 56px;
+  --kt-control-sm: 32px;
+  --kt-control-md: 40px;
+  --kt-control-lg: 48px;
+
+  /* Motion */
+  --kt-ease: cubic-bezier(0.3, 0, 0, 1);
+  --kt-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --kt-fast: 100ms;
+  --kt-medium: 200ms;
+  --kt-slow: 350ms;
+
+  /* Shadow */
+  --kt-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --kt-shadow-pop: 0 16px 24px rgba(0, 0, 0, 0.3), 0 6px 8px rgba(0, 0, 0, 0.2);
+
+  /* Layers */
+  --kt-z-sticky: 10;
+  --kt-z-player: 20;
+  --kt-z-sheet: 40;
+  --kt-z-toast: 60;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  :host {
+    --kt-fast: 0ms;
+    --kt-medium: 0ms;
+    --kt-slow: 0ms;
+  }
+}

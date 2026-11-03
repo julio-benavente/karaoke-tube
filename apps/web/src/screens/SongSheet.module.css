@@ -1,0 +1,25 @@
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  padding: var(--kt-space-2) var(--kt-space-4) var(--kt-space-4);
+  margin-bottom: var(--kt-space-2);
+  border-bottom: 1px solid var(--kt-white-10);
+}
+
+.text {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--kt-text-base);
+  font-weight: var(--kt-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sub {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+}
