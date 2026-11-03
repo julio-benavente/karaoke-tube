@@ -81,6 +81,12 @@ importers:
         specifier: ^8.3.5
         version: 8.3.5(esbuild@0.28.2)(jiti@2.7.0)
 
+  packages/client:
+    dependencies:
+      '@karaoke-tube/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/shared: {}
 
 packages:

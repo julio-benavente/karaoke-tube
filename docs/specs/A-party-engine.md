@@ -56,7 +56,7 @@ Rewrite `apps/api/src/durable-objects/room.ts` to implement the contract.
 - When the YouTube quota runs out, return 503 with a clear message. The UI shows "Search is resting, paste a link instead".
 - Skip D1 for now; cached songs live in KV.
 
-### A4. Browser client (`packages/client`)
+### A4. Browser client (`packages/client`) ✅
 New workspace package `@karaoke-tube/client`:
 - `createRoomClient({ code, baseUrl, identity? })` implements `RoomClient` over WebSocket. Keeps `memberId` + `key` in
   `localStorage` under `kt:room:<CODE>` and rejoins automatically. Reconnects with backoff (1 s, 2 s, 4 s, max 10 s), status `reconnecting` meanwhile.
