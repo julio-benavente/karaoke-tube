@@ -13,3 +13,4 @@ export type RoomMessage =
   | { type: "hello"; from: string }
   | { type: "chat"; from: string; text: string }
   | { type: "system"; text: string; members: number };
+export * from "./protocol";
