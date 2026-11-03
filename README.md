@@ -5,8 +5,8 @@ Karaoke parties with friends, powered by YouTube karaoke videos.
 ```
 apps/
   api/        Hono on Cloudflare Workers + Durable Objects (one per room). Also serves apps/web in prod.
-  web/        Guest web app (React + Vite) – join a room from your phone
-  extension/  Chrome extension (WXT + React) – runs on the host's YouTube tab
+  web/        Web app (React + Vite): guest phone screens, the host app (/host) and the TV screen (/tv)
+  extension/  LEGACY, optional Chrome extension (WXT + React): the old way to play on a YouTube tab
 packages/
   shared/     Types shared by all apps
 ```
@@ -35,17 +35,18 @@ namespace (searches 7 days, videos 30 days), so repeat searches are free.
 ## Dev
 
 ```sh
-pnpm dev               # runs api (:8787), web (:5173) and the extension together
+pnpm dev               # runs api (:8787) and web (:5173); the website runs the whole party
 # or one at a time:
 pnpm dev:api
 pnpm dev:web
-pnpm dev:extension     # opens a Chrome window with the extension loaded
+pnpm dev:extension     # legacy, optional: Chrome window with the extension loaded
 ```
 
 ### Smoke test
 - **API:** http://localhost:8787/api/health
 - **Web:** http://localhost:5173. Shows API health and connects to room `TEST`. Open two tabs and click "Send ping to room" to see the broadcast.
-- **Extension:** open any YouTube video in the Chrome window WXT launched, then check the page console for `[content]` logs. Background logs are under `chrome://extensions` → Karaoke Tube → "service worker". The popup has a "Ping API" button.
+- **Party:** open http://localhost:5173/host/new, start a party, then click "Open TV screen" (opens `/tv/<code>`; drag it to the TV and press "Start the party on this screen"). Guests join at `/join/<code>`. The TV screen plays the queue with the YouTube IFrame API, so no extension is needed.
+- **Extension (legacy):** the extension is optional and kept for reference; the website runs the whole party.
 
 ## Other commands
 
