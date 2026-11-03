@@ -126,21 +126,6 @@ function Host() {
 
   useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
 
-  // Once per party: point at the rejoin link, the only way back for a host without an account who switches device.
-  const code = state?.code;
-  useEffect(() => {
-    if (!code || !me) return;
-    const key = `kt:tip:rejoin:${code}`;
-    try {
-      if (localStorage.getItem(key)) return;
-      localStorage.setItem(key, "1");
-    } catch {
-      return;
-    }
-    toast.show(t("recovery.tip"), { duration: 9000 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, !!me]);
-
   if (closeReason === "forgotten") {
     markHosting(routeCode, false);
     return <NoParty code={routeCode} />;

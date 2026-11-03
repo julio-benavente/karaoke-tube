@@ -17,7 +17,6 @@ import {
   saveIdentity,
   USE_MOCK,
 } from "../session";
-import { adoptRecoveryHash } from "../recovery";
 import { useAccount } from "../account/AccountContext";
 import { useLiveParties } from "../account/useLiveParties";
 import css from "./Join.module.css";
@@ -45,14 +44,6 @@ function JoinForm() {
   const [busy, setBusy] = useState(false);
   const cleanup = useRef<() => void>(() => {});
   const nickRef = useRef<HTMLInputElement>(null);
-  // A personal rejoin link (#m=…&k=…): take its credentials and go straight back in as that member.
-  useEffect(() => {
-    const c = normalizeCode(params.code ?? "");
-    if (c && adoptRecoveryHash(c)) {
-      markJoined(c, true);
-      navigate(`/r/${c}`, { replace: true });
-    }
-  }, [params.code, navigate]);
   // Opened a party link while signed in, and this account is already in that party (lost this device's key)?
   // Take the account's credentials and go straight back in, with the same role.
   const live = useLiveParties();
