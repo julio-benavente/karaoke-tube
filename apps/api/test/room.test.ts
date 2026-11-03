@@ -182,8 +182,11 @@ describe("queue", () => {
     const { code, host } = await hostRoom({ player: false });
     const ana = await guest(code, "Ana");
     await host.act({ type: "update_settings", settings: { maxWaitingPerMember: 2, getReadyCard: false } });
+    // The first song starts playing, so it no longer counts as waiting.
     await ana.client.act({ type: "add_song", song: song() });
     await ana.client.act({ type: "add_song", song: song() });
+    const state = await ana.client.act({ type: "add_song", song: song() });
+    expect(state.upNext.length).toBe(2);
     expect(await ana.client.expectError({ type: "add_song", song: song() })).toBe("queue_limit");
     for (let i = 0; i < 4; i++) await host.act({ type: "add_song", song: song() });
   });

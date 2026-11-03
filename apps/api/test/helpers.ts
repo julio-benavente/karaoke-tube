@@ -42,14 +42,17 @@ export class TestClient {
     this.ws.send(JSON.stringify(msg));
   }
 
-  /** Waits for the next message (after `from`) matching `type`. */
-  async next<T extends ServerMessage["type"]>(type: T, from = this.cursor): Promise<Extract<ServerMessage, { type: T }>> {
+  /** Messages already returned by `next`, so each one is handed out once. */
+  private consumed = new Set<number>();
+
+  /** Waits for the oldest not-yet-returned message of `type` (at or after index `from`). */
+  async next<T extends ServerMessage["type"]>(type: T, from = 0): Promise<Extract<ServerMessage, { type: T }>> {
     const deadline = Date.now() + 2000;
     for (;;) {
-      const found = this.messages.slice(from).find((m) => m.type === type);
-      if (found) {
-        this.cursor = this.messages.indexOf(found) + 1;
-        return found as Extract<ServerMessage, { type: T }>;
+      const index = this.messages.findIndex((m, i) => i >= from && m.type === type && !this.consumed.has(i));
+      if (index !== -1) {
+        this.consumed.add(index);
+        return this.messages[index] as Extract<ServerMessage, { type: T }>;
       }
       if (Date.now() > deadline) throw new Error(`timed out waiting for ${type}; got ${JSON.stringify(this.messages.slice(from).map((m) => m.type))}`);
       await new Promise<void>((resolve) => {
@@ -58,7 +61,6 @@ export class TestClient {
       });
     }
   }
-  cursor = 0;
 
   /** Waits for a state broadcast that matches `pred`. */
   async waitForState(pred: (s: RoomState) => boolean): Promise<RoomState> {
@@ -95,7 +97,6 @@ export class TestClient {
       const got = this.messages.slice(from);
       const end = got.findIndex((m) => m.type === "error" && m.message.includes(marker));
       if (end !== -1) {
-        this.cursor = from + end + 1;
         return got.slice(0, end);
       }
       if (Date.now() > deadline) throw new Error(`timed out on ${msg.type}`);

@@ -38,7 +38,7 @@ Rewrite `apps/api/src/durable-objects/room.ts` to implement the contract.
 
 **Done when:** tests (see A5) cover join, rejoin, permissions, rotation order, queue limit and lock.
 
-### A2. Playback state machine (in the room)
+### A2. Playback state machine (in the room) ✅
 - When nothing is playing and `upNext` gets a song, or when the current song ends or is skipped:
   - with `getReadyCard` on: playback `get_ready`, `countdownEndsAt = now + countdownSec`, alarm at that time, then send `play`;
   - otherwise send `play` right away.

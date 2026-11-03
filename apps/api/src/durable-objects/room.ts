@@ -167,8 +167,11 @@ export class Room extends DurableObject<Env> {
     await this.onAlarm();
   }
 
-  /** Room alarms other than end-of-party cleanup (the get-ready countdown, A2). */
-  protected async onAlarm() {}
+  /** The get-ready countdown is over: tell the player to load the song. */
+  private async onAlarm() {
+    const item = this.nowPlayingItem();
+    if (item && this.playback().state === "get_ready") this.sendPlay(item);
+  }
 
   // ── Message handling ───────────────────────────────────────────────────
 
@@ -288,24 +291,127 @@ export class Room extends DurableObject<Env> {
         return;
       }
       default: {
-        await this.handlePlayback(ws, me, isHost, msg);
+        await this.handlePlayback(ws, isHost, msg);
         return;
       }
     }
     this.broadcastState();
   }
 
-  /** Playback messages (skip/pause/resume/restart/player_event), implemented in A2. */
-  protected async handlePlayback(_ws: WebSocket, _me: Member, isHost: boolean, msg: ClientMessage) {
-    if (msg.type !== "player_event" && !isHost) throw new RoomError("not_allowed", "Only hosts can do that.");
-    throw new RoomError("invalid_message", "Not supported yet.");
+  // ── Playback ───────────────────────────────────────────────────────────
+
+  private async handlePlayback(ws: WebSocket, isHost: boolean, msg: ClientMessage) {
+    if (msg.type === "player_event") return this.onPlayerEvent(ws, msg);
+    if (!isHost) throw new RoomError("not_allowed", "Only hosts can do that.");
+    const item = this.nowPlayingItem();
+    const pb = this.playback();
+    const now = Date.now();
+    switch (msg.type) {
+      case "skip":
+        if (!item) break;
+        this.setItem(item.id, { status: "skipped" });
+        await this.advance();
+        // Nothing left: stop the video that's still on screen.
+        if (!this.nowPlayingItem()) this.sendToPlayer({ type: "player_command", command: "pause" });
+        break;
+      case "pause":
+        if (pb.state !== "playing") break;
+        this.setPlayback({ state: "paused", positionSec: position(pb, now), updatedAt: now, countdownEndsAt: null });
+        this.sendToPlayer({ type: "player_command", command: "pause" });
+        break;
+      case "resume":
+        if (pb.state !== "paused") break;
+        this.setPlayback({ ...pb, state: "playing", updatedAt: now });
+        this.sendToPlayer({ type: "player_command", command: "resume" });
+        break;
+      case "restart":
+        if (!item || pb.state === "get_ready") break;
+        this.setPlayback({ ...pb, positionSec: 0, updatedAt: now });
+        this.sendToPlayer({ type: "player_command", command: "restart" });
+        break;
+      default:
+        throw new RoomError("invalid_message", "Unknown message.");
+    }
+    this.broadcastState();
   }
 
-  /** Runs after a song is added (A2 starts playback from here). */
-  protected async afterQueueChange() {}
+  private async onPlayerEvent(ws: WebSocket, msg: Extract<ClientMessage, { type: "player_event" }>) {
+    if (!this.isPlayer(ws)) throw new RoomError("not_allowed", "Only the party's player can send player events.");
+    const item = this.nowPlayingItem();
+    if (!item || item.id !== msg.itemId) return; // late event for a song that's already gone
+    const pb = this.playback();
+    const now = Date.now();
+    const positionSec = Math.max(0, msg.positionSec ?? 0);
+    switch (msg.event) {
+      case "started":
+        this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
+        break;
+      case "progress":
+        if (pb.state === "get_ready") this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
+        else this.setPlayback({ ...pb, positionSec, updatedAt: now });
+        break;
+      case "ended":
+        this.setItem(item.id, { status: "played" });
+        await this.advance();
+        break;
+      case "error":
+        this.setItem(item.id, { status: "skipped" });
+        await this.advance();
+        break;
+    }
+    this.broadcastState();
+  }
 
-  /** Runs after a socket rejoins (A2 resends `play` to a reconnecting player). */
-  protected async afterRejoin(_ws: WebSocket) {}
+  /**
+   * Starts the next song when nothing is playing: either the get-ready countdown (then `play` from the alarm)
+   * or `play` right away. With an empty queue, playback goes idle.
+   */
+  private async advance() {
+    if (this.nowPlayingItem() || this.status() === "ended") return;
+    const upNext = this.upNext();
+    const next = upNext[0];
+    const now = Date.now();
+    if (!next) {
+      this.setPlayback(idlePlayback(now));
+      return;
+    }
+    this.setItem(next.id, { status: "playing", startedAt: now, pinIndex: null });
+    this.applyPinShift(upNext, 0);
+    const { getReadyCard, countdownSec } = this.settings();
+    if (getReadyCard && countdownSec > 0) {
+      const countdownEndsAt = now + countdownSec * 1000;
+      this.setPlayback({ state: "get_ready", positionSec: 0, updatedAt: now, countdownEndsAt });
+      await this.ctx.storage.setAlarm(countdownEndsAt);
+    } else {
+      this.setPlayback({ state: "playing", positionSec: 0, updatedAt: now, countdownEndsAt: null });
+      this.sendPlay({ ...next, status: "playing" });
+    }
+  }
+
+  private sendPlay(item: StoredItem) {
+    this.sendToPlayer({ type: "play", item: publicItem(item) });
+  }
+
+  private sendToPlayer(msg: ServerMessage) {
+    const player = this.playerSocket();
+    if (player) this.send(player, msg);
+  }
+
+  /** A song was added: start it if nothing is playing. */
+  private async afterQueueChange() {
+    await this.advance();
+  }
+
+  /** A reconnecting player gets the current song again (it ignores a song it's already on). */
+  private async afterRejoin(ws: WebSocket) {
+    if (!this.isPlayer(ws)) return;
+    const item = this.nowPlayingItem();
+    const pb = this.playback();
+    if (!item) return;
+    if (pb.state === "get_ready" && pb.countdownEndsAt !== null && pb.countdownEndsAt > Date.now()) return;
+    this.sendPlay(item);
+    if (pb.state === "paused") this.sendToPlayer({ type: "player_command", command: "pause" });
+  }
 
   private async onJoin(ws: WebSocket, nickname: string, avatarSeed: string) {
     if (attachment(ws).memberId) throw new RoomError("invalid_message", "Already joined.");
@@ -373,7 +479,7 @@ export class Room extends DurableObject<Env> {
   // ── State ──────────────────────────────────────────────────────────────
 
   /** `closing` is a socket that's going away: its member doesn't count as connected through it. */
-  protected state(closing?: WebSocket): RoomState {
+  private state(closing?: WebSocket): RoomState {
     const connected = new Set<string>();
     for (const ws of this.ctx.getWebSockets()) {
       if (ws === closing) continue;
@@ -400,16 +506,16 @@ export class Room extends DurableObject<Env> {
     };
   }
 
-  protected nowPlayingItem(): StoredItem | undefined {
+  private nowPlayingItem(): StoredItem | undefined {
     return this.itemRows().find((i) => i.status === "playing");
   }
 
-  protected upNext(): StoredItem[] {
+  private upNext(): StoredItem[] {
     return orderUpNext(this.itemRows(), this.settings().queueMode);
   }
 
   /** Keeps pinned items moving up when the item at `index` leaves `upNext`. */
-  protected applyPinShift(upNext: StoredItem[], index: number) {
+  private applyPinShift(upNext: StoredItem[], index: number) {
     for (const [id, pin] of shiftPins(upNext, index)) this.sql.exec("UPDATE items SET pin_index = ? WHERE id = ?", pin, id);
   }
 
@@ -420,25 +526,25 @@ export class Room extends DurableObject<Env> {
     });
   }
 
-  protected setItem(id: string, fields: { status?: QueueItem["status"]; startedAt?: number; pinIndex?: null }) {
+  private setItem(id: string, fields: { status?: QueueItem["status"]; startedAt?: number; pinIndex?: null }) {
     if (fields.status !== undefined) this.sql.exec("UPDATE items SET status = ? WHERE id = ?", fields.status, id);
     if (fields.startedAt !== undefined) this.sql.exec("UPDATE items SET started_at = ? WHERE id = ?", fields.startedAt, id);
     if (fields.pinIndex === null) this.sql.exec("UPDATE items SET pin_index = NULL WHERE id = ?", id);
   }
 
-  protected playback(): Playback {
+  private playback(): Playback {
     return this.getMeta<Playback>("playback") ?? idlePlayback();
   }
 
-  protected setPlayback(playback: Playback) {
+  private setPlayback(playback: Playback) {
     this.setMeta("playback", playback);
   }
 
-  protected settings(): RoomSettings {
+  private settings(): RoomSettings {
     return { ...DEFAULT_SETTINGS, ...(this.getMeta<RoomSettings>("settings") ?? {}) };
   }
 
-  protected status(): "open" | "ended" {
+  private status(): "open" | "ended" {
     return this.getMeta<"open" | "ended">("status") ?? "open";
   }
 
@@ -450,7 +556,7 @@ export class Room extends DurableObject<Env> {
     return this.sql.exec<MemberRow>("SELECT * FROM members WHERE id = ?", id).toArray()[0];
   }
 
-  protected itemRows(): StoredItem[] {
+  private itemRows(): StoredItem[] {
     return this.sql.exec<ItemRow>("SELECT * FROM items ORDER BY added_at, id").toArray().map(rowToItem);
   }
 
@@ -480,15 +586,15 @@ export class Room extends DurableObject<Env> {
     return this.ctx.getWebSockets().filter((ws) => attachment(ws).memberId === memberId);
   }
 
-  protected playerSocket(): WebSocket | undefined {
+  private playerSocket(): WebSocket | undefined {
     return this.ctx.getWebSockets().find((ws) => attachment(ws).player);
   }
 
-  protected isPlayer(ws: WebSocket): boolean {
+  private isPlayer(ws: WebSocket): boolean {
     return attachment(ws).player;
   }
 
-  protected send(ws: WebSocket, msg: ServerMessage) {
+  private send(ws: WebSocket, msg: ServerMessage) {
     try {
       ws.send(JSON.stringify(msg));
     } catch {
@@ -497,7 +603,7 @@ export class Room extends DurableObject<Env> {
   }
 
   /** Sends to every joined socket except `except`. */
-  protected broadcast(msg: ServerMessage, except?: WebSocket) {
+  private broadcast(msg: ServerMessage, except?: WebSocket) {
     const data = JSON.stringify(msg);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws === except || !attachment(ws).memberId) continue;
@@ -510,7 +616,7 @@ export class Room extends DurableObject<Env> {
   }
 
   /** Broadcasts the full state. `closing` is left out of `connected`; neither it nor `except` gets the message. */
-  protected broadcastState(closing?: WebSocket, except?: WebSocket) {
+  private broadcastState(closing?: WebSocket, except?: WebSocket) {
     const data = JSON.stringify({ type: "state", state: this.state(closing) } satisfies ServerMessage);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws === closing || ws === except || !attachment(ws).memberId) continue;
@@ -527,6 +633,11 @@ export class Room extends DurableObject<Env> {
 
 function attachment(ws: WebSocket): Attachment {
   return (ws.deserializeAttachment() as Attachment | null) ?? { memberId: null, wantsPlayer: false, player: false };
+}
+
+/** Where playback is now, extrapolated from the last report while playing. */
+function position(pb: Playback, now: number): number {
+  return pb.state === "playing" ? pb.positionSec + (now - pb.updatedAt) / 1000 : pb.positionSec;
 }
 
 export function idlePlayback(now = Date.now()): Playback {
