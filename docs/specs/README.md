@@ -67,3 +67,6 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 - Room codes (integration): `ROOM_CODE_EXAMPLE`, `ROOM_CODE_RE`, `normalizeRoomCode()`, `isRoomCode()`. Codes are
   three words, e.g. `fuzzy-golden-panda` (was 4 characters), lowercase with dashes; the API also rate-limits room
   lookups and joins per IP. (`ROOM_CODE_ALPHABET` / `ROOM_CODE_LENGTH` from an intermediate commit are gone.)
+- `RoomState.playerConnected?` and `ClientMessage` `player_status { tabOpen }` (resilience): the extension's player
+  reports whether its YouTube window is open; the room exposes `playerConnected` (player socket attached and window
+  open) so the host app can offer "Reopen TV window".
