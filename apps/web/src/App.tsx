@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Spinner } from "@karaoke-tube/ui";
+import { Landing } from "./screens/Landing";
 import { JoinScreen } from "./screens/Join";
 import { RoomShell } from "./screens/RoomShell";
 import { HomeScreen } from "./screens/Home";
@@ -21,7 +22,7 @@ export function App() {
     <BrowserRouter>
       <Suspense fallback={<Spinner />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/join" replace />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/join/:code?" element={<JoinScreen />} />
           <Route path="/r/:code" element={<RoomShell />}>
             <Route index element={<HomeScreen />} />
