@@ -2,8 +2,8 @@ import QRCode from "qrcode";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { REACTIONS } from "@karaoke-tube/shared";
-import { Button, Chip, ChipRow, RoomProvider, createMockRoomClient, hueOf, useRoom, useRoomClient } from "@karaoke-tube/ui";
-import { GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
+import { Button, Chip, ChipRow, RoomProvider, createMockRoomClient, hueOf, sampleRecap, useRoom, useRoomClient } from "@karaoke-tube/ui";
+import { AwardsShow, GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
 import css from "./TvPreview.module.css";
 
 /**
@@ -36,6 +36,7 @@ function Preview() {
   const client = useRoomClient();
   const [qr, setQr] = useState<string>();
   const [size, setSize] = useState<"small" | "large">("large");
+  const [awards, setAwards] = useState(false);
   const [reactions, setReactions] = useState<TvReaction[]>([]);
   const seq = useRef(0);
 
@@ -58,6 +59,7 @@ function Preview() {
   if (!state) return <p className={css.wait}>Starting the mock room…</p>;
   const item = state.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
+  const recap = state.recap ?? sampleRecap(state.members);
   const mock = (client as unknown as { mock: { finishSong(): void; randomReaction(): void } }).mock;
 
   return (
@@ -82,6 +84,9 @@ function Preview() {
           <Button size="sm" variant="secondary" onClick={() => REACTIONS.forEach((_, i) => setTimeout(() => mock.randomReaction(), i * 150))}>
             Burst of reactions
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => setAwards((a) => !a)}>
+            {awards ? "Back to the overlay" : "Awards show"}
+          </Button>
         </div>
       </header>
 
@@ -94,7 +99,9 @@ function Preview() {
           </div>
         </div>
         <ShadowMount>
-          {state.playback.state === "get_ready" && item && state.playback.countdownEndsAt ? (
+          {awards ? (
+            <AwardsShow recap={recap} recapText={`${location.host}/recap/${recap.id}`} qrSrc={qr} />
+          ) : state.playback.state === "get_ready" && item && state.playback.countdownEndsAt ? (
             <GetReadyCard
               item={item}
               members={state.members}

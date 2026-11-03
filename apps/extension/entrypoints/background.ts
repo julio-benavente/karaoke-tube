@@ -18,6 +18,8 @@ type Port = Browser.runtime.Port;
 type SavedParty = { code: string; memberId: string; key: string; youtubeTabId: number | null; hostTabId?: number | null };
 const PARTY_KEY = "party";
 const YOUTUBE_URL = "https://www.youtube.com/";
+/** How long the TV keeps the awards show up after the party ends, before it goes back to normal. */
+const AWARDS_SHOW_MS = 60_000;
 
 let party: SavedParty | null = null;
 let room: RoomClient | null = null;
@@ -257,14 +259,25 @@ function onRoomChange(client: RoomClient) {
 async function endLocal() {
   if (!party && !room) return;
   console.log("[bg] party over");
+  const recapShown = !!room?.state?.recap;
   room?.close();
   room = null;
   party = null;
   currentPlay = null;
   await save();
-  postPlayer({ type: "not_party" });
-  playerPort?.disconnect();
+  // With a recap, the TV keeps the awards show up for a while before it goes back to normal.
+  const port = playerPort;
   playerPort = null;
+  const release = () => {
+    try {
+      port?.postMessage({ type: "not_party" } satisfies PlayerPortToTab);
+      port?.disconnect();
+    } catch {
+      // the tab is already gone
+    }
+  };
+  if (port && recapShown) setTimeout(release, AWARDS_SHOW_MS);
+  else release();
 }
 
 // ── Ports ────────────────────────────────────────────────────────────────

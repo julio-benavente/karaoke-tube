@@ -14,7 +14,7 @@ import {
   type RoomState,
   type Song,
 } from "@karaoke-tube/shared";
-import { SAMPLE_SONGS, sampleMembers } from "./sample-data";
+import { SAMPLE_SONGS, sampleMembers, sampleRecap } from "./sample-data";
 
 export type MockRoomOptions = {
   /** Room code. Default "groovy-disco-party". */
@@ -450,6 +450,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
     onReaction(listener) {
       reactionListeners.add(listener);
       return () => reactionListeners.delete(listener);
+      recap: sampleRecap(roomState.members),
     },
     onError(listener) {
       errorListeners.add(listener);

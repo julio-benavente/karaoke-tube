@@ -11,7 +11,7 @@ export * from "./format";
 export { createMockRoomClient, errorText } from "./mock/mock-room-client";
 export type { MockRoomClient, MockRoomOptions, MockControls, SimulateOptions } from "./mock/mock-room-client";
 export { createMockSearchApi, MOCK_CODES } from "./mock/mock-search-api";
-export { SAMPLE_SONGS } from "./mock/sample-data";
+export { SAMPLE_SONGS, sampleRecap } from "./mock/sample-data";
 
 export { Avatar, AvatarStack } from "./components/Avatar";
 export { Artwork, hueOf, tintOf } from "./components/Artwork";

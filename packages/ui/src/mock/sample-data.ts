@@ -1,4 +1,4 @@
-import type { Member, Role, Song } from "@karaoke-tube/shared";
+import type { Member, Recap, Role, Song, TitleId } from "@karaoke-tube/shared";
 
 const thumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
@@ -66,4 +66,38 @@ export function sampleMembers(meRole: Role, now = Date.now()): Member[] {
     connected: i !== 6,
     joinedAt: now - (60 - i * 5) * 60_000,
   }));
+}
+
+/** A believable end-of-night recap for the given members (mock room, /dev/tv, /dev/ui). */
+export function sampleRecap(members: Member[], now = Date.now()): Recap {
+  const sung = members.slice(0, 5).map((m, i) => ({
+    item: {
+      id: `perf-${i}`,
+      song: SAMPLE_SONGS[i * 3 % SAMPLE_SONGS.length]!,
+      addedBy: m.id,
+      singerIds: [m.id],
+      status: "played" as const,
+      addedAt: now - (90 - i * 10) * 60_000,
+    },
+    cheers: [14, 31, 9, 22, 5][i]!,
+    awards: i === 1 ? { crowd_pleaser: 3, great_vibes: 2 } : {},
+  }));
+  const titles: Record<string, TitleId[]> = {};
+  const pool: TitleId[][] = [
+    ["opening_act", "brave_soul"],
+    ["showstopper", "crowd_favorite", "repeat_performer"],
+    ["rising_star", "great_audience"],
+    ["power_ballad", "biggest_fan"],
+    ["grand_finale", "award_giver", "encore"],
+  ];
+  members.forEach((m, i) => (titles[m.id] = pool[i] ?? ["great_audience", "party_spirit"]));
+  return {
+    id: "0123456789abcdef",
+    code: "groovy-disco-party",
+    endedAt: now,
+    members: members.map(({ id, nickname, avatarSeed }) => ({ id, nickname, avatarSeed })),
+    performances: sung,
+    titles,
+    topMoment: sung[1] ?? null,
+  };
 }
