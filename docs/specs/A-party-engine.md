@@ -68,7 +68,7 @@ Use `@cloudflare/vitest-pool-workers` for the API. (Renamed upstream to `@cloudf
 Tests are in `apps/api/test/`: `queue`, `room`, `playback`, `search`.) Put the queue-ordering logic in a pure function (`apps/api/src/queue.ts`)
 and test it directly as well. `pnpm --filter @karaoke-tube/api test` passes.
 
-### A6. Extension: party session + YouTube player
+### A6. Extension: party session + YouTube player ✅
 - Background:
   - On message `{ type: "START_PARTY", nickname, avatarSeed }`: call `POST /api/rooms`, save `{ code, memberId, key }` in
     `chrome.storage.session`, open the host app page (`host.html`), and open a separate YouTube window (`https://www.youtube.com/`)
@@ -93,4 +93,15 @@ and the YouTube window plays it, then plays the next one on its own.
 Titles, recaps, duets UI, turn alerts, rating, D1, avatar rendering, all visual design.
 
 ## Requests for the other track
-- (none yet)
+- **B: stop using `RoomMessage` / `HealthResponse` in `apps/web/src/App.tsx`** (the old echo demo). Once it's gone,
+  A removes `RoomMessage` from `packages/shared/src/index.ts` (A6's last bullet; blocked only on this).
+- **B: `host.html`** is opened by `START_PARTY` (`browser.runtime.getURL("/host.html")`). Until B's host entrypoint
+  exists, that tab shows a Chrome error page. The host page gets its room with
+  `createExtensionRoomClient()` from `apps/extension/utils/room-client.ts`.
+- **B, popup:** send `{ type: "START_PARTY", nickname, avatarSeed }`, `{ type: "END_PARTY" }`, `{ type: "GET_PARTY" }`
+  with `browser.runtime.sendMessage`; types and responses are in `apps/extension/utils/api.ts`.
+- **B, integration notes:** the real clients live in `@karaoke-tube/client` (`createRoomClient`, `createSearchApi`).
+  `SearchApi` rejects with `ApiError`; `err.code === "search_unavailable"` → show "Search is resting, paste a link instead".
+  `video()` also accepts a full YouTube URL. A kicked member ends up with `status: "closed"` and `me: null`.
+- **B, TV overlay:** the placeholder `Badge` in `apps/extension/entrypoints/youtube.content/Badge.tsx` takes an
+  `OverlayInfo` (`apps/extension/utils/ports.ts`: code, nowSinging, upNext, getReadyEndsAt). Swap in B's overlay there.

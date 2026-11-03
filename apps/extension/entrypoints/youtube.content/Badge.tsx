@@ -1,70 +1,58 @@
 import { useEffect, useState } from "react";
-import type { ExtMessage } from "@/utils/api";
+import type { OverlayInfo } from "@/utils/ports";
 
-type ApiStatus = "checking" | "ok" | "error";
-
-const currentVideoId = () => new URL(location.href).searchParams.get("v");
-
-export function Badge() {
-  const [api, setApi] = useState<ApiStatus>("checking");
-  const [videoId, setVideoId] = useState<string | null>(currentVideoId());
-
-  // Ping the API through the background service worker.
-  useEffect(() => {
-    browser.runtime
-      .sendMessage({ type: "PING_API" } satisfies ExtMessage)
-      .then((res: { ok: boolean }) => {
-        console.log("[content] API via background:", res);
-        setApi(res?.ok ? "ok" : "error");
-      })
-      .catch((e) => {
-        console.error("[content] API ping failed:", e);
-        setApi("error");
-      });
-  }, []);
-
-  // YouTube is a single-page app: `yt-navigate-finish` fires on every in-app navigation.
-  useEffect(() => {
-    const onNavigate = () => setVideoId(currentVideoId());
-    document.addEventListener("yt-navigate-finish", onNavigate);
-    return () => document.removeEventListener("yt-navigate-finish", onNavigate);
-  }, []);
-
-  // Runs once per actual video change (no duplicate logs).
-  useEffect(() => {
-    console.log("[content] current video:", videoId);
-    browser.runtime.sendMessage({ type: "VIDEO_CHANGED", videoId } satisfies ExtMessage);
-
-    const video = document.querySelector<HTMLVideoElement>("video.html5-main-video");
-    if (video) video.onended = () => console.log("[content] video ended:", videoId);
-  }, [videoId]);
-
-  const apiLabel = { checking: "API …", ok: "API ✓", error: "API ✗" }[api];
-  const apiColor = { checking: "#facc15", ok: "#4ade80", error: "#f87171" }[api];
-
+/**
+ * Placeholder TV overlay: room code, who's singing and who's next. Mounted inside `#movie_player`
+ * so it stays visible in fullscreen. Spec B delivers the real overlay components.
+ */
+export function Badge({ overlay }: { overlay: OverlayInfo }) {
+  const countdown = useCountdown(overlay.getReadyEndsAt);
   return (
     <div
       style={{
-        position: "fixed",
-        right: 16,
-        bottom: 16,
+        position: "absolute",
+        left: 16,
+        bottom: 64,
         display: "flex",
-        gap: 8,
-        alignItems: "center",
-        padding: "8px 14px",
-        borderRadius: 999,
-        background: "rgba(17, 17, 17, 0.88)",
+        flexDirection: "column",
+        gap: 4,
+        maxWidth: "60%",
+        padding: "10px 16px",
+        borderRadius: 14,
+        background: "rgba(17, 17, 17, 0.82)",
         color: "#fff",
-        font: "500 13px/1.2 system-ui, -apple-system, sans-serif",
+        font: "500 15px/1.3 system-ui, -apple-system, sans-serif",
         boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
         pointerEvents: "none",
+        zIndex: 60,
       }}
     >
-      <span>🎤 Karaoke Tube</span>
-      <span style={{ opacity: 0.4 }}>·</span>
-      <span style={{ color: apiColor }}>{apiLabel}</span>
-      <span style={{ opacity: 0.4 }}>·</span>
-      <span style={{ fontFamily: "ui-monospace, monospace" }}>{videoId ?? "no video"}</span>
+      <span style={{ opacity: 0.7, fontSize: 13 }}>
+        🎤 Karaoke Tube · join with code <b style={{ fontFamily: "ui-monospace, monospace", opacity: 1 }}>{overlay.code}</b>
+      </span>
+      {countdown !== null && <span style={{ fontSize: 20, fontWeight: 700 }}>Get ready… {countdown}</span>}
+      <span>
+        <span style={{ opacity: 0.6 }}>Now singing: </span>
+        {overlay.nowSinging ?? "nobody yet, add a song!"}
+      </span>
+      {overlay.upNext && (
+        <span>
+          <span style={{ opacity: 0.6 }}>Up next: </span>
+          {overlay.upNext}
+        </span>
+      )}
     </div>
   );
+}
+
+function useCountdown(endsAt: number | null): number | null {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (endsAt === null) return;
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [endsAt]);
+  if (endsAt === null) return null;
+  const left = Math.ceil((endsAt - now) / 1000);
+  return left > 0 ? left : null;
 }
