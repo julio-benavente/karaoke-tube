@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { GripVertical, X } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
-import { songParts } from "../format";
+import { singerLabel, songParts } from "../format";
 import { Artwork } from "./Artwork";
 import { AvatarStack } from "./Avatar";
 import css from "./Rows.module.css";
@@ -15,6 +15,8 @@ export type QueueRowProps = {
   playing?: boolean;
   /** Mark as mine (accent singer name). */
   mine?: boolean;
+  /** My member id: with `mine`, a duet reads "You & Ben". */
+  meId?: string;
   position?: number;
   onRemove?: () => void;
   /** Menu button or other actions. */
@@ -26,7 +28,7 @@ export type QueueRowProps = {
 };
 
 export function singerNames(item: QueueItem, members: Member[]): string {
-  return item.singerIds.map((id) => members.find((m) => m.id === id)?.nickname ?? "Someone").join(" & ");
+  return singerLabel(item, members);
 }
 
 /** A song in the queue with its singer. */
@@ -35,6 +37,7 @@ export function QueueRow({
   members,
   playing,
   mine,
+  meId,
   position,
   onRemove,
   actions,
@@ -63,8 +66,12 @@ export function QueueRow({
       <div className={css.text}>
         <div className={clsx(css.title, playing && css.titleNow)}>{title}</div>
         <div className={css.sub}>
-          <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={16} />
-          <span className={clsx(css.singer, mine && css.mine)}>{mine ? "You" : singerNames(item, members)}</span>
+          {item.everyone ? (
+            <span aria-hidden>🎉</span>
+          ) : (
+            <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={16} />
+          )}
+          <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId) : "You") : singerNames(item, members)}</span>
           <span className={css.dotSep}>·</span>
           <span className={css.artist}>{artist}</span>
         </div>

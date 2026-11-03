@@ -5,6 +5,7 @@ import {
   SAMPLE_SONGS,
   Shelf,
   ShortcutTile,
+  SingWithButton,
   greeting,
   hueOf,
   songParts,
@@ -41,6 +42,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
         <button type="button" className={css.fakeSearch} onClick={onSearch}>
           What do you want to sing?
         </button>
+        <SingWithButton />
       </header>
       <h1 className={css.greeting}>{greeting()}</h1>
       <div className={css.shortcuts}>

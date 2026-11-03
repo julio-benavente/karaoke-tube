@@ -6,7 +6,12 @@ export type AddResult = {
   song: Song;
   /** 0 = playing now (queue was empty), 1 = next, 2 = after one song… */
   position: number;
+  /** "Host picks" mode: the song waits for a host's OK instead of joining the queue. */
+  awaitingApproval?: boolean;
 };
+
+/** Who sings a new song besides the adder. Empty = just the adder. */
+export type AddSingers = { singerIds?: string[]; everyone?: boolean };
 
 type Pending = { song: Song; knownIds: Set<string>; timer: ReturnType<typeof setTimeout> };
 
@@ -35,6 +40,12 @@ export function useAddSong(onAdded?: (r: AddResult) => void) {
       if (!st || !me) return;
       for (const [videoId, p] of waiting.current) {
         const isNew = (id: string) => !p.knownIds.has(id);
+        const waitingOk = st.pending?.some((q) => q.song.videoId === videoId && q.addedBy === me.id && isNew(q.id));
+        if (waitingOk) {
+          clear(videoId);
+          cb.current?.({ song: p.song, position: -1, awaitingApproval: true });
+          continue;
+        }
         const idx = st.upNext.findIndex((q) => q.song.videoId === videoId && q.addedBy === me.id && isNew(q.id));
         const now = st.nowPlaying;
         const playingNow = !!now && now.song.videoId === videoId && now.addedBy === me.id && isNew(now.id);
@@ -55,14 +66,22 @@ export function useAddSong(onAdded?: (r: AddResult) => void) {
   }, [client, clear]);
 
   const add = useCallback(
-    (song: Song) => {
+    (song: Song, singers?: AddSingers) => {
       if (waiting.current.has(song.videoId)) return;
       const st = client.state;
-      const knownIds = new Set([...(st?.upNext.map((q) => q.id) ?? []), ...(st?.nowPlaying ? [st.nowPlaying.id] : [])]);
+      const knownIds = new Set([
+        ...(st?.upNext.map((q) => q.id) ?? []),
+        ...(st?.pending?.map((q) => q.id) ?? []),
+        ...(st?.nowPlaying ? [st.nowPlaying.id] : []),
+      ]);
       const timer = setTimeout(() => clear(song.videoId), 8000);
       waiting.current.set(song.videoId, { song, knownIds, timer });
       setPending((xs) => [...xs, song.videoId]);
-      client.send({ type: "add_song", song });
+      client.send({
+        type: "add_song",
+        song,
+        ...(singers?.everyone ? { everyone: true } : singers?.singerIds?.length ? { singerIds: singers.singerIds } : {}),
+      });
     },
     [client, clear],
   );
