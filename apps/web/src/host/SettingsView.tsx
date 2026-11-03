@@ -1,7 +1,13 @@
-import { Minus, Plus } from "lucide-react";
-import type { QueueMode, RoomSettings } from "@karaoke-tube/shared";
-import { Toggle, useRoom } from "@karaoke-tube/ui";
+import { Minus, Plus, QrCode } from "lucide-react";
+import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
+import { Button, Toggle, useRoom } from "@karaoke-tube/ui";
 import css from "./host.module.css";
+
+const JOIN_OPTIONS: Array<[JoinInfoMode, string]> = [
+  ["between", "Between songs (recommended)"],
+  ["always", "Always on screen"],
+  ["start", "Only at the start"],
+];
 
 /** H2: every RoomSettings field, applied live. */
 export function SettingsView() {
@@ -72,6 +78,40 @@ export function SettingsView() {
           checked={s.locked}
           onChange={(v) => set({ locked: v })}
         />
+        <div className={css.settingRow}>
+          <div className={css.settingText}>
+            <span className={css.settingLabel}>Join code on the TV</span>
+            <span className={css.settingDesc}>Choose when guests can see the QR code and party code.</span>
+          </div>
+          <select
+            className={css.select}
+            aria-label="Join code on the TV"
+            value={s.joinInfo}
+            onChange={(e) => set({ joinInfo: e.target.value as JoinInfoMode })}
+          >
+            {JOIN_OPTIONS.map(([mode, label]) => (
+              <option key={mode} value={mode}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={css.settingRow}>
+          <div className={css.settingText}>
+            <span className={css.settingLabel}>Show code on TV</span>
+            <span className={css.settingDesc}>Flashes the code for 15 seconds, for anyone who arrives late.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<QrCode size={16} />}
+            disabled={!state.playerConnected}
+            title={state.playerConnected ? undefined : "Open the TV screen first"}
+            onClick={() => send({ type: "show_join" })}
+          >
+            Show code
+          </Button>
+        </div>
         <Toggle
           label="Reactions"
           description="Guests can send emoji that float over the video on the TV."

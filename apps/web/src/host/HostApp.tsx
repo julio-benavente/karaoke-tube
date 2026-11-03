@@ -1,4 +1,4 @@
-import { CircleSlash, Lock, LockOpen, Tv, Power, Flame } from "lucide-react";
+import { CircleSlash, Lock, LockOpen, Tv, Power, Flame, QrCode } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
 import {
@@ -169,6 +169,19 @@ function Host() {
               <IconButton label={queueOpen ? "Hide queue" : "Show queue"} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
                 <QueueIcon />
               </IconButton>
+              {state.playerConnected && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={<QrCode size={16} />}
+                  onClick={() => {
+                    send({ type: "show_join" });
+                    toast.show("Showing the code on the TV for 15 seconds.");
+                  }}
+                >
+                  Show code on TV
+                </Button>
+              )}
               <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code)}>
                 Open TV screen
               </Button>

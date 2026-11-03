@@ -417,6 +417,9 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       case "update_settings":
         if (!host) return deny();
         return applySettings(msg.settings);
+      case "show_join":
+        if (!host) return deny();
+        return;
       case "end_party":
         if (sender?.role !== "host") return deny();
         return endParty();
