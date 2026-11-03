@@ -9,6 +9,7 @@ import {
   Logo,
   MiniPlayer,
   RoomProvider,
+  SingWithProvider,
   Spinner,
   ToastProvider,
   errorText,
@@ -17,7 +18,10 @@ import {
   useToast,
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
+import { AwardPrompt } from "./AwardPrompt";
+import { EndStory } from "./EndStory";
 import { NowSingingSheet } from "./NowSinging";
+import { TurnAlertBanner } from "./TurnAlert";
 import css from "./RoomShell.module.css";
 
 type ShellCtx = { openNowSinging: () => void; code: string; leave: () => void };
@@ -42,13 +46,15 @@ export function RoomShell() {
   return (
     <RoomProvider client={client} search={getSearchApi()}>
       <ToastProvider offset={148}>
-        <Shell
-          code={code}
-          retry={() => {
-            dropRoomClient(code);
-            setAttempt((n) => n + 1);
-          }}
-        />
+        <SingWithProvider>
+          <Shell
+            code={code}
+            retry={() => {
+              dropRoomClient(code);
+              setAttempt((n) => n + 1);
+            }}
+          />
+        </SingWithProvider>
       </ToastProvider>
     </RoomProvider>
   );
@@ -105,7 +111,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
     );
   }
   if (state?.status === "ended" || closeReason === "ended") {
-    return <ThanksScreen onDone={leave} />;
+    return state?.recap ? <EndStory recap={state.recap} meId={me?.id} onDone={leave} /> : <ThanksScreen onDone={leave} />;
   }
   if (status === "closed") {
     return (
@@ -175,6 +181,8 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
           )}
         </BottomTabs>
         <NowSingingSheet open={nowOpen && !!state.nowPlaying} onClose={closeNowSinging} />
+        <TurnAlertBanner />
+        <AwardPrompt />
       </div>
     </ShellContext.Provider>
   );

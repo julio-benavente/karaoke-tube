@@ -5,6 +5,7 @@ import {
   BROWSE_PRESETS,
   EmptyState,
   SAMPLE_SONGS,
+  SingWithButton,
   SongRow,
   Tile,
   parseYouTubeId,
@@ -81,6 +82,7 @@ export function SearchView() {
             </button>
           )}
         </label>
+        <SingWithButton />
       </header>
 
       {!search.query.trim() ? (

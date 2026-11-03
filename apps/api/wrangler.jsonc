@@ -20,7 +20,8 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
 
   // YouTube search results (7 days) and video details (30 days). Wrangler creates the namespace on first deploy.
-  "kv_namespaces": [{ "binding": "SEARCH_CACHE" }],
+  // RECAPS: end-of-night recaps, readable at /recap/:id for 30 days.
+  "kv_namespaces": [{ "binding": "SEARCH_CACHE" }, { "binding": "RECAPS" }],
 
   // Per-IP limits on room lookups/joins (code guessing) and room creation.
   "ratelimits": [

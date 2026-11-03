@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import type { Reaction, RoomState } from "@karaoke-tube/shared";
-import { GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
+import { AwardsShow, GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
 import { WEB_URL } from "@/utils/api";
 
 export type ReactionFeed = (listener: (e: { memberId: string; reaction: Reaction }) => void) => () => void;
@@ -13,7 +13,10 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
   const seq = useRef(0);
   const members = useRef(state.members);
   members.current = state.members;
+  const [recapQr, setRecapQr] = useState<string>();
   const joinUrl = `${WEB_URL}/join/${state.code}`;
+  const recapId = state.recap?.id;
+  const recapUrl = recapId ? `${WEB_URL}/recap/${recapId}` : null;
 
   useEffect(() => {
     let live = true;
@@ -22,6 +25,15 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
       live = false;
     };
   }, [joinUrl]);
+
+  useEffect(() => {
+    if (!recapUrl) return;
+    let live = true;
+    QRCode.toDataURL(recapUrl, { margin: 1, width: 300 }).then((src) => live && setRecapQr(src));
+    return () => {
+      live = false;
+    };
+  }, [recapUrl]);
 
   // Keep each reaction for TV_REACTION_MS, then drop it.
   useEffect(
@@ -42,7 +54,10 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
   return (
     <>
       <style>{tvCss}</style>
-      {playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
+      {state.recap ? (
+        // The party is over: the awards show replaces the normal overlay until the background lets the TV go.
+        <AwardsShow recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
+      ) : playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
         <GetReadyCard
           item={nowPlaying}
           members={state.members}

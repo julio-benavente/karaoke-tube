@@ -45,7 +45,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
             <div className={css.meta}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>
-                {singer && <Avatar seed={singer.avatarSeed} size={16} />}
+                {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={16} />}
                 <span className={css.singer}>{singerNames(item, members)}</span>
                 <span>·</span>
                 <span className={css.artist}>{parts.artist}</span>
@@ -77,7 +77,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
         )}
         {playback.state === "get_ready" ? (
           <div className={css.getReady}>
-            Get ready{singer ? `, ${singer.nickname}` : ""}… <b>{countdown}</b>
+            Get ready{item ? `, ${singerNames(item, members)}` : ""}… <b>{countdown}</b>
           </div>
         ) : (
           <ProgressBar value={position} max={item?.song.durationSec ?? 0} showTimes className={css.progress} />

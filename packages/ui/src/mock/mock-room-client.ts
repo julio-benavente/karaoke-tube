@@ -2,6 +2,7 @@ import { normalizeRoomCode } from "@karaoke-tube/shared";
 import {
   DEFAULT_SETTINGS,
   REACTIONS,
+  type AwardWindow,
   type ClientMessage,
   type ConnectionStatus,
   type ErrorCode,
@@ -14,7 +15,7 @@ import {
   type RoomState,
   type Song,
 } from "@karaoke-tube/shared";
-import { SAMPLE_SONGS, sampleMembers } from "./sample-data";
+import { SAMPLE_SONGS, sampleMembers, sampleRecap } from "./sample-data";
 
 export type MockRoomOptions = {
   /** Room code. Default "groovy-disco-party". */
@@ -57,6 +58,8 @@ export type MockControls = {
   endParty(): void;
   /** Re-run: room is locked / unlocked from outside. */
   setSettings(settings: Partial<RoomSettings>): void;
+  /** Another member (a random connected one by default) adds a song, e.g. to see "Host picks" waiting songs. */
+  addSongAs(song?: Song, memberId?: string): void;
 };
 
 export type MockRoomClient = RoomClient & { mock: MockControls };
@@ -93,6 +96,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
   let simTimer: ReturnType<typeof setTimeout> | null = null;
   let simSongLength: number | null = null;
   let countdownTimer: ReturnType<typeof setTimeout> | null = null;
+  let awardTimer: ReturnType<typeof setTimeout> | null = null;
 
   function buildInitialState(): RoomState {
     if (options.empty) {
@@ -102,6 +106,8 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
         members: others,
         nowPlaying: null,
         upNext: [],
+        pending: [],
+        awardWindow: null,
         playback: { state: "idle", positionSec: 0, updatedAt: now, countdownEndsAt: null },
         settings,
       };
@@ -118,13 +124,17 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
     };
     const upNext: QueueItem[] = rest.slice(0, 5).map((song, i) => {
       const singer = singers[(i + 2) % singers.length]!;
+      // A sample duet and a group song, so the queue shows "Ana & Ben" and "Everyone".
+      const partner = singers[(i + 3) % singers.length]!;
+      const duet = i === 1 && partner.id !== singer.id;
       return {
         id: newItemId(),
         song,
-        singerIds: [singer.id],
+        singerIds: duet ? [singer.id, partner.id] : [singer.id],
         addedBy: singer.id,
         status: "waiting",
         addedAt: now - (8 - i) * 60_000,
+        ...(i === 3 ? { everyone: true } : {}),
       };
     });
     return {
@@ -133,6 +143,8 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       members: others,
       nowPlaying,
       upNext,
+      pending: [],
+      awardWindow: null,
       playback: { state: "playing", positionSec: 42, updatedAt: now, countdownEndsAt: null },
       settings,
     };
@@ -190,10 +202,13 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
     countdownTimer = null;
     const [next, ...rest] = roomState.upNext;
     const t = Date.now();
-    void how; // finished items aren't kept in RoomState
+    const done = roomState.nowPlaying;
+    // A song that really started opens the awards window for 60 s.
+    const awardWindow = done && done.status === "playing" ? openAwardWindow({ ...done, status: how }, t) : roomState.awardWindow;
     if (!next) {
       commit({
         ...roomState,
+        awardWindow,
         nowPlaying: null,
         upNext: [],
         playback: { state: "idle", positionSec: 0, updatedAt: t, countdownEndsAt: null },
@@ -204,15 +219,25 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       const endsAt = t + roomState.settings.countdownSec * 1000;
       commit({
         ...roomState,
+        awardWindow,
         nowPlaying: { ...next, status: "waiting" },
         upNext: rest,
         playback: { state: "get_ready", positionSec: 0, updatedAt: t, countdownEndsAt: endsAt },
       });
       countdownTimer = later(startNowPlaying, endsAt - t + 600); // + time for YouTube to start
     } else {
-      commit({ ...roomState, nowPlaying: { ...next, status: "waiting" }, upNext: rest });
+      commit({ ...roomState, awardWindow, nowPlaying: { ...next, status: "waiting" }, upNext: rest });
       startNowPlaying();
     }
+  }
+
+  function openAwardWindow(item: QueueItem, t: number): AwardWindow {
+    if (awardTimer) clearTimeout(awardTimer);
+    awardTimer = later(() => {
+      awardTimer = null;
+      commit({ ...roomState, awardWindow: null });
+    }, 60_000);
+    return { item, closesAt: t + 60_000, counts: {}, givenBy: [] };
   }
 
   function startNowPlaying() {
@@ -236,18 +261,17 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
 
   // ── queue order ───────────────────────────────────────────────────────
 
-  /** Rotation: insert so that each singer gets one song per round. */
+  /** Rotation: insert so that each singer gets one song per round. A duet counts for each singer. */
   function insertFair(upNext: QueueItem[], item: QueueItem): QueueItem[] {
-    if (roomState.settings.queueMode === "fifo") return [...upNext, item];
-    const singer = item.singerIds[0];
-    const counts = new Map<string, number>();
-    if (roomState.nowPlaying) counts.set(roomState.nowPlaying.singerIds[0]!, 1);
-    const myRound = upNext.filter((q) => q.singerIds[0] === singer).length + (counts.get(singer!) ?? 0);
-    const seen = new Map(counts);
+    if (roomState.settings.queueMode === "fifo" || roomState.settings.queueMode === "approval") return [...upNext, item];
+    const turns = (it: QueueItem) => it.singerIds;
+    const seen = new Map<string, number>();
+    if (roomState.nowPlaying) for (const id of turns(roomState.nowPlaying)) seen.set(id, 1);
+    const myRound = Math.max(...turns(item).map((id) => upNext.filter((q) => turns(q).includes(id)).length + (seen.get(id) ?? 0)));
     for (let i = 0; i < upNext.length; i++) {
-      const sid = upNext[i]!.singerIds[0]!;
-      const round = seen.get(sid) ?? 0;
-      seen.set(sid, round + 1);
+      const ids = turns(upNext[i]!);
+      const round = Math.max(...ids.map((id) => seen.get(id) ?? 0));
+      for (const id of ids) seen.set(id, (seen.get(id) ?? 0) + 1);
       if (round > myRound) return [...upNext.slice(0, i), item, ...upNext.slice(i)];
     }
     return [...upNext, item];
@@ -285,25 +309,61 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
         return; // the mock keeps no keys
       case "add_song": {
         if (!sender) return deny();
-        if (roomState.settings.hostsOnlyAdd && !host) return deny();
-        const singerIds = msg.singerIds?.length ? msg.singerIds : [from];
-        const mine = roomState.upNext.filter((q) => q.singerIds.includes(from)).length;
-        if (!host && mine >= roomState.settings.maxWaitingPerMember) {
-          return error("queue_limit", `You can have ${roomState.settings.maxWaitingPerMember} songs waiting at a time.`);
+        const st = roomState.settings;
+        if (st.hostsOnlyAdd && !host) return deny();
+        const everyone = msg.everyone === true;
+        const singerIds = everyone ? [from] : msg.singerIds?.length ? [...new Set(msg.singerIds)] : [from];
+        if ((everyone || singerIds.length > 1) && !st.duets) return deny();
+        if (!host && !singerIds.includes(from)) return deny();
+        const waiting = [...roomState.upNext, ...(roomState.pending ?? [])].filter((q) => q.singerIds.includes(from)).length;
+        if (!host && waiting >= st.maxWaitingPerMember) {
+          return error("queue_limit", `You can have ${st.maxWaitingPerMember} songs waiting at a time.`);
         }
+        const wait = st.queueMode === "approval" && !host;
         const item: QueueItem = {
           id: newItemId(),
           song: msg.song,
           singerIds,
           addedBy: from,
-          status: "waiting",
+          status: wait ? "pending" : "waiting",
           addedAt: Date.now(),
+          ...(everyone ? { everyone: true } : {}),
         };
+        if (wait) return commit({ ...roomState, pending: [...(roomState.pending ?? []), item] });
         commit({ ...roomState, upNext: insertFair(roomState.upNext, item) });
         if (!roomState.nowPlaying) advance("played");
         return;
       }
+      case "approve_song":
+      case "decline_song": {
+        if (!host) return deny();
+        const item = roomState.pending?.find((q) => q.id === msg.itemId);
+        if (!item) return deny();
+        const pending = (roomState.pending ?? []).filter((q) => q.id !== msg.itemId);
+        if (msg.type === "decline_song") return commit({ ...roomState, pending });
+        commit({ ...roomState, pending, upNext: insertFair(roomState.upNext, { ...item, status: "waiting" }) });
+        if (!roomState.nowPlaying) advance("played");
+        return;
+      }
+      case "give_award": {
+        const win = roomState.awardWindow;
+        if (!sender || !roomState.settings.awards || !win || win.item.id !== msg.itemId || win.closesAt < Date.now()) return deny();
+        if (win.item.singerIds.includes(from) || win.givenBy.includes(from)) return deny();
+        return commit({
+          ...roomState,
+          awardWindow: {
+            ...win,
+            counts: { ...win.counts, [msg.award]: (win.counts[msg.award] ?? 0) + 1 },
+            givenBy: [...win.givenBy, from],
+          },
+        });
+      }
       case "remove_song": {
+        const waitingItem = roomState.pending?.find((q) => q.id === msg.itemId);
+        if (waitingItem) {
+          if (!host && waitingItem.addedBy !== from) return deny();
+          return commit({ ...roomState, pending: (roomState.pending ?? []).filter((q) => q.id !== msg.itemId) });
+        }
         const item = roomState.upNext.find((q) => q.id === msg.itemId);
         if (!item) return;
         if (!host && item.addedBy !== from && !item.singerIds.includes(from)) return deny();
@@ -351,11 +411,12 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
           ...roomState,
           members: roomState.members.filter((m) => m.id !== msg.memberId),
           upNext: roomState.upNext.filter((q) => !q.singerIds.includes(msg.memberId)),
+          pending: (roomState.pending ?? []).filter((q) => !q.singerIds.includes(msg.memberId)),
         });
       }
       case "update_settings":
         if (!host) return deny();
-        return commit({ ...roomState, settings: { ...roomState.settings, ...msg.settings } });
+        return applySettings(msg.settings);
       case "end_party":
         if (sender?.role !== "host") return deny();
         return endParty();
@@ -365,6 +426,16 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       case "player_event":
         return;
     }
+  }
+
+  /** Switching "Host picks" off lets every pending song in. */
+  function applySettings(patch: Partial<RoomSettings>) {
+    const settings = { ...roomState.settings, ...patch };
+    const leaving = roomState.settings.queueMode === "approval" && settings.queueMode !== "approval";
+    let upNext = roomState.upNext;
+    if (leaving) for (const q of roomState.pending ?? []) upNext = insertFair(upNext, { ...q, status: "waiting" });
+    commit({ ...roomState, settings, upNext, pending: leaving ? [] : roomState.pending });
+    if (leaving && !roomState.nowPlaying) advance("played");
   }
 
   function kickMe() {
@@ -381,6 +452,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       ...roomState,
       status: "ended",
       playback: { state: "idle", positionSec: 0, updatedAt: Date.now(), countdownEndsAt: null },
+      recap: sampleRecap(roomState.members),
     });
     setStatus("closed");
   }
@@ -474,7 +546,11 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       },
       kickMe,
       endParty,
-      setSettings: (s) => commit({ ...roomState, settings: { ...roomState.settings, ...s } }),
+      setSettings: (s) => applySettings(s),
+      addSongAs(song = pick(SAMPLE_SONGS), memberId) {
+        const m = memberId ?? pick(roomState.members.filter((x) => x.id !== meId && x.connected && x.role === "guest")).id;
+        handle({ type: "add_song", song }, m);
+      },
     },
   };
   return client;

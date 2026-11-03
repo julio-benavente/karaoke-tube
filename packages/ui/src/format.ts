@@ -1,4 +1,4 @@
-import type { Song } from "@karaoke-tube/shared";
+import type { Member, QueueItem, Song } from "@karaoke-tube/shared";
 
 export function formatTime(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) sec = 0;
@@ -53,4 +53,14 @@ export function parseYouTubeId(input: string): string | null {
     // not a URL
   }
   return null;
+}
+
+/** Who sings an item: "Ana", "Ana & Ben", "Ana, Ben & Cy", or "Everyone" for a group song. */
+export function singerLabel(item: Pick<QueueItem, "singerIds" | "everyone">, members: Pick<Member, "id" | "nickname">[], meId?: string): string {
+  if (item.everyone) return "Everyone";
+  // "You" goes first: "You & Ben".
+  const ids = meId && item.singerIds.includes(meId) ? [meId, ...item.singerIds.filter((id) => id !== meId)] : item.singerIds;
+  const names = ids.map((id) => (id === meId ? "You" : (members.find((m) => m.id === id)?.nickname ?? "Someone")));
+  if (names.length <= 2) return names.join(" & ");
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
 }

@@ -10,7 +10,7 @@ import {
   ProgressBar,
   Sheet,
   hueOf,
-  singerNames,
+  singerLabel,
   songParts,
   useCountdown,
   usePlaybackPosition,
@@ -104,9 +104,9 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <div className={css.singer}>
-        {singer && <Avatar seed={singer.avatarSeed} size={28} />}
+        {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={28} />}
         <span>
-          🎤 <b>{item.singerIds.includes(me.id) ? "You" : singerNames(item, state.members)}</b>
+          🎤 <b>{singerLabel(item, state.members, me.id)}</b>
           {playback.state === "paused" && <span className={css.paused}> · Paused</span>}
         </span>
       </div>

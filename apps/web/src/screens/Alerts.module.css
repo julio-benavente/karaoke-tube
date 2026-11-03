@@ -1,0 +1,168 @@
+/* C2 turn alert: pinned to the top of every guest screen. */
+.turnWrap {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + var(--kt-space-2));
+  left: 0;
+  right: 0;
+  z-index: var(--kt-z-toast);
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--kt-space-3);
+  pointer-events: none;
+}
+
+.turn {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  width: 100%;
+  max-width: 480px;
+  padding: var(--kt-space-3) var(--kt-space-3) var(--kt-space-3) var(--kt-space-4);
+  border-radius: var(--kt-radius-lg);
+  font-size: var(--kt-text-base);
+  font-weight: var(--kt-weight-bold);
+  box-shadow: var(--kt-shadow-pop);
+  pointer-events: auto;
+  animation: turnIn 260ms var(--kt-ease-out);
+}
+
+.soon {
+  background: var(--kt-card);
+  color: var(--kt-text);
+  border: 1px solid var(--kt-accent);
+}
+
+.urgent {
+  background: var(--kt-accent);
+  color: var(--kt-accent-ink);
+}
+
+.urgent .close {
+  color: var(--kt-accent-ink);
+}
+
+.turnText {
+  flex: 1;
+  min-width: 0;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--kt-radius-full);
+  color: var(--kt-text-2);
+}
+
+.close:hover {
+  background: var(--kt-white-10);
+}
+
+@keyframes turnIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* C3 award card: sits above the mini player and tabs. */
+.awardWrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-3) + env(safe-area-inset-bottom));
+  z-index: var(--kt-z-toast);
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--kt-space-3);
+  pointer-events: none;
+}
+
+.award {
+  width: 100%;
+  max-width: 480px;
+  padding: var(--kt-space-3);
+  border-radius: var(--kt-radius-lg);
+  background: var(--kt-card);
+  box-shadow: var(--kt-shadow-pop);
+  pointer-events: auto;
+  animation: awardIn 260ms var(--kt-ease-out);
+}
+
+.awardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  margin-bottom: var(--kt-space-3);
+}
+
+.awardTitle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--kt-text-md);
+  line-height: 1.3;
+}
+
+.awardLine {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.awardSub {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+}
+
+.awardButtons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--kt-space-2);
+}
+
+.awardBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--kt-space-2) 2px;
+  border-radius: var(--kt-radius-md);
+  background: var(--kt-white-10);
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-medium);
+  text-align: center;
+  line-height: 1.2;
+  transition: background-color var(--kt-fast) var(--kt-ease), transform var(--kt-fast) var(--kt-ease);
+}
+
+.awardBtn:hover {
+  background: var(--kt-white-20);
+}
+
+.awardBtn:active {
+  transform: scale(0.96);
+}
+
+.awardEmoji {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.thanks {
+  display: block;
+  padding: var(--kt-space-1) var(--kt-space-1);
+  text-align: center;
+  font-weight: var(--kt-weight-bold);
+}
+
+@keyframes awardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}

@@ -62,6 +62,39 @@ describe("orderUpNext", () => {
     const items = [item("ana", 1, { status: "played", startedAt: 1 })];
     expect(orderUpNext(items, "fifo")).toEqual([]);
   });
+
+  it("a duet uses a turn for each singer", () => {
+    // Ana & Ben's duet comes first; then Cleo, who hasn't sung, goes before Ana's solo and Ben's solo.
+    const duet = item("ana", 1, { singerIds: ["ana", "ben"] });
+    const anaSolo = item("ana", 2);
+    const benSolo = item("ben", 3);
+    const cleo = item("cleo", 4);
+    const order = orderUpNext([duet, anaSolo, benSolo, cleo], "rotation").map((i) => i.id);
+    expect(order).toEqual([duet.id, cleo.id, anaSolo.id, benSolo.id]);
+  });
+
+  it("a duet waits until both singers are due", () => {
+    // Ben already sang; a duet with him is round 1, so Cleo (round 0) goes first.
+    const sung = item("ben", 1, { status: "played", startedAt: 5 });
+    const duet = item("ana", 2, { singerIds: ["ana", "ben"] });
+    const cleo = item("cleo", 3);
+    expect(orderUpNext([sung, duet, cleo], "rotation").map((i) => i.id)).toEqual([cleo.id, duet.id]);
+  });
+
+  it("an 'everyone sings' song is the adder's turn", () => {
+    const group = item("ana", 1, { everyone: true });
+    const anaSolo = item("ana", 2);
+    const ben = item("ben", 3);
+    expect(orderUpNext([group, anaSolo, ben], "rotation").map((i) => i.id)).toEqual([group.id, ben.id, anaSolo.id]);
+  });
+
+  it("approval mode orders approved songs like rotation and leaves pending ones out", () => {
+    const a1 = item("ana", 1);
+    const a2 = item("ana", 2);
+    const b = item("ben", 3);
+    const pending = item("cleo", 0, { status: "pending" });
+    expect(orderUpNext([a1, a2, b, pending], "approval").map((i) => i.id)).toEqual([a1.id, b.id, a2.id]);
+  });
 });
 
 describe("shiftPins", () => {

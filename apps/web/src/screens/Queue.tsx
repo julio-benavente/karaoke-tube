@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronsUp, ListMusic, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronsUp, ListMusic, MoreHorizontal, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import type { QueueItem } from "@karaoke-tube/shared";
@@ -22,6 +22,8 @@ export function QueueScreen() {
   const { nowPlaying, upNext, members } = state;
   const myIndex = upNext.findIndex((q) => q.singerIds.includes(me.id));
   const singingNow = !!nowPlaying?.singerIds.includes(me.id);
+  const pending = state.pending ?? [];
+  const myPending = pending.filter((q) => q.addedBy === me.id || q.singerIds.includes(me.id));
 
   let banner: string | null = null;
   if (singingNow) banner = state.playback.state === "get_ready" ? "Get ready, you're up!" : "You're singing now. Go get 'em!";
@@ -44,11 +46,70 @@ export function QueueScreen() {
         </div>
       )}
 
+      {isHost && pending.length > 0 && (
+        <section className={css.section} data-testid="pending-approve">
+          <h2 className={css.h2}>
+            Needs your OK <span className={css.count}>{pending.length}</span>
+          </h2>
+          <ul className={css.list}>
+            {pending.map((q) => (
+              <li key={q.id} className={css.item}>
+                <QueueRow
+                  item={q}
+                  members={members}
+                  meId={me.id}
+                  actions={
+                    <span className={css.approveBtns}>
+                      <button
+                        type="button"
+                        className={css.decline}
+                        onClick={() => send({ type: "decline_song", itemId: q.id })}
+                        aria-label={`Decline ${songParts(q.song).title}`}
+                      >
+                        <X />
+                      </button>
+                      <button
+                        type="button"
+                        className={css.approve}
+                        onClick={() => send({ type: "approve_song", itemId: q.id })}
+                        aria-label={`Approve ${songParts(q.song).title}`}
+                      >
+                        <Check />
+                      </button>
+                    </span>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {!isHost && myPending.length > 0 && (
+        <section className={css.section} data-testid="pending-mine">
+          <h2 className={css.h2}>Waiting for the host's OK</h2>
+          <p className={css.hint}>The host picks what plays tonight. Your song joins the queue once they say yes.</p>
+          <ul className={css.list}>
+            {myPending.map((q) => (
+              <li key={q.id} className={css.item}>
+                <QueueRow
+                  item={q}
+                  members={members}
+                  meId={me.id}
+                  mine
+                  onRemove={() => send({ type: "remove_song", itemId: q.id })}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {nowPlaying ? (
         <section className={css.section}>
           <h2 className={css.h2}>Now singing</h2>
           <button type="button" className={css.nowBtn} onClick={openNowSinging} aria-label="Open now singing">
-            <QueueRow item={nowPlaying} members={members} playing mine={singingNow} />
+            <QueueRow item={nowPlaying} members={members} playing mine={singingNow} meId={me.id} />
           </button>
         </section>
       ) : null}
@@ -74,6 +135,7 @@ export function QueueScreen() {
                     members={members}
                     position={i + 1}
                     mine={q.singerIds.includes(me.id)}
+                    meId={me.id}
                     onRemove={mine && !isHost ? () => send({ type: "remove_song", itemId: q.id }) : undefined}
                     actions={
                       isHost ? (

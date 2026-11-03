@@ -1,0 +1,136 @@
+import { Check, PartyPopper, User, Users } from "lucide-react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { AddSingers } from "../hooks/add-song";
+import { useRoom } from "../hooks/room";
+import { Avatar } from "./Avatar";
+import { Button } from "./Button";
+import { Sheet } from "./Sheet";
+import css from "./SingWith.module.css";
+
+type Choice = { partnerIds: string[]; everyone: boolean };
+type Ctx = { choice: Choice; setChoice: (c: Choice) => void };
+const SingWithContext = createContext<Ctx | null>(null);
+
+/** Remembers who sings the next song you add ("Sing with…"). Wrap the app inside RoomProvider. */
+export function SingWithProvider({ children }: { children: ReactNode }) {
+  const [choice, setChoice] = useState<Choice>({ partnerIds: [], everyone: false });
+  const value = useMemo(() => ({ choice, setChoice }), [choice]);
+  return <SingWithContext.Provider value={value}>{children}</SingWithContext.Provider>;
+}
+
+export type UseSingWith = {
+  /** False when the host turned duets off or nobody else is here: hide the picker. */
+  enabled: boolean;
+  everyone: boolean;
+  /** Partner ids that are still in the party. */
+  partnerIds: string[];
+  toggleMember: (id: string) => void;
+  setEveryone: (on: boolean) => void;
+  solo: () => void;
+  /** The singers to send with `add`, or undefined for a solo song. */
+  singers: () => AddSingers | undefined;
+  /** Back to solo (after a song is added). */
+  reset: () => void;
+  /** "Just me", "With Ana", "With Ana & Ben", "Everyone sings". */
+  label: string;
+};
+
+export function useSingWith(): UseSingWith {
+  const ctx = useContext(SingWithContext);
+  if (!ctx) throw new Error("useSingWith needs <SingWithProvider>");
+  const { state, me } = useRoom();
+  const { choice, setChoice } = ctx;
+  const members = state?.members ?? [];
+  const partnerIds = choice.partnerIds.filter((id) => id !== me?.id && members.some((m) => m.id === id));
+  const enabled = !!state?.settings.duets && members.some((m) => m.id !== me?.id);
+  const on = enabled && choice.everyone;
+  const partners = enabled ? partnerIds : [];
+  const names = partners.map((id) => members.find((m) => m.id === id)?.nickname ?? "someone");
+
+  return {
+    enabled,
+    everyone: on,
+    partnerIds: partners,
+    toggleMember: (id) =>
+      setChoice({
+        everyone: false,
+        partnerIds: choice.partnerIds.includes(id) ? choice.partnerIds.filter((x) => x !== id) : [...choice.partnerIds, id],
+      }),
+    setEveryone: (v) => setChoice({ everyone: v, partnerIds: [] }),
+    solo: () => setChoice({ everyone: false, partnerIds: [] }),
+    singers: () => {
+      if (on) return { everyone: true };
+      if (partners.length && me) return { singerIds: [me.id, ...partners] };
+      return undefined;
+    },
+    reset: () => setChoice({ everyone: false, partnerIds: [] }),
+    label: on ? "Everyone sings" : names.length ? `With ${names.join(" & ")}` : "Just me",
+  };
+}
+
+/** Inline chips: Just me · Everyone sings · each member in the party. */
+export function SingWithPicker({ className }: { className?: string }) {
+  const { state, me } = useRoom();
+  const sw = useSingWith();
+  if (!state || !me || !sw.enabled) return null;
+  const solo = !sw.everyone && sw.partnerIds.length === 0;
+  const others = [...state.members].filter((m) => m.id !== me.id).sort((a, b) => Number(b.connected) - Number(a.connected));
+  return (
+    <div className={className} role="group" aria-label="Who sings?">
+      <div className={css.chips}>
+        <button type="button" className={css.opt} aria-pressed={solo} onClick={sw.solo}>
+          <User size={16} /> Just me
+        </button>
+        <button type="button" className={css.opt} aria-pressed={sw.everyone} onClick={() => sw.setEveryone(!sw.everyone)}>
+          <PartyPopper size={16} /> Everyone sings
+        </button>
+        {others.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            className={css.opt}
+            aria-pressed={sw.partnerIds.includes(m.id)}
+            onClick={() => sw.toggleMember(m.id)}
+            title={m.connected ? undefined : "Away right now"}
+          >
+            <Avatar seed={m.avatarSeed} size={20} />
+            <span className={css.name}>{m.nickname}</span>
+            {sw.partnerIds.includes(m.id) && <Check size={14} />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** A pill showing who sings the next song; tap opens the "Sing with…" sheet. Renders nothing when duets are off. */
+export function SingWithButton({ className }: { className?: string }) {
+  const sw = useSingWith();
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  if (!sw.enabled) return null;
+  const solo = !sw.everyone && sw.partnerIds.length === 0;
+  return (
+    <>
+      <button
+        type="button"
+        className={`${css.pill} ${solo ? "" : css.pillOn} ${className ?? ""}`}
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+      >
+        <Users size={16} />
+        <span>{solo ? "Sing with…" : sw.label}</span>
+      </button>
+      <Sheet open={open} onClose={close} label="Sing with">
+        <div className={css.sheet}>
+          <h2 className={css.sheetTitle}>Sing with…</h2>
+          <p className={css.sheetText}>Pick partners for a duet, or let the whole room sing. It applies to the next song you add.</p>
+          <SingWithPicker />
+          <Button block onClick={close}>
+            Done
+          </Button>
+        </div>
+      </Sheet>
+    </>
+  );
+}

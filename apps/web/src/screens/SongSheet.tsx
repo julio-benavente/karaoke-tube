@@ -1,11 +1,12 @@
 import { CirclePlus } from "lucide-react";
 import type { Song } from "@karaoke-tube/shared";
-import { ActionList, Artwork, Sheet, formatTime, songParts } from "@karaoke-tube/ui";
+import { ActionList, Artwork, Sheet, SingWithPicker, formatTime, songParts, useSingWith } from "@karaoke-tube/ui";
 import css from "./SongSheet.module.css";
 
 /** Song details + "Add to queue", opened from Home tiles and cards. */
 export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose: () => void; onAdd: (s: Song) => void }) {
   const parts = song ? songParts(song) : null;
+  const sing = useSingWith();
   return (
     <Sheet open={!!song} onClose={onClose} label={parts ? `${parts.title} options` : "Song"}>
       {song && parts && (
@@ -19,6 +20,12 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
               </div>
             </div>
           </div>
+          {sing.enabled && (
+            <div className={css.sing}>
+              <div className={css.singTitle}>Sing with…</div>
+              <SingWithPicker />
+            </div>
+          )}
           <ActionList
             items={[
               {

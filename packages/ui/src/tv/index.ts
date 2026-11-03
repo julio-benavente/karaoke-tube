@@ -16,3 +16,4 @@ import tvCss from "./tv.css?inline";
 export { tvCss };
 export { TvOverlay, TV_REACTION_MS, type TvOverlayProps, type TvReaction } from "./TvOverlay";
 export { GetReadyCard, type GetReadyCardProps } from "./GetReadyCard";
+export { AwardsShow, type AwardsShowProps } from "./AwardsShow";

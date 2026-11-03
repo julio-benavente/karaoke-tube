@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
-import { songParts } from "../format";
+import { singerLabel, songParts } from "../format";
 
 export type GetReadyCardProps = {
   item: QueueItem;
@@ -25,7 +25,7 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5 
 
   const singers = item.singerIds.map((id) => members.find((m) => m.id === id));
   const first = singers[0];
-  const label = singers.map((m) => m?.nickname ?? "Someone").join(" & ");
+  const label = singerLabel(item, members);
   const { title, artist } = songParts(item.song);
   const msLeft = Math.max(0, countdownEndsAt - now);
   const secs = Math.ceil(msLeft / 1000);

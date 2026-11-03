@@ -1,13 +1,18 @@
 import { DurableObject } from "cloudflare:workers";
 import {
+  AWARDS,
   DEFAULT_SETTINGS,
   REACTIONS,
+  type Award,
+  type AwardWindow,
   type ClientMessage,
   type CreateRoomResponse,
   type ErrorCode,
   type Member,
   type Playback,
   type QueueItem,
+  type Recap,
+  type RecapPerformance,
   type Role,
   type RoomInfoResponse,
   type RoomSettings,
@@ -15,12 +20,17 @@ import {
   type ServerMessage,
   type Song,
 } from "@karaoke-tube/shared";
-import { orderUpNext, shiftPins, type StoredItem } from "../queue";
+import { orderUpNext, shiftPins, turnHolders, type StoredItem } from "../queue";
+import { computeTitles } from "../titles";
 
 /** Storage is deleted this long after the party ends. */
 export const ENDED_TTL_MS = 60 * 60 * 1000;
 /** Each member may send one reaction per this many ms. */
 export const REACTION_INTERVAL_MS = 500;
+/** How long after a performance members can give it awards. */
+export const AWARD_WINDOW_MS = 60 * 1000;
+/** Recaps stay readable at /recap/:id this long. */
+export const RECAP_TTL_SEC = 30 * 24 * 60 * 60;
 const MAX_NICKNAME = 24;
 
 /** Kept on each socket with `serializeAttachment`, so it survives hibernation. */
@@ -44,6 +54,8 @@ type ItemRow = {
   added_at: number;
   started_at: number | null;
   pin_index: number | null;
+  everyone: number;
+  performed_at: number | null;
 };
 
 export class RoomError extends Error {
@@ -78,6 +90,24 @@ export class Room extends DurableObject<Env> {
         status TEXT NOT NULL, added_at INTEGER NOT NULL, started_at INTEGER, pin_index INTEGER
       );
     `);
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS awards (
+        item_id TEXT NOT NULL, member_id TEXT NOT NULL, award TEXT NOT NULL, at INTEGER NOT NULL,
+        PRIMARY KEY (item_id, member_id)
+      );
+      CREATE TABLE IF NOT EXISTS cheers (
+        item_id TEXT NOT NULL, member_id TEXT NOT NULL, count INTEGER NOT NULL,
+        PRIMARY KEY (item_id, member_id)
+      );
+    `);
+    // v1.1 columns, added to rooms created before them.
+    for (const column of ["everyone INTEGER NOT NULL DEFAULT 0", "performed_at INTEGER"]) {
+      try {
+        this.sql.exec(`ALTER TABLE items ADD COLUMN ${column}`);
+      } catch {
+        // already there
+      }
+    }
   }
 
   // ── RPC from the Worker ────────────────────────────────────────────────
@@ -191,29 +221,63 @@ export class Room extends DurableObject<Env> {
         const settings = this.settings();
         if (settings.hostsOnlyAdd) requireHost();
         const members = new Set(this.memberRows().map((m) => m.id));
-        const singerIds = msg.singerIds && msg.singerIds.length > 0 ? [...new Set(msg.singerIds)] : [me.id];
+        const everyone = msg.everyone === true;
+        // A group song is the adder's turn; a duet is a turn for each singer.
+        const singerIds = everyone ? [me.id] : msg.singerIds && msg.singerIds.length > 0 ? [...new Set(msg.singerIds)] : [me.id];
         if (singerIds.some((id) => !members.has(id))) throw new RoomError("not_allowed", "Unknown singer.");
+        if ((everyone || singerIds.length > 1) && !settings.duets) {
+          throw new RoomError("not_allowed", "The host turned duets and group songs off.");
+        }
         if (!isHost && !singerIds.includes(me.id)) throw new RoomError("not_allowed", "You can only add songs you sing in.");
         if (!isHost) {
-          const waiting = this.itemRows().filter((i) => i.status === "waiting" && i.singerIds.includes(me.id)).length;
+          const waiting = this.itemRows().filter(
+            (i) => (i.status === "waiting" || i.status === "pending") && turnHolders(i).includes(me.id),
+          ).length;
           if (waiting >= settings.maxWaitingPerMember) {
             throw new RoomError("queue_limit", `You already have ${waiting} song${waiting === 1 ? "" : "s"} waiting.`);
           }
         }
+        // "Host picks": guests' songs wait for a host's OK.
+        const status = settings.queueMode === "approval" && !isHost ? "pending" : "waiting";
         const s = msg.song;
         const song: Song = { videoId: s.videoId, title: s.title, channel: s.channel, durationSec: s.durationSec, thumbnailUrl: s.thumbnailUrl };
         this.sql.exec(
-          "INSERT INTO items (id, song, singer_ids, added_by, status, added_at, started_at, pin_index) VALUES (?, ?, ?, ?, 'waiting', ?, NULL, NULL)",
+          "INSERT INTO items (id, song, singer_ids, added_by, status, added_at, started_at, pin_index, everyone) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?)",
           crypto.randomUUID(),
           JSON.stringify(song),
           JSON.stringify(singerIds),
           me.id,
+          status,
           this.nextAddedAt(),
+          everyone ? 1 : 0,
         );
         await this.afterQueueChange();
         break;
       }
+      case "approve_song":
+      case "decline_song": {
+        requireHost();
+        const item = this.itemRows().find((i) => i.id === msg.itemId && i.status === "pending");
+        if (!item) throw new RoomError("not_allowed", "That song isn't waiting for approval.");
+        if (msg.type === "approve_song") {
+          this.setItem(item.id, { status: "waiting" });
+          await this.afterQueueChange();
+        } else {
+          this.sql.exec("DELETE FROM items WHERE id = ?", item.id);
+        }
+        break;
+      }
+      case "give_award": {
+        this.giveAward(me, msg.itemId, msg.award);
+        break;
+      }
       case "remove_song": {
+        const pendingItem = this.itemRows().find((i) => i.id === msg.itemId && i.status === "pending");
+        if (pendingItem) {
+          if (!isHost && pendingItem.addedBy !== me.id) throw new RoomError("not_allowed", "You can only remove your own songs.");
+          this.sql.exec("DELETE FROM items WHERE id = ?", pendingItem.id);
+          break;
+        }
         const upNext = this.upNext();
         const index = upNext.findIndex((i) => i.id === msg.itemId);
         if (index === -1) throw new RoomError("not_allowed", "That song isn't waiting in the queue.");
@@ -268,15 +332,27 @@ export class Room extends DurableObject<Env> {
       }
       case "update_settings": {
         requireHost();
-        this.setMeta("settings", { ...this.settings(), ...sanitizeSettings(msg.settings) });
+        const next = { ...this.settings(), ...sanitizeSettings(msg.settings) };
+        this.setMeta("settings", next);
+        // Leaving "Host picks": every pending song gets in.
+        if (next.queueMode !== "approval") {
+          this.sql.exec("UPDATE items SET status = 'waiting' WHERE status = 'pending'");
+          await this.afterQueueChange();
+        }
         break;
       }
       case "end_party": {
         if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can end the party.");
         const now = Date.now();
+        // The song on screen when the party ends still counts as sung if it started.
+        const current = this.nowPlayingItem();
+        if (current) this.setItem(current.id, { status: current.performedAt !== null ? "played" : "skipped" });
+        this.sql.exec("DELETE FROM items WHERE status IN ('waiting', 'pending')");
         this.setMeta("status", "ended");
         this.setMeta("endedAt", now);
         this.setMeta("playback", idlePlayback(now));
+        this.setMeta("awardWindow", null);
+        await this.saveRecap(now);
         await this.ctx.storage.setAlarm(now + ENDED_TTL_MS);
         this.broadcastState();
         this.broadcast({ type: "ended" });
@@ -287,6 +363,9 @@ export class Room extends DurableObject<Env> {
         const now = Date.now();
         if (now - (this.lastReaction.get(me.id) ?? 0) < REACTION_INTERVAL_MS) return; // dropped
         this.lastReaction.set(me.id, now);
+        // Count it toward the performance on screen (for the end-of-night titles).
+        const current = this.nowPlayingItem();
+        if (current && current.performedAt !== null) this.countCheer(current.id, me.id);
         this.broadcast({ type: "reaction", memberId: me.id, reaction: msg.reaction });
         return;
       }
@@ -310,6 +389,7 @@ export class Room extends DurableObject<Env> {
       case "skip":
         if (!item) break;
         this.setItem(item.id, { status: "skipped" });
+        this.openAwardWindow(item);
         await this.advance();
         // Nothing left: stop the video that's still on screen.
         if (!this.nowPlayingItem()) this.sendToPlayer({ type: "player_command", command: "pause" });
@@ -347,6 +427,11 @@ export class Room extends DurableObject<Env> {
       const song: Song = { ...item.song, durationSec: Math.round(msg.durationSec) };
       this.sql.exec("UPDATE items SET song = ? WHERE id = ?", JSON.stringify(song), item.id);
     }
+    // The song really got going: it counts as a performance (awards, titles).
+    if ((msg.event === "started" || msg.event === "progress") && item.performedAt === null) {
+      this.sql.exec("UPDATE items SET performed_at = ? WHERE id = ?", now, item.id);
+      item.performedAt = now;
+    }
     switch (msg.event) {
       case "started":
         this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
@@ -357,10 +442,12 @@ export class Room extends DurableObject<Env> {
         break;
       case "ended":
         this.setItem(item.id, { status: "played" });
+        this.openAwardWindow(item);
         await this.advance();
         break;
       case "error":
         this.setItem(item.id, { status: "skipped" });
+        this.openAwardWindow(item);
         await this.advance();
         break;
     }
@@ -481,6 +568,120 @@ export class Room extends DurableObject<Env> {
     return Math.max(Date.now(), last + 1);
   }
 
+  // ── v1.1: awards, cheers, recap ────────────────────────────────────────
+
+  /** A performance just finished: members who didn't sing it can give it an award for a minute. */
+  private openAwardWindow(item: StoredItem) {
+    if (item.performedAt == null) return; // it never really started
+    this.setMeta("awardWindow", { itemId: item.id, closesAt: Date.now() + AWARD_WINDOW_MS });
+  }
+
+  private giveAward(me: Member, itemId: string, award: Award) {
+    if (!this.settings().awards) throw new RoomError("not_allowed", "Awards are off.");
+    const win = this.getMeta<{ itemId: string; closesAt: number }>("awardWindow");
+    if (!win || win.itemId !== itemId || Date.now() > win.closesAt) {
+      throw new RoomError("not_allowed", "Awards for that song are closed.");
+    }
+    const item = this.itemRows().find((i) => i.id === itemId);
+    if (!item) throw new RoomError("not_allowed", "Awards for that song are closed.");
+    if (turnHolders(item).includes(me.id)) throw new RoomError("not_allowed", "Awards are for the other singers.");
+    const given = this.sql.exec("SELECT 1 FROM awards WHERE item_id = ? AND member_id = ?", itemId, me.id).toArray().length > 0;
+    if (given) throw new RoomError("not_allowed", "You already gave this performance an award.");
+    this.sql.exec("INSERT INTO awards (item_id, member_id, award, at) VALUES (?, ?, ?, ?)", itemId, me.id, award, Date.now());
+  }
+
+  /** One reaction from `memberId` during the performance of `itemId`. */
+  private countCheer(itemId: string, memberId: string) {
+    this.sql.exec(
+      "INSERT INTO cheers (item_id, member_id, count) VALUES (?, ?, 1) ON CONFLICT(item_id, member_id) DO UPDATE SET count = count + 1",
+      itemId,
+      memberId,
+    );
+  }
+
+  private awardWindowState(): AwardWindow | null {
+    if (!this.settings().awards || this.status() === "ended") return null;
+    const win = this.getMeta<{ itemId: string; closesAt: number } | null>("awardWindow");
+    if (!win || Date.now() > win.closesAt) return null;
+    const item = this.itemRows().find((i) => i.id === win.itemId);
+    if (!item) return null;
+    const rows = this.sql.exec<{ member_id: string; award: Award }>("SELECT member_id, award FROM awards WHERE item_id = ?", item.id).toArray();
+    const counts: Partial<Record<Award, number>> = {};
+    for (const r of rows) counts[r.award] = (counts[r.award] ?? 0) + 1;
+    return { item: publicItem(item), closesAt: win.closesAt, counts, givenBy: rows.map((r) => r.member_id) };
+  }
+
+  /** Builds the end-of-night recap (titles unless turned off), keeps it with the room and in KV for 30 days. */
+  private async saveRecap(now: number) {
+    const items = this.itemRows()
+      .filter((i) => i.performedAt != null && (i.status === "played" || i.status === "skipped"))
+      .sort((a, b) => a.performedAt! - b.performedAt!);
+    const cheerRows = this.sql.exec<{ item_id: string; member_id: string; count: number }>("SELECT * FROM cheers").toArray();
+    const awardRows = this.sql.exec<{ item_id: string; member_id: string; award: Award }>("SELECT item_id, member_id, award FROM awards").toArray();
+
+    const performances: RecapPerformance[] = items.map((item) => {
+      const awards: Partial<Record<Award, number>> = {};
+      for (const a of awardRows) if (a.item_id === item.id) awards[a.award] = (awards[a.award] ?? 0) + 1;
+      const reactions = cheerRows.filter((c) => c.item_id === item.id).reduce((n, c) => n + c.count, 0);
+      const awardCount = Object.values(awards).reduce((n, c) => n + (c ?? 0), 0);
+      return { item: publicItem(item), cheers: reactions + awardCount, awards };
+    });
+
+    const members = this.memberRows();
+    const reactionsSent: Record<string, number> = {};
+    const awardsGiven: Record<string, number> = {};
+    const cheered: Record<string, string[]> = {};
+    for (const c of cheerRows) {
+      reactionsSent[c.member_id] = (reactionsSent[c.member_id] ?? 0) + c.count;
+      (cheered[c.member_id] ??= []).push(c.item_id);
+    }
+    for (const a of awardRows) {
+      awardsGiven[a.member_id] = (awardsGiven[a.member_id] ?? 0) + 1;
+      (cheered[a.member_id] ??= []).push(a.item_id);
+    }
+
+    const titles = this.settings().titles
+      ? computeTitles({
+          members: members.map((m) => ({ id: m.id, joinedAt: m.joined_at })),
+          performances: performances.map((p, i) => ({
+            itemId: p.item.id,
+            singerIds: p.item.singerIds,
+            everyone: !!p.item.everyone,
+            addedBy: p.item.addedBy,
+            durationSec: p.item.song.durationSec,
+            performedAt: items[i]!.performedAt!,
+            cheers: p.cheers,
+          })),
+          reactionsSent,
+          awardsGiven,
+          cheered,
+        })
+      : {};
+    const topMoment = performances.reduce<RecapPerformance | null>((best, p) => (p.cheers > (best?.cheers ?? 0) ? p : best), null);
+    const recap: Recap = {
+      id: randomKey().slice(0, 16),
+      code: this.getMeta<string>("code") ?? "",
+      endedAt: now,
+      members: members.map((m) => ({ id: m.id, nickname: m.nickname, avatarSeed: m.avatar_seed })),
+      performances,
+      titles,
+      topMoment,
+    };
+    this.setMeta("recap", recap);
+    try {
+      await this.env.RECAPS.put(`recap:${recap.id}`, JSON.stringify(recap), { expirationTtl: RECAP_TTL_SEC });
+    } catch (e) {
+      console.error("[room] couldn't save the recap", e); // the party still ends; the recap stays in the room
+    }
+  }
+
+  private pendingItems(): QueueItem[] {
+    return this.itemRows()
+      .filter((i) => i.status === "pending")
+      .sort((a, b) => a.addedAt - b.addedAt)
+      .map(publicItem);
+  }
+
   // ── State ──────────────────────────────────────────────────────────────
 
   /** `closing` is a socket that's going away: its member doesn't count as connected through it. */
@@ -508,6 +709,9 @@ export class Room extends DurableObject<Env> {
       upNext: this.upNext().map(publicItem),
       playback: this.playback(),
       settings: this.settings(),
+      pending: this.pendingItems(),
+      awardWindow: this.awardWindowState(),
+      recap: this.status() === "ended" ? (this.getMeta<Recap>("recap") ?? null) : null,
     };
   }
 
@@ -659,11 +863,13 @@ function rowToItem(row: ItemRow): StoredItem {
     addedAt: row.added_at,
     startedAt: row.started_at,
     pinIndex: row.pin_index,
+    performedAt: row.performed_at ?? null,
+    ...(row.everyone ? { everyone: true } : {}),
   };
 }
 
 function publicItem(item: StoredItem): QueueItem {
-  const { startedAt: _s, pinIndex: _p, ...rest } = item;
+  const { startedAt: _s, pinIndex: _p, performedAt: _f, ...rest } = item;
   return rest;
 }
 
@@ -679,14 +885,16 @@ async function sha256(text: string): Promise<string> {
 
 function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   const out: Partial<RoomSettings> = {};
-  if (input.queueMode === "rotation" || input.queueMode === "fifo") out.queueMode = input.queueMode;
+  if (input.queueMode === "rotation" || input.queueMode === "fifo" || input.queueMode === "approval") {
+    out.queueMode = input.queueMode;
+  }
   if (typeof input.maxWaitingPerMember === "number" && Number.isFinite(input.maxWaitingPerMember)) {
     out.maxWaitingPerMember = Math.max(1, Math.min(20, Math.trunc(input.maxWaitingPerMember)));
   }
   if (typeof input.countdownSec === "number" && Number.isFinite(input.countdownSec)) {
     out.countdownSec = Math.max(0, Math.min(30, Math.trunc(input.countdownSec)));
   }
-  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard"] as const) {
+  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }
   return out;
@@ -729,8 +937,16 @@ export function parseClientMessage(text: string): ClientMessage {
       ok(
         isSong(m.song) &&
           (m.singerIds === undefined ||
-            (Array.isArray(m.singerIds) && m.singerIds.length <= 4 && m.singerIds.every((id) => isStr(id, 64)))),
+            (Array.isArray(m.singerIds) && m.singerIds.length <= 8 && m.singerIds.every((id) => isStr(id, 64)))) &&
+          (m.everyone === undefined || typeof m.everyone === "boolean"),
       );
+      break;
+    case "approve_song":
+    case "decline_song":
+      ok(isStr(m.itemId, 64));
+      break;
+    case "give_award":
+      ok(isStr(m.itemId, 64) && (AWARDS as readonly unknown[]).includes(m.award));
       break;
     case "remove_song":
       ok(isStr(m.itemId, 64));

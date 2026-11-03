@@ -9,6 +9,7 @@ import {
   ChipRow,
   EmptyState,
   Sheet,
+  SingWithButton,
   SongRow,
   TextField,
   Tile,
@@ -53,7 +54,8 @@ export function SearchScreen() {
 
   if (!state || !me) return null;
 
-  const mine = state.upNext.filter((q) => q.singerIds.includes(me.id));
+  const waitingOk = (state.pending ?? []).filter((q) => q.singerIds.includes(me.id));
+  const mine = [...state.upNext.filter((q) => q.singerIds.includes(me.id)), ...waitingOk];
   const limit = state.settings.maxWaitingPerMember;
   const atLimit = !isHost && mine.length >= limit;
   const blocked = state.settings.hostsOnlyAdd && !isHost;
@@ -130,6 +132,7 @@ export function SearchScreen() {
           )}
         </label>
         <ChipRow className={css.chips}>
+          <SingWithButton />
           <Chip icon={<Link2 size={16} />} onClick={pasteFromClipboard}>
             Paste a YouTube link
           </Chip>

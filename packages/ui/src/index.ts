@@ -4,6 +4,7 @@
 
 export * from "./hooks/room";
 export * from "./hooks/add-song";
+export * from "./hooks/turn-alert";
 export * from "./browse";
 export * from "./avatar";
 export * from "./format";
@@ -11,7 +12,7 @@ export * from "./format";
 export { createMockRoomClient, errorText } from "./mock/mock-room-client";
 export type { MockRoomClient, MockRoomOptions, MockControls, SimulateOptions } from "./mock/mock-room-client";
 export { createMockSearchApi, MOCK_CODES } from "./mock/mock-search-api";
-export { SAMPLE_SONGS } from "./mock/sample-data";
+export { SAMPLE_SONGS, sampleRecap } from "./mock/sample-data";
 
 export { Avatar, AvatarStack } from "./components/Avatar";
 export { AvatarPicker, type AvatarPickerProps } from "./components/AvatarPicker";
@@ -30,3 +31,4 @@ export { Toggle } from "./components/Toggle";
 export { Toast, ToastProvider, useToast } from "./components/Toast";
 export { Sheet, ActionList } from "./components/Sheet";
 export { EmptyState, Mark, Logo, Spinner, TextField, Banner } from "./components/EmptyState";
+export { SingWithProvider, SingWithPicker, SingWithButton, useSingWith, type UseSingWith } from "./components/SingWith";

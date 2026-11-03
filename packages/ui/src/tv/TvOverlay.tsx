@@ -2,7 +2,7 @@ import { formatRoomCode } from "@karaoke-tube/shared";
 import type { CSSProperties } from "react";
 import { REACTION_EMOJI, type Member, type QueueItem, type Reaction } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
-import { songParts } from "../format";
+import { singerLabel as itemSingers, songParts } from "../format";
 
 /** How long a floating reaction animates. Remove it from `reactions` after this. */
 export const TV_REACTION_MS = 3000;
@@ -42,8 +42,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
   const nextSinger = next ? name(members, next.singerIds[0]) : undefined;
   const nowParts = nowPlaying ? songParts(nowPlaying.song) : null;
   const nextParts = next ? songParts(next.song) : null;
-  const singerLabel = (item: QueueItem) =>
-    item.singerIds.map((id) => name(members, id)?.nickname ?? "Someone").join(" & ");
+  const singerLabel = (item: QueueItem) => itemSingers(item, members);
 
   return (
     <div className="kt-tv" aria-hidden="true">
