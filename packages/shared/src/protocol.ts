@@ -108,7 +108,14 @@ export type ClientMessage =
   | { type: "end_party" } // host only
   | { type: "react"; reaction: Reaction }
   /** Sent only by the extension's YouTube player (authenticated as the host). */
-  | { type: "player_event"; event: "started" | "progress" | "ended" | "error"; itemId: string; positionSec?: number };
+  | {
+      type: "player_event";
+      event: "started" | "progress" | "ended" | "error";
+      itemId: string;
+      positionSec?: number;
+      /** The video's real length, from the player. Fills in `song.durationSec` when it was unknown (0). */
+      durationSec?: number;
+    };
 
 /** Room → clients. */
 export type ServerMessage =

@@ -62,3 +62,5 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 - `RoomClient.closeReason?: "kicked" | "ended" | "left" | null` (B, `contract: RoomClient.closeReason`). The UI needs to
   tell "you were removed" apart from "party ended" and a dropped connection. A's clients should set it when the server
   sends `kicked` / `ended`, or when `close()` is called.
+- `player_event.durationSec?` (integration): the player reports the video's real length. Songs added from a pasted link
+  without a YouTube key come from oEmbed with `durationSec: 0`; the room fills it in from this when the song starts.
