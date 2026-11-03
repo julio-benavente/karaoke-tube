@@ -181,6 +181,14 @@
   font-size: 1cqw;
 }
 
+/* Join block on the get-ready card: bottom-left, small. */
+.kt-tv-ready-join {
+  top: auto;
+  right: auto;
+  left: 2cqw;
+  bottom: 3cqh;
+}
+
 /* ── Floating reactions ───────────────────────────────── */
 .kt-tv-reactions {
   position: absolute;

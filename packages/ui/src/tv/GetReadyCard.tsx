@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Member, QueueItem } from "@karaoke-tube/shared";
+import { formatRoomCode, type Member, type QueueItem } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
 import { singerLabel, songParts } from "../format";
 
@@ -10,13 +10,15 @@ export type GetReadyCardProps = {
   countdownEndsAt: number;
   /** Total countdown length, for the ring. Default: `settings.countdownSec` or 5. */
   countdownSec?: number;
+  /** Small "join the party" block (QR + code) in a corner of the card. Hidden when missing. */
+  join?: { code: string; qrSrc?: string; joinText?: string };
 };
 
 /**
  * T2: full-player card between songs: avatar, name, song, countdown.
  * Pure apart from a local clock for the countdown. Render inside the player (and a shadow root) with `tvCss`.
  */
-export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5 }: GetReadyCardProps) {
+export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5, join }: GetReadyCardProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 100);
@@ -56,6 +58,20 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5 
           </div>
         </div>
       </div>
+      {join && (
+        <div className="kt-tv-join kt-tv-ready-join">
+          {join.qrSrc && (
+            <div className="kt-tv-qr">
+              <img src={join.qrSrc} alt="" />
+            </div>
+          )}
+          <div className="kt-tv-jointext">
+            <span className="kt-tv-joinlabel">Join the party</span>
+            <span className="kt-tv-code">{formatRoomCode(join.code)}</span>
+            {join.joinText && <span className="kt-tv-url">{join.joinText}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

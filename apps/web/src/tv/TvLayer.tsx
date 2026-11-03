@@ -7,6 +7,19 @@ import { WEB_URL } from "../host/client";
 
 export type ReactionFeed = (listener: (e: { memberId: string; reaction: Reaction }) => void) => () => void;
 
+/** A QR code image (data URL) for `url`. */
+export function useQr(url: string, width = 300) {
+  const [src, setSrc] = useState<string>();
+  useEffect(() => {
+    let live = true;
+    QRCode.toDataURL(url, { margin: 1, width }).then((s) => live && setSrc(s));
+    return () => {
+      live = false;
+    };
+  }, [url, width]);
+  return src;
+}
+
 /** Mounts children in an open shadow root with only tvCss, so the overlay's styles stay isolated. */
 function ShadowMount({ children }: { children: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -31,24 +44,15 @@ function ShadowMount({ children }: { children: ReactNode }) {
 }
 
 /** The TV overlay (now singing, up next, QR, reactions, get-ready card, awards show) over the player. */
-export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: ReactionFeed }) {
-  const [qr, setQr] = useState<string>();
+export function TvLayer({ state, onReaction, flash = false }: { state: RoomState; onReaction: ReactionFeed; flash?: boolean }) {
+  const qr = useQr(`${WEB_URL}/join/${state.code}`);
   const [recapQr, setRecapQr] = useState<string>();
   const [reactions, setReactions] = useState<TvReaction[]>([]);
   const seq = useRef(0);
   const members = useRef(state.members);
   members.current = state.members;
-  const joinUrl = `${WEB_URL}/join/${state.code}`;
   const recapId = state.recap?.id;
   const recapUrl = recapId ? `${WEB_URL}/recap/${recapId}` : null;
-
-  useEffect(() => {
-    let live = true;
-    QRCode.toDataURL(joinUrl, { margin: 1, width: 300 }).then((src) => live && setQr(src));
-    return () => {
-      live = false;
-    };
-  }, [joinUrl]);
 
   useEffect(() => {
     if (!recapUrl) return;
@@ -75,12 +79,16 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
   );
 
   const { playback, nowPlaying } = state;
+  const joinInfo = state.settings.joinInfo ?? "between";
+  const joinText = `${new URL(WEB_URL).host}/join`;
   return (
     <ShadowMount>
       {state.recap ? (
         <AwardsShow recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
       ) : playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
-        <GetReadyCard item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec} />
+        <GetReadyCard item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec}
+          join={flash || joinInfo !== "start" ? { code: state.code, qrSrc: qr, joinText } : undefined}
+        />
       ) : (
         <TvOverlay
           nowPlaying={nowPlaying}
@@ -88,8 +96,9 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
           members={state.members}
           code={state.code}
           qrSrc={qr}
-          joinText={`${new URL(WEB_URL).host}/join`}
+          joinText={joinText}
           reactions={reactions}
+          hideJoin={!(flash || joinInfo === "always")}
         />
       )}
     </ShadowMount>

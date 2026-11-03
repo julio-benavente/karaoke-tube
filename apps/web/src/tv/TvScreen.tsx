@@ -7,8 +7,10 @@ import { useParams } from "react-router";
 import { adoptHostLink, hasCredentials } from "../host/client";
 import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
+import { Lobby } from "./Lobby";
 
 const AWARDS_SHOW_MS = 60_000;
+const JOIN_FLASH_MS = 15_000;
 
 const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
 const center = { ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", padding: 24 } as const;
@@ -50,6 +52,9 @@ function Tv({ code }: { code: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const [client, setClient] = useState<RoomClient | null>(null);
+  // "Show code on TV" from the host app: the join QR + code show over the song for a while.
+  const [flash, setFlash] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const startAtFor = (item: QueueItem): number => {
     const state = clientRef.current?.state;
@@ -66,6 +71,10 @@ function Tv({ code }: { code: string }) {
       if (msg.type === "play") {
         wantPlay.current = msg.item;
         playerRef.current?.play(msg.item, startAtFor(msg.item));
+      } else if (msg.type === "join_flash") {
+        setFlash(true);
+        clearTimeout(flashTimer.current);
+        flashTimer.current = setTimeout(() => setFlash(false), JOIN_FLASH_MS);
       } else if (msg.type === "player_command") {
         playerRef.current?.command(msg.command);
       }
@@ -74,6 +83,7 @@ function Tv({ code }: { code: string }) {
     clientRef.current = c;
     setClient(c);
     return () => {
+      clearTimeout(flashTimer.current);
       c.close();
       clientRef.current = null;
       setClient(null);
@@ -165,22 +175,29 @@ function Tv({ code }: { code: string }) {
       </div>
       {/* Swallows the mouse so YouTube's hover UI (title bar, pause button, share) never shows over the song. */}
       <div style={{ position: "absolute", inset: 0, zIndex: 5 }} />
-      {started && state && <TvLayer state={state} onReaction={onReaction} />}
-      {!started && (
-        <div style={{ ...center, zIndex: 10 }}>
-          <h1 style={{ fontSize: 40, margin: 0 }}>Karaoke Tube</h1>
-          <button
-            style={bigBtn}
-            data-testid="tv-start"
-            onClick={() => {
-              setStarted(true);
-              fullscreen();
-            }}
-          >
-            Start the party on this screen
-          </button>
-          <p style={{ opacity: 0.6 }}>{status === "open" ? "Connected. Drag this window to the TV, then press Start." : "Connecting…"}</p>
-        </div>
+      {started && state && <TvLayer state={state} onReaction={onReaction} flash={flash} />}
+      {(!started || (state && !ended && !state.recap && !state.nowPlaying && state.playback.state === "idle")) && (
+        <Lobby
+          code={code}
+          members={state?.members ?? []}
+          action={
+            !started && (
+              <button
+                style={{ ...bigBtn, fontSize: "4vh", padding: "2vh 6vh" }}
+                data-testid="tv-start"
+                onClick={() => {
+                  setStarted(true);
+                  fullscreen();
+                }}
+              >
+                Start party
+              </button>
+            )
+          }
+          hint={
+            !started && <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? "Connected. Drag this window to the TV, then press Start." : "Connecting…"}</p>
+          }
+        />
       )}
       {started && (
         <button
