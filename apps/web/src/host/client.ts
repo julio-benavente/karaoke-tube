@@ -1,6 +1,7 @@
-import { createRoomClient, createSearchApi, localStorageCredentials } from "@karaoke-tube/client";
+import { createRoomClient, localStorageCredentials } from "@karaoke-tube/client";
 import type { RoomClient, SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, type MockRoomClient } from "@karaoke-tube/ui";
+import { getSearchApi } from "../session";
 
 /** Where guests open the app. The QR code and invite link point here. */
 export const WEB_URL: string = location.origin;
@@ -36,7 +37,7 @@ export function hasCredentials(code: string): boolean {
 export function createHostClients(code: string): { room: RoomClient; search: SearchApi; isMock: boolean } {
   const params = new URLSearchParams(location.search);
   if (params.get("mock") !== "1") {
-    return { room: createRoomClient({ code }), search: createSearchApi(), isMock: false };
+    return { room: createRoomClient({ code }), search: getSearchApi(), isMock: false };
   }
   const mock: MockRoomClient = createMockRoomClient({
     code,

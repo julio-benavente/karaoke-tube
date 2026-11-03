@@ -73,7 +73,7 @@ describe("GET /api/search", () => {
     const search = calls.find((u) => u.pathname.endsWith("/search"))!;
     expect(search.searchParams.get("q")).toBe("queen bohemian karaoke");
     expect(search.searchParams.get("type")).toBe("video");
-    expect(search.searchParams.get("videoEmbeddable")).toBe("true");
+    expect(search.searchParams.has("videoEmbeddable")).toBe(false);
     expect(search.searchParams.get("maxResults")).toBe("15");
     expect(search.searchParams.get("key")).toBe("test-key");
 
