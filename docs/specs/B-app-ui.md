@@ -68,7 +68,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 - **Settings (H2)**: every `RoomSettings` field, live.
 - Uses the mock until A's `createExtensionRoomClient()` exists at `apps/extension/utils/room-client.ts`.
 
-### B4. Popup (`apps/extension/entrypoints/popup/`)
+### B4. Popup (`apps/extension/entrypoints/popup/`) ✅
 Small Spotify-style card. No party: nickname + avatar + "Start a party" (sends `{ type: "START_PARTY", nickname, avatarSeed }` to the background).
 Party running: code, guest count, "Open host app", "End party" (`END_PARTY`), and `GET_PARTY` on open.
 
@@ -95,5 +95,9 @@ and nothing in the UI uses Spotify's name, logo, green or font.
 - **`SHOW_ON_TV` message** (background): the host app's "Show on TV" button sends `{ type: "SHOW_ON_TV" }`. Please focus the
   party's YouTube window and make the player full screen if you can, and reply `{ ok: true }`. Without a reply the host app
   shows a hint ("drag the YouTube window onto the TV, press F").
+- **Popup message replies** (background), as the popup reads them (`apps/extension/entrypoints/popup/party.ts`):
+  `START_PARTY` → `{ ok: true, code }` or `{ ok: false, error }`; `GET_PARTY` → `{ ok: true, party: { code, guestCount } | null }`;
+  `END_PARTY` → `{ ok: true }`. Until `GET_PARTY` replies with an `ok` boolean, the popup runs in a local "Demo" mode.
+  "Open host app" opens or focuses `host.html` itself.
 - **`WXT_WEB_URL`** in `apps/extension/.env.example` (and `wxt.config.ts` if needed): the guest web app's origin. The host
   app's QR code and invite link use `${WXT_WEB_URL}/join/<CODE>`; it falls back to `http://localhost:5173`.
