@@ -9,7 +9,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 /** The party the background is running, as the popup sees it. */
-export type PartyInfo = { code: string; guestCount: number };
+export type PartyInfo = { code: string; guestCount: number; tvOpen: boolean };
 
 // One-off messages to the background service worker (`browser.runtime.sendMessage`).
 export type ExtMessage =

@@ -106,7 +106,7 @@ export default defineContentScript({
               .catch(() => console.log("[content] player fullscreen needs a click or F on the TV window"));
             break;
           case "play":
-            player?.play(msg.item);
+            player?.play(msg.item, msg.startAt);
             break;
           case "command":
             player?.command(msg.command);

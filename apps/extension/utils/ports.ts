@@ -10,7 +10,8 @@ export type PlayerPortToTab =
   | { type: "not_party" }
   /** This is the party's tab. `state` is null until the room connection is up. */
   | { type: "party"; code: string; state: RoomState | null }
-  | { type: "play"; item: QueueItem }
+  /** `startAt`: resume a song that was already playing at this second (TV window reopened or reloaded). */
+  | { type: "play"; item: QueueItem; startAt?: number }
   | { type: "command"; command: "pause" | "resume" | "restart" }
   /** Nothing to play: stop whatever is on screen. */
   | { type: "stop" }

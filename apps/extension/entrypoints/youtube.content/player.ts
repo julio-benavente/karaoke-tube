@@ -7,6 +7,9 @@ type Report = (msg: Extract<PlayerPortToBackground, { type: "event" }>) => void;
 const START_TIMEOUT_MS = 15_000;
 const PROGRESS_EVERY_MS = 5_000;
 const TICK_MS = 500;
+/** Resume only when the song was this far in; within this many seconds of the target, don't seek. */
+const RESUME_MIN_SEC = 3;
+const RESUME_TOLERANCE_SEC = 5;
 
 const currentVideoId = () => new URL(location.href).searchParams.get("v");
 const moviePlayer = () => document.querySelector<HTMLElement>("#movie_player");
@@ -43,9 +46,14 @@ export class YouTubePlayer {
     this.item = null;
   }
 
-  play(item: QueueItem) {
+  /**
+   * Plays `item`. `startAt` (seconds) resumes a song that was already going, e.g. after the TV window was
+   * closed and reopened or reloaded; a new song starts at 0.
+   */
+  play(item: QueueItem, startAt = 0) {
     if (this.item?.id === item.id && (this.started || currentVideoId() === item.song.videoId)) return; // already on it
-    console.log("[player] play", item.song.videoId, item.song.title);
+    const resumeAt = startAt > RESUME_MIN_SEC ? Math.floor(startAt) : 0;
+    console.log("[player] play", item.song.videoId, item.song.title, resumeAt ? `from ${resumeAt}s` : "");
     this.item = item;
     this.started = false;
     this.finished = false;
@@ -53,12 +61,17 @@ export class YouTubePlayer {
     this.lastProgress = 0;
     if (currentVideoId() !== item.song.videoId) {
       // A full navigation: the reloaded tab reconnects and the background sends this item again.
-      location.assign(`/watch?v=${encodeURIComponent(item.song.videoId)}`);
+      const t = resumeAt ? `&t=${resumeAt}s` : "";
+      location.assign(`/watch?v=${encodeURIComponent(item.song.videoId)}${t}`);
       return;
     }
     const video = videoEl();
     if (video) {
-      if (video.ended || video.currentTime > 1) video.currentTime = 0;
+      if (resumeAt) {
+        if (Math.abs(video.currentTime - resumeAt) > RESUME_TOLERANCE_SEC) video.currentTime = resumeAt;
+      } else if (video.ended || video.currentTime > 1) {
+        video.currentTime = 0;
+      }
       void video.play().catch(() => {});
     }
     this.startTicking();
