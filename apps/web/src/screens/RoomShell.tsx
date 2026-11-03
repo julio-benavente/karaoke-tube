@@ -73,7 +73,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   useRoomErrors((e) => {
     if (e.code === "queue_limit") {
       const n = state?.settings.maxWaitingPerMember ?? 2;
-      toast.show(`You've got ${n} song${n === 1 ? "" : "s"} waiting. Add more after one plays.`, { tone: "error" });
+      toast.show(t("search.limitToast", { count: n }), { tone: "error" });
     } else {
       toast.show(errorText(e.code), { tone: "error" });
     }
