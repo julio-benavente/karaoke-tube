@@ -1,5 +1,5 @@
 import { createRoomClient, createSearchApi } from "@karaoke-tube/client";
-import { ROOM_CODE_LENGTH, type ErrorCode, type Role, type RoomClient, type SearchApi } from "@karaoke-tube/shared";
+import { normalizeRoomCode, type ErrorCode, type Role, type RoomClient, type SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, MOCK_CODES, randomSeed, type MockRoomClient } from "@karaoke-tube/ui";
 
 /**
@@ -121,9 +121,7 @@ export function dropRoomClient(code: string) {
   clients.delete(code);
 }
 
+/** Canonical code while typing ("Disco Tiger 427" → "disco-tiger-427"). */
 export function normalizeCode(raw: string): string {
-  return raw
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, ROOM_CODE_LENGTH);
+  return normalizeRoomCode(raw);
 }

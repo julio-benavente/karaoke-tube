@@ -142,10 +142,34 @@ export type ErrorCode =
 
 // ── Room codes ───────────────────────────────────────────────────────────
 
-/** Characters in a room code: no 0/O or 1/I, so it reads well off a TV. */
-export const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-/** 6 characters ≈ 1 billion codes: hard to guess, still easy to type. */
-export const ROOM_CODE_LENGTH = 6;
+/**
+ * Room codes are three words, e.g. "fuzzy-golden-panda": easy to say across a room, ~57 million combinations
+ * (the API also rate-limits lookups per IP). Always lowercase with dashes in URLs and storage.
+ */
+export const ROOM_CODE_EXAMPLE = "fuzzy-golden-panda";
+export const ROOM_CODE_RE = /^[a-z]+-[a-z]+-[a-z]+$/;
+
+/**
+ * The canonical form of a typed code: lowercase, any run of spaces/dashes/punctuation becomes one dash
+ * ("Fuzzy Golden  Panda" → "fuzzy-golden-panda"). Leaves a trailing dash while typing; check the result
+ * with `isRoomCode`.
+ */
+export function normalizeRoomCode(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z]+/g, "-")
+    .replace(/^-+/, "")
+    .slice(0, 40);
+}
+
+/** For showing a code to people: words with spaces, "fuzzy golden panda". */
+export function formatRoomCode(code: string): string {
+  return code.replace(/-/g, " ");
+}
+
+export function isRoomCode(code: string): boolean {
+  return ROOM_CODE_RE.test(code);
+}
 
 // ── HTTP: /api ───────────────────────────────────────────────────────────
 

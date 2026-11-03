@@ -1,6 +1,6 @@
 import { CircleSlash, Lock, LockOpen, Tv, Power, Flame } from "lucide-react";
 import { useMemo, useState } from "react";
-import { REACTION_EMOJI } from "@karaoke-tube/shared";
+import { REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
 import {
   Button,
   EmptyState,
@@ -31,7 +31,7 @@ export type View = "home" | "search" | "settings";
 
 /** H1: the host app, full tab. Sidebar | main | queue, player bar at the bottom. */
 export function HostApp() {
-  const code = (useParams().code ?? "").toUpperCase();
+  const code = normalizeRoomCode(useParams().code ?? "");
   const isMock = new URLSearchParams(location.search).get("mock") === "1";
   // Before creating the client: it rejoins with the credentials the extension's link carries.
   const allowed = useMemo(() => {

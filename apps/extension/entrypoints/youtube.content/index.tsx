@@ -2,7 +2,7 @@ import ReactDOM from "react-dom/client";
 import type { Reaction, RoomState } from "@karaoke-tube/shared";
 import { PLAYER_PORT, type PlayerPortToBackground, type PlayerPortToTab } from "@/utils/ports";
 import { YouTubePlayer } from "./player";
-import { TvLayer, injectFigtree, type ReactionFeed } from "./TvLayer";
+import { TvLayer, injectFigtree, setPartyStyles, type ReactionFeed } from "./TvLayer";
 
 const PING_EVERY_MS = 20_000;
 
@@ -32,6 +32,7 @@ export default defineContentScript({
     const mountOverlay = async () => {
       if (ui) return;
       injectFigtree();
+      setPartyStyles(true);
       ui = await createShadowRootUi(ctx, {
         name: "karaoke-tube-overlay",
         // Inside the player element, so it's still there in fullscreen.
@@ -69,6 +70,7 @@ export default defineContentScript({
       player = null;
       ui?.remove();
       ui = null;
+      setPartyStyles(false);
     };
 
     const connect = () => {

@@ -64,5 +64,6 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
   sends `kicked` / `ended`, or when `close()` is called.
 - `player_event.durationSec?` (integration): the player reports the video's real length. Songs added from a pasted link
   without a YouTube key come from oEmbed with `durationSec: 0`; the room fills it in from this when the song starts.
-- `ROOM_CODE_ALPHABET` / `ROOM_CODE_LENGTH` (integration): room codes are 6 characters (was 4) so they can't be guessed
-  by a script; the API also rate-limits room lookups and joins per IP.
+- Room codes (integration): `ROOM_CODE_EXAMPLE`, `ROOM_CODE_RE`, `normalizeRoomCode()`, `isRoomCode()`. Codes are
+  three words, e.g. `fuzzy-golden-panda` (was 4 characters), lowercase with dashes; the API also rate-limits room
+  lookups and joins per IP. (`ROOM_CODE_ALPHABET` / `ROOM_CODE_LENGTH` from an intermediate commit are gone.)

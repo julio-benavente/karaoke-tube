@@ -156,10 +156,11 @@
 }
 
 .code {
-  font-size: var(--kt-text-3xl);
+  font-size: var(--kt-text-xl);
   font-weight: var(--kt-weight-black);
-  letter-spacing: 0.08em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .copy {

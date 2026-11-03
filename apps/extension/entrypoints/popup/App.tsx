@@ -1,3 +1,4 @@
+import { formatRoomCode } from "@karaoke-tube/shared";
 import { Dices, ExternalLink, Power, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
@@ -118,7 +119,7 @@ function Running({ api, party, onEnded }: { api: PartyApi; party: PartyInfo; onE
         <span className={css.live}>
           <span className={css.dot} /> Party running
         </span>
-        <span className={css.code}>{party.code}</span>
+        <span className={css.code}>{formatRoomCode(party.code)}</span>
         <span className={css.guests}>
           <Users size={14} /> {party.guestCount} {party.guestCount === 1 ? "guest" : "guests"}
         </span>

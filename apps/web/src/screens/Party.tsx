@@ -1,3 +1,4 @@
+import { formatRoomCode } from "@karaoke-tube/shared";
 import { Check, Copy, Crown, LogOut, MoreHorizontal, Share2, ShieldCheck, UserMinus } from "lucide-react";
 import { useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
@@ -42,8 +43,8 @@ export function PartyScreen() {
 
       <section className={css.codeCard}>
         <span className={css.codeLabel}>Party code</span>
-        <span className={css.code} aria-label={`Code ${code.split("").join(" ")}`}>
-          {code}
+        <span className={css.code} aria-label={`Code ${formatRoomCode(code)}`}>
+          {formatRoomCode(code)}
         </span>
         <p className={css.codeHint}>Friends join at {location.host}/join with this code.</p>
         <Button variant="light" size="sm" icon={copied ? <Check size={16} /> : canShare ? <Share2 size={16} /> : <Copy size={16} />} onClick={share}>

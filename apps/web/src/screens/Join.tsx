@@ -1,4 +1,4 @@
-import { ROOM_CODE_LENGTH } from "@karaoke-tube/shared";
+import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
 import { Dices } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -42,7 +42,7 @@ export function JoinScreen() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const name = nickname.trim();
-    if (code.length !== ROOM_CODE_LENGTH) return setError({ field: "code", text: `Party codes have ${ROOM_CODE_LENGTH} characters.` });
+    if (!isRoomCode(code.replace(/-+$/, ""))) return setError({ field: "code", text: `Party codes look like ${ROOM_CODE_EXAMPLE}.` });
     if (!name) return nickRef.current?.focus();
     setError(null);
     setBusy(true);
@@ -109,8 +109,8 @@ export function JoinScreen() {
             setCode(normalizeCode(e.target.value));
             if (error?.field === "code") setError(null);
           }}
-          placeholder="QX7K2M"
-          autoCapitalize="characters"
+          placeholder={ROOM_CODE_EXAMPLE}
+          autoCapitalize="none"
           autoComplete="off"
           spellCheck={false}
           inputMode="text"
@@ -133,12 +133,12 @@ export function JoinScreen() {
           </p>
         )}
 
-        <Button type="submit" size="lg" block disabled={busy || !nickname.trim() || code.length !== ROOM_CODE_LENGTH}>
+        <Button type="submit" size="lg" block disabled={busy || !nickname.trim() || !isRoomCode(code.replace(/-+$/, ""))}>
           {busy ? "Joining…" : "Join"}
         </Button>
         {USE_MOCK && (
           <p className={css.hint}>
-            Demo mode: any code works. Try <b>NOROOM</b>, <b>LOCKED</b> or <b>THEEND</b> for the error states.
+            Demo mode: any code works. Try <b>no-such-party</b>, <b>locked-door-party</b> or <b>party-is-over</b> for the error states.
           </p>
         )}
       </form>

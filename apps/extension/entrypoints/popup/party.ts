@@ -1,4 +1,3 @@
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from "@karaoke-tube/shared";
 // Popup ↔ background messages (Spec A implements the background side; see "Requests for the other track" in B's spec).
 
 export type PartyInfo = { code: string; guestCount: number };
@@ -53,7 +52,7 @@ export async function createPartyApi(): Promise<PartyApi> {
       demo,
       get: async () => demoParty(),
       start: async () => {
-        const code = Array.from({ length: ROOM_CODE_LENGTH }, () => ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)]).join("");
+        const code = "groovy-demo-party";
         setDemoParty({ code, guestCount: 0 });
         return { ok: true, code };
       },

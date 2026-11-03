@@ -1,4 +1,4 @@
-import type { ClientMessage, RoomClient, ServerMessage } from "@karaoke-tube/shared";
+import { normalizeRoomCode, type ClientMessage, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
 import { BaseRoomClient } from "./base";
 
 export type Credentials = { memberId: string; key: string };
@@ -28,7 +28,7 @@ export type CreateRoomClientOptions = {
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 10000];
 
-export const storageKey = (code: string) => `kt:room:${code.toUpperCase()}`;
+export const storageKey = (code: string) => `kt:room:${normalizeRoomCode(code)}`;
 
 export function localStorageCredentials(): CredentialStore {
   return {
@@ -76,7 +76,7 @@ export function memoryCredentials(initial?: Credentials | null, onSave?: (creds:
 
 function wsUrl(baseUrl: string | undefined, code: string, player: boolean): string {
   const base = baseUrl || (typeof location !== "undefined" ? location.origin : "");
-  const url = new URL(`/api/rooms/${encodeURIComponent(code.toUpperCase())}/ws`, base);
+  const url = new URL(`/api/rooms/${encodeURIComponent(normalizeRoomCode(code))}/ws`, base);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   if (player) url.searchParams.set("player", "1");
   return url.toString();
@@ -96,7 +96,7 @@ class WebSocketRoomClient extends BaseRoomClient {
 
   constructor(private readonly opts: CreateRoomClientOptions) {
     super();
-    this.code = opts.code.toUpperCase();
+    this.code = normalizeRoomCode(opts.code);
     this.url = wsUrl(opts.baseUrl, this.code, !!opts.player);
     this.store = opts.credentials ?? localStorageCredentials();
     this.WS = opts.WebSocket ?? WebSocket;

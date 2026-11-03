@@ -1,3 +1,4 @@
+import { formatRoomCode } from "@karaoke-tube/shared";
 import { Check, Copy, Crown, Home, MoreHorizontal, Search, Settings, ShieldCheck, UserMinus } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
@@ -73,7 +74,7 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
           <div className={css.qr}>{qr ? <img src={qr} alt={`QR code to join party ${code}`} /> : <span />}</div>
           <div className={css.joinText}>
             <span className={css.codeLabel}>Code</span>
-            <span className={css.code}>{code}</span>
+            <span className={css.code}>{formatRoomCode(code)}</span>
             <button type="button" className={css.copy} onClick={copy}>
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "Copied" : "Copy link"}

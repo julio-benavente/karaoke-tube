@@ -1,11 +1,12 @@
+import { normalizeRoomCode } from "@karaoke-tube/shared";
 import type { RoomInfoResponse, SearchApi, Song } from "@karaoke-tube/shared";
 import { SAMPLE_SONGS } from "./sample-data";
 
 /** Codes with special behaviour in the mock. Any other code is an open party. */
 export const MOCK_CODES = {
-  locked: "LOCKED",
-  ended: "THEEND",
-  missing: "NOROOM",
+  locked: "locked-door-party",
+  ended: "party-is-over",
+  missing: "no-such-party",
 } as const;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -66,7 +67,7 @@ export function createMockSearchApi(): SearchApi {
     },
     async roomInfo(code): Promise<RoomInfoResponse> {
       await wait(jitter());
-      const c = code.toUpperCase();
+      const c = normalizeRoomCode(code);
       if (c === MOCK_CODES.missing) return { code: c, exists: false, locked: false, status: null };
       if (c === MOCK_CODES.ended) return { code: c, exists: true, locked: false, status: "ended" };
       return { code: c, exists: true, locked: c === MOCK_CODES.locked, status: "open" };

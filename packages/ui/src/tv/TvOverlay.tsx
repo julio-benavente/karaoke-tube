@@ -1,3 +1,4 @@
+import { formatRoomCode } from "@karaoke-tube/shared";
 import type { CSSProperties } from "react";
 import { REACTION_EMOJI, type Member, type QueueItem, type Reaction } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
@@ -79,7 +80,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
           )}
           <div className="kt-tv-jointext">
             <span className="kt-tv-joinlabel">Join the party</span>
-            <span className="kt-tv-code">{code}</span>
+            <span className="kt-tv-code">{formatRoomCode(code)}</span>
             {joinText && <span className="kt-tv-url">{joinText}</span>}
           </div>
         </div>

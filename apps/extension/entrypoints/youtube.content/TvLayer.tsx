@@ -64,6 +64,27 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
   );
 }
 
+/**
+ * In the party's window only: hide YouTube's end screen (the grid of recommended videos), the end cards in the
+ * last seconds, and the "more videos" strip on pause. They'd cover the TV between songs. Ads and branding stay.
+ */
+const HIDE_RECOMMENDATIONS = `
+#movie_player .html5-endscreen, #movie_player .videowall-endscreen, #movie_player .ytp-endscreen-content,
+#movie_player .ytp-autonav-endscreen, #movie_player .ytp-ce-element, #movie_player .ytp-ce-covering-overlay,
+#movie_player .ytp-pause-overlay, #movie_player .ytp-suggestion-set, #movie_player .ytp-cards-teaser,
+#movie_player .ytp-endscreen-previous, #movie_player .ytp-endscreen-next, #movie_player .ytp-fullscreen-grid,
+#movie_player .ytp-fullerscreen-edu-button { display: none !important; }`;
+
+export function setPartyStyles(on: boolean) {
+  const existing = document.getElementById("kt-party-styles");
+  if (!on) return existing?.remove();
+  if (existing) return;
+  const style = document.createElement("style");
+  style.id = "kt-party-styles";
+  style.textContent = HIDE_RECOMMENDATIONS;
+  document.head.append(style);
+}
+
 const FIGTREE_WEIGHTS = [400, 700, 800] as const;
 
 /** `@font-face` doesn't work inside a shadow root, so Figtree is declared once at document level. */

@@ -1,20 +1,30 @@
 import { Hono } from "hono";
 import {
-  ROOM_CODE_ALPHABET,
-  ROOM_CODE_LENGTH,
+  isRoomCode,
+  normalizeRoomCode,
   type ApiErrorResponse,
   type CreateRoomRequest,
   type CreateRoomResponse,
   type RoomInfoResponse,
 } from "@karaoke-tube/shared";
 import type { Context, Next } from "hono";
+import { ADJECTIVES, NOUNS } from "../words";
 
-const CODE_RE = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}$`);
+/** Unbiased random integer in [0, n). */
+function randomInt(n: number): number {
+  const limit = Math.floor(0x1_0000_0000 / n) * n;
+  const buf = new Uint32Array(1);
+  do crypto.getRandomValues(buf);
+  while (buf[0]! >= limit);
+  return buf[0]! % n;
+}
 
-/** 256 is a multiple of 32, so `b % 32` is unbiased. */
-function randomCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(ROOM_CODE_LENGTH));
-  return [...bytes].map((b) => ROOM_CODE_ALPHABET[b % ROOM_CODE_ALPHABET.length]).join("");
+/** "<adjective>-<adjective>-<noun>" with two different adjectives, e.g. "fuzzy-golden-panda". */
+export function randomCode(): string {
+  const first = randomInt(ADJECTIVES.length);
+  let second = randomInt(ADJECTIVES.length - 1);
+  if (second >= first) second++;
+  return `${ADJECTIVES[first]}-${ADJECTIVES[second]}-${NOUNS[randomInt(NOUNS.length)]}`;
 }
 
 /**
@@ -54,8 +64,8 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
   })
 
   .get("/:code", lookupLimit, async (c) => {
-    const code = (c.req.param("code") ?? "").toUpperCase();
-    if (!CODE_RE.test(code)) {
+    const code = normalizeRoomCode(c.req.param("code") ?? "");
+    if (!isRoomCode(code)) {
       return c.json({ code, exists: false, locked: false, status: null } satisfies RoomInfoResponse);
     }
     const info = await roomStub(c.env, code).info();
@@ -67,7 +77,7 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
     if (c.req.header("Upgrade") !== "websocket") {
       return c.text("Expected a WebSocket upgrade", 426);
     }
-    const code = (c.req.param("code") ?? "").toUpperCase();
-    if (!CODE_RE.test(code)) return c.text("Room not found", 404);
+    const code = normalizeRoomCode(c.req.param("code") ?? "");
+    if (!isRoomCode(code)) return c.text("Room not found", 404);
     return roomStub(c.env, code).fetch(c.req.raw);
   });

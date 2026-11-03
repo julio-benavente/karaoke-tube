@@ -1,3 +1,4 @@
+import { formatRoomCode } from "@karaoke-tube/shared";
 import { ChevronDown, RotateCcw, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REACTIONS, REACTION_EMOJI, type Reaction } from "@karaoke-tube/shared";
@@ -74,7 +75,7 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         </IconButton>
         <div className={css.topText}>
           <span className={css.kicker}>Now singing</span>
-          <span className={css.code}>Party {state.code}</span>
+          <span className={css.code}>Party {formatRoomCode(state.code)}</span>
         </div>
         <span style={{ width: 40 }} />
       </header>

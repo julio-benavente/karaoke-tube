@@ -81,10 +81,9 @@
 }
 
 .code input {
-  font-size: var(--kt-text-xl);
+  font-size: var(--kt-text-lg);
   font-weight: var(--kt-weight-bold);
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .formError {

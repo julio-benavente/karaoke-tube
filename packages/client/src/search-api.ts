@@ -1,4 +1,12 @@
-import type { ApiErrorCode, ApiErrorResponse, RoomInfoResponse, SearchApi, SearchResponse, VideoResponse } from "@karaoke-tube/shared";
+import {
+  normalizeRoomCode,
+  type ApiErrorCode,
+  type ApiErrorResponse,
+  type RoomInfoResponse,
+  type SearchApi,
+  type SearchResponse,
+  type VideoResponse,
+} from "@karaoke-tube/shared";
 
 /** A non-2xx /api response. `code === "search_unavailable"` means: offer "paste a link instead". */
 export class ApiError extends Error {
@@ -29,6 +37,6 @@ export function createSearchApi(baseUrl = ""): SearchApi {
   return {
     search: (query) => get<SearchResponse>(`/search?q=${encodeURIComponent(query)}`),
     video: (videoId) => get<VideoResponse>(`/videos/${encodeURIComponent(videoId)}`),
-    roomInfo: (code) => get<RoomInfoResponse>(`/rooms/${encodeURIComponent(code.toUpperCase())}`),
+    roomInfo: (code) => get<RoomInfoResponse>(`/rooms/${encodeURIComponent(normalizeRoomCode(code))}`),
   };
 }
