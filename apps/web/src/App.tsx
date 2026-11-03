@@ -11,6 +11,8 @@ import { RecapPage } from "./screens/RecapPage";
 
 const Gallery = lazy(() => import("./dev/Gallery").then((m) => ({ default: m.Gallery })));
 const HostApp = lazy(() => import("./host/HostApp").then((m) => ({ default: m.HostApp })));
+const NewParty = lazy(() => import("./host/NewParty").then((m) => ({ default: m.NewParty })));
+const TvScreen = lazy(() => import("./tv/TvScreen").then((m) => ({ default: m.TvScreen })));
 const RecapDev = lazy(() => import("./dev/RecapDev").then((m) => ({ default: m.RecapDev })));
 const TvPreview = lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview })));
 
@@ -28,6 +30,8 @@ export function App() {
             <Route path="party" element={<PartyScreen />} />
           </Route>
           <Route path="/recap/:id" element={<RecapPage />} />
+          <Route path="/host/new" element={<NewParty />} />
+          <Route path="/tv/:code" element={<TvScreen />} />
           <Route path="/host/:code" element={<HostApp />} />
           <Route path="/dev/ui" element={<Gallery />} />
           <Route path="/dev/recap" element={<RecapDev />} />

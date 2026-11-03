@@ -5,27 +5,24 @@ import { createMockRoomClient, createMockSearchApi, type MockRoomClient } from "
 /** Where guests open the app. The QR code and invite link point here. */
 export const WEB_URL: string = location.origin;
 
-const EXT_KEY = "kt:ext";
-
 /**
- * The extension opens `/host/<CODE>#m=<memberId>&k=<key>&x=<extensionId>` when it starts a party.
- * Save the host's credentials like any member's (localStorage `kt:room:<CODE>`), remember the extension id
- * for "Show on TV", and wipe the fragment from the address bar.
+ * The host app opens `/tv/<CODE>#m=<memberId>&k=<key>` for the TV screen. Save the host's credentials like any
+ * member's (localStorage `kt:room:<CODE>`) and wipe the fragment from the address bar.
  */
 export function adoptHostLink(code: string) {
   const hash = new URLSearchParams(location.hash.slice(1));
   const memberId = hash.get("m");
   const key = hash.get("k");
-  const ext = hash.get("x");
   if (memberId && key) localStorageCredentials().save(code, { memberId, key });
-  if (ext) {
-    try {
-      localStorage.setItem(EXT_KEY, ext);
-    } catch {
-      // ignore
-    }
-  }
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+
+/** Opens the TV screen (`/tv/<code>`) in its own window, with the host's credentials in the fragment. */
+export function openTvScreen(code: string): boolean {
+  const creds = localStorageCredentials().load(code);
+  if (!creds) return false;
+  const url = `/tv/${code}#m=${encodeURIComponent(creds.memberId)}&k=${encodeURIComponent(creds.key)}`;
+  return !!window.open(url, "kt-tv");
 }
 
 export function hasCredentials(code: string): boolean {
@@ -50,24 +47,4 @@ export function createHostClients(code: string): { room: RoomClient; search: Sea
   });
   (window as unknown as { kt: MockRoomClient }).kt = mock;
   return { room: mock, search: createMockSearchApi(), isMock: true };
-}
-
-type ChromeRuntime = { sendMessage(extensionId: string, msg: unknown): Promise<unknown> };
-
-/** Ask the Karaoke Tube extension (via externally_connectable) to put the YouTube window on the TV. */
-export async function askExtensionShowOnTv(): Promise<boolean> {
-  let ext: string | null = null;
-  try {
-    ext = localStorage.getItem(EXT_KEY);
-  } catch {
-    // ignore
-  }
-  const runtime = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime;
-  if (!ext || !runtime?.sendMessage) return false;
-  try {
-    const res = (await runtime.sendMessage(ext, { type: "SHOW_ON_TV" })) as { ok?: boolean } | undefined;
-    return !!res?.ok;
-  } catch {
-    return false;
-  }
 }

@@ -22,7 +22,7 @@ import {
   useToast,
 } from "@karaoke-tube/ui";
 import { useParams } from "react-router";
-import { adoptHostLink, askExtensionShowOnTv, createHostClients, hasCredentials } from "./client";
+import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "./client";
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
@@ -36,7 +36,7 @@ export type View = "home" | "search" | "settings";
 export function HostApp() {
   const code = normalizeRoomCode(useParams().code ?? "");
   const isMock = new URLSearchParams(location.search).get("mock") === "1";
-  // Before creating the client: it rejoins with the credentials the extension's link carries.
+  // Before creating the client: it rejoins with the saved host credentials.
   const allowed = useMemo(() => {
     adoptHostLink(code);
     return isMock || hasCredentials(code);
@@ -45,8 +45,8 @@ export function HostApp() {
   if (!clients) {
     return (
       <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title="Open the host app from the extension">
-          Start or open your party with the Karaoke Tube button in Chrome's toolbar. Joining as a guest?{" "}
+        <EmptyState icon={<CircleSlash />} title="No party saved on this device" action={<Button onClick={() => (location.href = "/host/new")}>Host a party</Button>}>
+          Start a party from this browser, or open the host link you started it with. Joining as a guest?{" "}
           <a href={`/join/${code}`}>Join {code}</a>.
         </EmptyState>
       </div>
@@ -75,8 +75,8 @@ function Host() {
   if (state?.status === "ended" || closeReason === "ended") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => (location.href = "/")}>Done</Button>}>
-          Thanks for hosting! Start a new party from the Karaoke Tube button in your toolbar.
+        <EmptyState icon={<Power />} title="The party has ended" action={<Button onClick={() => (location.href = "/host/new")}>Start a new party</Button>}>
+          Thanks for hosting! Want another round? Start a new party anytime.
         </EmptyState>
       </div>
     );
@@ -125,10 +125,13 @@ function Host() {
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
       {status === "reconnecting" && <div className={css.reconnecting}>Reconnecting to the party…</div>}
       {status === "open" && state.playerConnected === false && (
-        <div className={css.tvClosed} role="alert">
-          The TV window is closed
-          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show)}>
-            Reopen TV window
+        <div className={css.tvClosed} role="alert" data-testid="tv-banner">
+          <span>
+            No TV screen connected
+            <span className={css.tvHint}> Open the TV screen, drag that window to the TV and press Start.</span>
+          </span>
+          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code)}>
+            Open TV screen
           </Button>
         </div>
       )}
@@ -166,8 +169,8 @@ function Host() {
               <IconButton label={queueOpen ? "Hide queue" : "Show queue"} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
                 <QueueIcon />
               </IconButton>
-              <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show)}>
-                Show on TV
+              <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code)}>
+                Open TV screen
               </Button>
               <Button size="sm" variant="ghost" icon={<Power size={16} />} onClick={() => setConfirmEnd(true)}>
                 End
@@ -251,8 +254,7 @@ function QueueIcon() {
   );
 }
 
-/** Ask the background to bring the YouTube window forward; it goes full screen on the TV. */
-async function showOnTv(show: (m: string) => void) {
-  if (await askExtensionShowOnTv()) return;
-  show("Drag the YouTube window onto the TV, then press F for full screen.");
+/** Opens the TV screen window; the party plays there. */
+function showOnTv(show: (m: string, o?: { tone: "error" }) => void, code: string) {
+  if (!openTvScreen(code)) show("Couldn't open the TV screen. Allow pop-ups for this site and try again.", { tone: "error" });
 }

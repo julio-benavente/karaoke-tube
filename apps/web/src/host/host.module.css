@@ -54,7 +54,7 @@
   transform: translateX(-50%);
 }
 
-/* "The TV window is closed" — the extension's YouTube window isn't there to play. */
+/* "No TV screen connected" — nothing is playing the queue until the TV screen page is open. */
 .tvClosed {
   position: absolute;
   top: var(--kt-space-3);
@@ -69,7 +69,12 @@
   color: var(--kt-base);
   font-weight: var(--kt-weight-bold);
   transform: translateX(-50%);
-  white-space: nowrap;
+}
+
+.tvHint {
+  display: block;
+  font-weight: var(--kt-weight-regular);
+  font-size: var(--kt-text-sm);
 }
 
 .muted {

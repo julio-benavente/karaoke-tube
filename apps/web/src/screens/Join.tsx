@@ -1,6 +1,6 @@
 import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 import type { ErrorCode } from "@karaoke-tube/shared";
 import { AvatarPicker, Button, Logo, TextField, errorText } from "@karaoke-tube/ui";
 import {
@@ -146,6 +146,9 @@ function JoinForm() {
           </p>
         )}
       </form>
+      <p className={css.hint}>
+        Want to run the music? <Link to="/host/new">Host a party</Link>
+      </p>
     </div>
   );
 }
