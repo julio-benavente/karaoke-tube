@@ -18,6 +18,20 @@ corepack enable pnpm   # once
 pnpm install
 ```
 
+### YouTube API key
+
+Search (`/api/search`, `/api/videos/:id`) calls the YouTube Data API v3. Make a key in Google Cloud Console
+(APIs & Services → enable "YouTube Data API v3" → Credentials → API key), then:
+
+```sh
+cp apps/api/.dev.vars.example apps/api/.dev.vars   # local: put the key in YOUTUBE_API_KEY=
+cd apps/api && npx wrangler secret put YOUTUBE_API_KEY   # production
+```
+
+Without a key, or when the daily quota (10,000 units, about 100 searches) runs out, search returns
+`503 { error: "search_unavailable" }` and the UI asks for a pasted link. Results are cached in the `SEARCH_CACHE` KV
+namespace (searches 7 days, videos 30 days), so repeat searches are free.
+
 ## Dev
 
 ```sh
@@ -38,6 +52,7 @@ pnpm dev:extension     # opens a Chrome window with the extension loaded
 ```sh
 pnpm typecheck
 pnpm build
+pnpm --filter @karaoke-tube/api test         # room, queue, playback and search tests (Workers runtime)
 pnpm --filter @karaoke-tube/api cf-typegen   # after editing wrangler.jsonc
 pnpm --filter @karaoke-tube/api deploy       # builds web + deploys the Worker (needs `wrangler login`)
 pnpm --filter @karaoke-tube/extension zip    # zip for the Chrome Web Store

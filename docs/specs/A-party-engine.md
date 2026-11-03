@@ -47,7 +47,7 @@ Rewrite `apps/api/src/durable-objects/room.ts` to implement the contract.
 - `pause` / `resume` / `restart` from hosts → update playback and send `player_command` to the player socket.
 - Only the host's extension socket counts as the player. Mark it by sending `?player=1` on the WebSocket URL with the host key.
 
-### A3. Search
+### A3. Search ✅
 - `GET /api/search?q=` calls YouTube Data API v3 `search.list` (type=video, videoEmbeddable=true, q = `<q> karaoke`, 15 results),
   then `videos.list` for durations. Return `SearchResponse`.
 - Cache in KV by normalised query (lowercase, trimmed, collapsed spaces) for 7 days. Add a `SEARCH_CACHE` KV binding.
