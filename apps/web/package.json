@@ -10,6 +10,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@karaoke-tube/client": "workspace:*",
     "@karaoke-tube/shared": "workspace:*",
     "@karaoke-tube/ui": "workspace:*",
     "clsx": "^2.1.1",
