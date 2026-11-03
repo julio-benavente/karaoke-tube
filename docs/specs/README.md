@@ -57,4 +57,5 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 
 ## Contract changes
 
-- (none yet)
+- `ApiErrorCode` / `ApiErrorResponse` (A3): the JSON body of every non-2xx `/api` response. A 503 with
+  `search_unavailable` means YouTube search is out of quota; the real `SearchApi` rejects with an `ApiError` carrying it.

@@ -145,8 +145,15 @@ export type RoomInfoResponse = { code: string; exists: boolean; locked: boolean;
 /** GET /api/search?q=  (the API adds "karaoke" to the query and caches results) */
 export type SearchResponse = { query: string; results: Song[] };
 
-/** GET /api/videos/:videoId  (details for a pasted link) */
+/** GET /api/videos/:videoId  (details for a pasted link; also accepts a full YouTube URL, URL-encoded) */
 export type VideoResponse = { song: Song };
+
+/**
+ * Body of any non-2xx /api response.
+ * `search_unavailable` (503): the YouTube quota ran out or search isn't set up. Show "Search is resting, paste a link instead".
+ */
+export type ApiErrorCode = "bad_request" | "not_found" | "search_unavailable";
+export type ApiErrorResponse = { error: ApiErrorCode; message: string };
 
 // ── Client interface the UI codes against ────────────────────────────────
 
