@@ -110,6 +110,8 @@ export type RoomState = {
    * The real host gets the role back when they return and this member goes back to what they were.
    */
   tempHostId?: string | null;
+  /** A TV screen is paired with this party (it may be offline: see `playerConnected`). */
+  screenPaired?: boolean;
   /** Songs waiting for a host's OK ("approval" mode), oldest first. v1.1. */
   pending?: QueueItem[];
   /** The performance members can give awards to right now, if any. v1.1. */
@@ -232,6 +234,8 @@ export type ClientMessage =
   | { type: "restart" } // hosts
   | { type: "set_role"; memberId: string; role: "cohost" | "guest" } // host only
   | { type: "kick"; memberId: string } // hosts
+  /** Hosts: unpair the TV screen (it goes back to showing a pairing code). */
+  | { type: "remove_screen" }
   /** Leave the party for good: your waiting songs go with you. The host leaving ends the party. */
   | { type: "leave" }
   /** Hosts: take everything a member still has waiting out of the queue (e.g. they went offline). */
@@ -267,6 +271,8 @@ export type ServerMessage =
   | { type: "player_command"; command: "pause" | "resume" | "restart" }
   | { type: "error"; code: ErrorCode; message: string }
   | { type: "kicked" }
+  /** To a paired TV screen: it was removed (or replaced by another one) and must stop. */
+  | { type: "screen_removed" }
   | { type: "ended" }
   /** A host asked the TV to show the join QR + code for a few seconds. */
   | { type: "join_flash" };
@@ -367,3 +373,17 @@ export interface SearchApi {
   video(videoId: string): Promise<VideoResponse>;
   roomInfo(code: string): Promise<RoomInfoResponse>;
 }
+
+// ── TV pairing ───────────────────────────────────────────────────────────
+// A TV shows a short code; the host types it into the host app; the room then trusts that TV's screen key.
+// The TV connects to the room as this reserved member id with its screen key (the `rejoin` message).
+
+/** Reserved member id a paired TV screen connects with. Never a real member. */
+export const SCREEN_MEMBER_ID = "screen";
+
+/** POST /api/pair/start: the TV asks for a code to show. */
+export type PairStartResponse = { id: string; code: string; expiresInSec: number };
+/** GET /api/pair/:id: the TV polls until the host has entered the code. */
+export type PairStatusResponse = { state: "waiting" } | { state: "expired" } | { state: "paired"; roomCode: string; screenKey: string };
+/** POST /api/pair/claim: the host app, with its room credentials, pairs the TV that shows `code`. */
+export type PairClaimRequest = { code: string; roomCode: string; memberId: string; key: string };

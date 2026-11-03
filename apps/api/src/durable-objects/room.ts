@@ -20,6 +20,7 @@ import {
   type RoomState,
   type ServerMessage,
   type Song,
+  SCREEN_MEMBER_ID,
 } from "@karaoke-tube/shared";
 import { orderUpNext, shiftPins, turnHolders, type StoredItem } from "../queue";
 import { computeTitles } from "../titles";
@@ -243,7 +244,7 @@ export class Room extends DurableObject<Env> {
     if (!attachment(ws).memberId) return;
     this.broadcastState(ws);
     await this.checkHostPresence(ws);
-    const anyoneLeft = this.ctx.getWebSockets().some((s) => s !== ws && attachment(s).memberId);
+    const anyoneLeft = this.ctx.getWebSockets().some((s) => s !== ws && attachment(s).memberId && attachment(s).memberId !== SCREEN_MEMBER_ID);
     if (!anyoneLeft && this.getMeta("code") !== null && this.status() === "open") {
       this.setMeta("idleSince", Date.now());
       await this.scheduleAlarm();
@@ -281,7 +282,7 @@ export class Room extends DurableObject<Env> {
     }
     // Nobody has been connected for IDLE_TTL_MS: the party was abandoned.
     const idleSince = this.getMeta<number>("idleSince");
-    const anyone = this.ctx.getWebSockets().some((s) => attachment(s).memberId);
+    const anyone = this.ctx.getWebSockets().some((s) => attachment(s).memberId && attachment(s).memberId !== SCREEN_MEMBER_ID);
     if (idleSince && !anyone && now >= idleSince + IDLE_TTL_MS) {
       console.log("[room] ending an abandoned party");
       await this.endRoom();
@@ -311,9 +312,56 @@ export class Room extends DurableObject<Env> {
     }
   }
 
+  /**
+   * The host app pairs a TV: only the host (including a temporary host) can. Returns the screen's key, which the
+   * TV keeps; any earlier screen is dropped, so there is one screen per party.
+   */
+  async pairScreen(memberId: string, key: string): Promise<string | null> {
+    if (this.getMeta("code") === null || this.status() !== "open") return null;
+    const member = this.memberRow(memberId);
+    if (!member || member.role !== "host" || member.key_hash !== (await sha256(key))) return null;
+    this.dropScreenSockets();
+    const screenKey = randomKey();
+    this.setMeta("screenKeyHash", await sha256(screenKey));
+    this.setMeta("playerTabOpen", false);
+    this.broadcastState();
+    return screenKey;
+  }
+
+  /** Unpairs the TV: its key stops working and it is told to go back to showing a pairing code. */
+  private dropScreen() {
+    this.dropScreenSockets();
+    this.setMeta("screenKeyHash", null);
+    this.setMeta("playerTabOpen", false);
+  }
+
+  private dropScreenSockets() {
+    for (const sock of this.socketsOf(SCREEN_MEMBER_ID)) {
+      this.send(sock, { type: "screen_removed" });
+      sock.serializeAttachment({ memberId: null, wantsPlayer: false, player: false } satisfies Attachment);
+      sock.close(1000, "screen removed");
+    }
+  }
+
+  /** The TV connects with its screen key (as the reserved member id). It becomes the party's player. */
+  private async onScreenRejoin(ws: WebSocket, key: string) {
+    const hash = this.getMeta<string>("screenKeyHash");
+    if (!hash || hash !== (await sha256(key))) throw new RoomError("bad_key", "This screen isn't paired any more.");
+    for (const other of this.ctx.getWebSockets()) {
+      const o = attachment(other);
+      if (other !== ws && o.player) other.serializeAttachment({ ...o, player: false } satisfies Attachment);
+    }
+    ws.serializeAttachment({ memberId: SCREEN_MEMBER_ID, wantsPlayer: true, player: true } satisfies Attachment);
+    this.send(ws, { type: "welcome", memberId: SCREEN_MEMBER_ID, key, state: this.state() });
+    await this.afterRejoin(ws);
+  }
+
   /** Is anyone connected as this member? `closing` is a socket that's going away and doesn't count. */
-  private isOnline(memberId: string, closing?: WebSocket): boolean {
-    return this.ctx.getWebSockets().some((s) => s !== closing && attachment(s).memberId === memberId);
+  private isOnline(memberId: string, closing?: WebSocket, ignorePlayer = false): boolean {
+    return this.ctx.getWebSockets().some((s) => {
+      if (s === closing || attachment(s).memberId !== memberId) return false;
+      return !(ignorePlayer && attachment(s).player); // a TV window opened with the host's login isn't the host
+    });
   }
 
   /** Starts or stops the "host is offline" clock. It only runs while somebody else is here to take over. */
@@ -323,7 +371,7 @@ export class Room extends DurableObject<Env> {
     if (!host) return;
     const since = this.getMeta<number>("hostOfflineSince");
     const othersHere = this.memberRows().some((m) => m.id !== host.id && !m.phoneless && this.isOnline(m.id, closing));
-    if (this.isOnline(host.id, closing) || !othersHere) {
+    if (this.isOnline(host.id, closing, true) || !othersHere) {
       if (since !== null) {
         this.setMeta("hostOfflineSince", null);
         await this.scheduleAlarm();
@@ -412,6 +460,17 @@ export class Room extends DurableObject<Env> {
     if (msg.type === "join") return this.onJoin(ws, msg.nickname, msg.avatarSeed);
     if (msg.type === "rejoin") return this.onRejoin(ws, msg.memberId, msg.key);
 
+    if (attachment(ws).memberId === SCREEN_MEMBER_ID) {
+      // A paired TV screen is not a member: it can only report on the video it plays.
+      if (this.status() === "ended") return;
+      if (msg.type === "player_event") return this.onPlayerEvent(ws, msg);
+      if (msg.type === "player_status") {
+        this.setMeta("playerTabOpen", msg.tabOpen);
+        this.broadcastState();
+        return;
+      }
+      throw new RoomError("not_allowed", "A TV screen can't do that.");
+    }
     const me = this.currentMember(ws);
     if (this.status() === "ended") throw new RoomError("room_ended", "The party has ended.");
     const isHost = me.role === "host" || me.role === "cohost";
@@ -553,6 +612,11 @@ export class Room extends DurableObject<Env> {
         const target = this.memberRow(msg.memberId);
         if (!target) throw new RoomError("not_allowed", "Unknown member.");
         await this.removeMemberSongs(target.id);
+        break;
+      }
+      case "remove_screen": {
+        if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can remove the TV screen.");
+        this.dropScreen();
         break;
       }
       case "update_settings": {
@@ -759,6 +823,7 @@ export class Room extends DurableObject<Env> {
   }
 
   private async onRejoin(ws: WebSocket, memberId: string, key: string) {
+    if (memberId === SCREEN_MEMBER_ID) return this.onScreenRejoin(ws, key);
     const member = this.memberRow(memberId);
     if (!member || member.key_hash !== (await sha256(key))) throw new RoomError("bad_key", "Can't rejoin; join again.");
     // The real host is back: they are the host again (before their welcome, so they see the right role).
@@ -964,6 +1029,7 @@ export class Room extends DurableObject<Env> {
       recap: this.status() === "ended" ? (this.getMeta<Recap>("recap") ?? null) : null,
       playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
       tempHostId: this.getMeta<Succession>("succession")?.actingId ?? null,
+      screenPaired: this.getMeta<string>("screenKeyHash") !== null,
     };
   }
 
@@ -1225,6 +1291,7 @@ export function parseClientMessage(text: string): ClientMessage {
       ok(isStr(m.memberId, 64));
       break;
     case "leave":
+    case "remove_screen":
       break;
     case "add_guest":
       ok(isStr(m.nickname, 100) && typeof m.avatarSeed === "string");

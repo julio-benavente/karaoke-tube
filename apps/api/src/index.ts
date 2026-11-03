@@ -3,11 +3,13 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { accountRoutes } from "./routes/account";
 import { healthRoutes } from "./routes/health";
+import { pairRoutes } from "./routes/pair";
 import { recapRoutes } from "./routes/recaps";
 import { roomRoutes } from "./routes/rooms";
 import { searchRoutes } from "./routes/search";
 
 export { Room } from "./durable-objects/room";
+export { Pairing } from "./durable-objects/pairing";
 
 const app = new Hono<{ Bindings: Env }>().basePath("/api");
 
@@ -19,6 +21,7 @@ const routes = app
   .route("/health", healthRoutes)
   .route("/account", accountRoutes)
   .route("/rooms", roomRoutes)
+  .route("/pair", pairRoutes)
   .route("/recaps", recapRoutes)
   .route("/", searchRoutes);
 

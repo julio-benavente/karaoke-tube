@@ -15,9 +15,16 @@
 
   // One Durable Object instance per karaoke room (live queue, members, websockets).
   "durable_objects": {
-    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+    "bindings": [
+      { "name": "ROOM", "class_name": "Room" },
+      // TV pairing codes: one instance for the whole app.
+      { "name": "PAIRING", "class_name": "Pairing" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["Pairing"] }
+  ],
 
   // YouTube search results (7 days) and video details (30 days). Wrangler creates the namespace on first deploy.
   // RECAPS: end-of-night recaps, readable at /recap/:id for 30 days.
