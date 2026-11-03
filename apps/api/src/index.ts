@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { healthRoutes } from "./routes/health";
+import { recapRoutes } from "./routes/recaps";
 import { roomRoutes } from "./routes/rooms";
 import { searchRoutes } from "./routes/search";
 
@@ -13,7 +14,11 @@ app.use("*", logger());
 // Allow the extension and the Vite dev server to call the API.
 app.use("*", cors());
 
-const routes = app.route("/health", healthRoutes).route("/rooms", roomRoutes).route("/", searchRoutes);
+const routes = app
+  .route("/health", healthRoutes)
+  .route("/rooms", roomRoutes)
+  .route("/recaps", recapRoutes)
+  .route("/", searchRoutes);
 
 // Exported so the React apps can get a typed client via `hc<AppType>()`.
 export type AppType = typeof routes;
