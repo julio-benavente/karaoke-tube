@@ -23,7 +23,7 @@ export default defineConfig({
     // chrome.storage.local keeps the running party across service worker and browser restarts.
     permissions: ["storage"],
     // Let the background script call our API (local dev + deployed Worker).
-    host_permissions: ["http://localhost:8787/*", "https://*.workers.dev/*"],
+    host_permissions: [`${process.env.WXT_API_URL ?? "http://localhost:8787"}/*`, "https://*.workers.dev/*"],
     // Figtree for the TV overlay, loaded by the content script at document level.
     web_accessible_resources: [{ resources: ["fonts/*.woff2"], matches: ["*://*.youtube.com/*"] }],
     // The host app on the website sends "Show on TV" to the extension. Ports don't count in match patterns.
