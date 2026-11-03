@@ -9,6 +9,7 @@ import {
   SongRow,
   Tile,
   parseYouTubeId,
+  presetName,
   useRoom,
   useSearch,
   useSearchApi,
@@ -94,7 +95,7 @@ export function SearchView() {
             {BROWSE_PRESETS.map((p, i) => (
               <Tile
                 key={p.id}
-                title={p.title}
+                title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => runPreset(p.title, p.query)}

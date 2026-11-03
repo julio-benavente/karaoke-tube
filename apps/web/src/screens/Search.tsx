@@ -15,6 +15,7 @@ import {
   Tile,
   SAMPLE_SONGS,
   parseYouTubeId,
+  presetName,
   useRoom,
   useSearch,
   useT,
@@ -140,7 +141,7 @@ export function SearchScreen() {
           </Chip>
           {BROWSE_PRESETS.slice(0, 5).map((p) => (
             <Chip key={p.id} selected={presetTitle === p.title} onClick={() => runPreset(p.title, p.query)}>
-              {p.title}
+              {presetName(t, p.id)}
             </Chip>
           ))}
         </ChipRow>
@@ -162,7 +163,7 @@ export function SearchScreen() {
             {BROWSE_PRESETS.map((p, i) => (
               <Tile
                 key={p.id}
-                title={p.title}
+                title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => runPreset(p.title, p.query)}

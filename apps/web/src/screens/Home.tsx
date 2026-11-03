@@ -1,4 +1,4 @@
-import { useT } from "@karaoke-tube/ui";
+import { presetName, useT } from "@karaoke-tube/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { Song } from "@karaoke-tube/shared";
@@ -87,7 +87,7 @@ export function HomeScreen() {
           </Chip>
           {GENRES.map((g) => (
             <Chip key={g.id} selected={genre === g.id} onClick={() => setGenre(genre === g.id ? null : g.id)}>
-              {g.title}
+              {presetName(t, g.id)}
             </Chip>
           ))}
         </ChipRow>
@@ -119,7 +119,7 @@ export function HomeScreen() {
               ))}
             </div>
           )}
-          <Shelf title={t("home.more", { title: preset.title })}>{genreSearch.results.slice(6).map(card)}</Shelf>
+          <Shelf title={t("home.more", { title: presetName(t, preset.id) })}>{genreSearch.results.slice(6).map(card)}</Shelf>
         </section>
       ) : (
         <section className={css.section}>
