@@ -1,3 +1,4 @@
+import { createCatalogSearchApi } from "@karaoke-tube/catalog";
 import { createRoomClient, createSearchApi } from "@karaoke-tube/client";
 import { normalizeRoomCode, type ErrorCode, type Role, type RoomClient, type SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, MOCK_CODES, randomSeed, type MockRoomClient } from "@karaoke-tube/ui";
@@ -58,7 +59,8 @@ export function hasJoined(code: string): boolean {
 
 let searchApi: SearchApi | null = null;
 export function getSearchApi(): SearchApi {
-  searchApi ??= USE_MOCK ? createMockSearchApi() : createSearchApi();
+  // Songs are searched in our own catalog (in the browser); YouTube only backs up what the catalog lacks.
+  searchApi ??= USE_MOCK ? createMockSearchApi() : createCatalogSearchApi(createSearchApi());
   return searchApi;
 }
 
