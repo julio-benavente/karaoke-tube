@@ -1,9 +1,10 @@
 import { useT } from "@karaoke-tube/ui";
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, Copy, Crown, LogOut, MoreHorizontal, Share2, ShieldCheck, UserMinus } from "lucide-react";
+import { Check, Copy, Crown, ListPlus, LogOut, MoreHorizontal, Share2, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router";
 import { useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { ActionList, Avatar, Button, Pill, Sheet, useRoom } from "@karaoke-tube/ui";
+import { ActionList, AddGuestSheet, Avatar, Button, Pill, Sheet, useRoom, useSingWith } from "@karaoke-tube/ui";
 import { useShell } from "./RoomShell";
 import css from "./Party.module.css";
 
@@ -15,6 +16,9 @@ export function PartyScreen() {
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [menu, setMenu] = useState<Member | null>(null);
+  const [addGuest, setAddGuest] = useState(false);
+  const sing = useSingWith();
+  const navigate = useNavigate();
   if (!state || !me) return null;
 
   const link = `${location.origin}/join/${code}`;
@@ -58,6 +62,11 @@ export function PartyScreen() {
         <h2 className={css.h2}>
           {t("host.guests")} <span className={css.count}>{t("host.hereCount", { n: online })}</span>
         </h2>
+        {isHost && (
+          <Button variant="secondary" size="sm" icon={<UserPlus size={16} />} onClick={() => setAddGuest(true)} className={css.addGuest}>
+            {t("host.addGuest")}
+          </Button>
+        )}
         <ul className={css.list}>
           {members.map((m) => (
             <li key={m.id} className={css.member}>
@@ -67,7 +76,7 @@ export function PartyScreen() {
                   {m.nickname}
                   {m.id === me.id && <span className={css.you}> {t("party.you")}</span>}
                 </span>
-                <span className={css.status}>{m.connected ? t("party.here") : t("party.away")}</span>
+                <span className={css.status}>{m.phoneless ? t("party.noPhone") : m.connected ? t("party.here") : t("party.away")}</span>
               </div>
               {m.role === "host" && (
                 <Pill tone="accent">
@@ -102,6 +111,8 @@ export function PartyScreen() {
         </div>
       </Sheet>
 
+      <AddGuestSheet open={addGuest} onClose={() => setAddGuest(false)} />
+
       <Sheet open={!!menu} onClose={() => setMenu(null)} label={t("party.guestOptions")}>
         {menu && (
           <>
@@ -111,7 +122,21 @@ export function PartyScreen() {
             </div>
             <ActionList
               items={[
-                ...(me.role === "host"
+                ...(sing.canAddFor
+                  ? [
+                      {
+                        key: "addfor",
+                        label: t("party.addSongFor", { name: menu.nickname }),
+                        icon: <ListPlus />,
+                        danger: false,
+                        onClick: () => {
+                          sing.setAs(menu.id);
+                          navigate(`/r/${code}/search`);
+                        },
+                      },
+                    ]
+                  : []),
+                ...(me.role === "host" && !menu.phoneless
                   ? [
                       menu.role === "cohost"
                         ? {

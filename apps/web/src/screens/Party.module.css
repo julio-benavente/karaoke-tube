@@ -151,3 +151,7 @@
   margin-bottom: var(--kt-space-2);
   border-bottom: 1px solid var(--kt-white-10);
 }
+
+.addGuest {
+  margin-bottom: var(--kt-space-3);
+}

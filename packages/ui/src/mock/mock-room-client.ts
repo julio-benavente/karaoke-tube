@@ -418,6 +418,16 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
       case "update_settings":
         if (!host) return deny();
         return applySettings(msg.settings);
+      case "add_guest": {
+        if (!host) return deny();
+        return commit({
+          ...roomState,
+          members: [
+            ...roomState.members,
+            { id: `m${Date.now()}`, nickname: msg.nickname.trim().slice(0, 30) || "Guest", avatarSeed: msg.avatarSeed, role: "guest", connected: true, joinedAt: Date.now(), phoneless: true },
+          ],
+        });
+      }
       case "show_join":
         if (!host) return deny();
         return;

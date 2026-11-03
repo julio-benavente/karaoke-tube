@@ -16,7 +16,7 @@ import { EmptyState, IconButton, QueueRow, songParts, useRoom, useT } from "@kar
 import css from "./host.module.css";
 
 /** Right panel: now singing + next up, drag to reorder. */
-export function QueuePanel({ onClose }: { onClose: () => void }) {
+export function QueuePanel({ onClose }: { onClose?: () => void }) {
   const { state, send } = useRoom();
   const t = useT();
   const upNext = state?.upNext ?? [];
@@ -52,9 +52,11 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
     <aside className={`${css.panel} ${css.queue}`} aria-label={t("host.queueAria")}>
       <header className={css.queueHead}>
         <h2 className={css.queueTitle}>{t("tab.queue")}</h2>
-        <IconButton label={t("host.closeQueue")} size="sm" onClick={onClose}>
-          <X size={18} />
-        </IconButton>
+        {onClose && (
+          <IconButton label={t("host.closeQueue")} size="sm" onClick={onClose}>
+            <X size={18} />
+          </IconButton>
+        )}
       </header>
       <div className={css.queueScroll}>
         {(state.pending?.length ?? 0) > 0 && (

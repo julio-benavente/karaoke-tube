@@ -173,3 +173,34 @@ describe("C4 recap & titles", () => {
     expect(state.recap?.titles).toEqual({});
   });
 });
+
+describe("phoneless guests", () => {
+  it("a host adds a guest without a phone; songs for them take their turns", async () => {
+    const { code, host } = await party();
+    const ana = await guest(code, "Ana");
+    await host.act({ type: "add_song", song: song("now") });
+    let state = await host.act({ type: "add_guest", nickname: "Abuela", avatarSeed: "abu" });
+    const abuela = state.members.find((m) => m.nickname === "Abuela")!;
+    expect(abuela.phoneless).toBe(true);
+    expect(abuela.connected).toBe(true);
+    state = await host.act({ type: "add_song", song: song("for abuela"), singerIds: [abuela.id] });
+    expect(state.upNext.at(-1)?.singerIds).toEqual([abuela.id]);
+    expect(state.upNext.at(-1)?.addedBy).toBe(state.members.find((m) => m.role === "host")!.id);
+    // Rotation: Ana's and Abuela's first songs come before a second one from the host.
+    await ana.client.act({ type: "add_song", song: song("ana") });
+    state = await host.act({ type: "add_song", song: song("host 2") });
+    expect(state.upNext.map((i) => i.song.title).at(-1)).toBe("host 2");
+  });
+
+  it("guests can't add guests, co-hosts can, and a phoneless guest can't be a co-host", async () => {
+    const { code, host } = await party();
+    const ana = await guest(code, "Ana");
+    expect(await ana.client.expectError({ type: "add_guest", nickname: "Tio", avatarSeed: "x" })).toBe("not_allowed");
+    await host.act({ type: "set_role", memberId: ana.id, role: "cohost" });
+    const state = await ana.client.act({ type: "add_guest", nickname: "Tio", avatarSeed: "x" });
+    const tio = state.members.find((m) => m.nickname === "Tio")!;
+    expect(await host.expectError({ type: "set_role", memberId: tio.id, role: "cohost" })).toBe("not_allowed");
+    const after = await host.act({ type: "kick", memberId: tio.id });
+    expect(after.members.some((m) => m.id === tio.id)).toBe(false);
+  });
+});

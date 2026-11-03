@@ -1,19 +1,20 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, Copy, Crown, Home, MoreHorizontal, Search, Settings, ShieldCheck, UserMinus } from "lucide-react";
+import { Check, Copy, Crown, Home, ListPlus, MoreHorizontal, PhoneOff, Search, Settings, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import QRCode from "qrcode";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { Avatar, Logo, Pill, useRoom, useT } from "@karaoke-tube/ui";
+import { AddGuestSheet, Avatar, Button, Logo, Pill, useRoom, useSingWith, useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "./client";
 import type { View } from "./HostApp";
 import css from "./host.module.css";
 
 /** Left column: brand + nav panel, then "Your party" with code, QR and guests. */
-export function Sidebar({ view, onView }: { view: View; onView: (v: View) => void }) {
+export function Sidebar({ view, onView, only, actions }: { view: View; onView: (v: View) => void; only?: "party"; actions?: ReactNode }) {
   const { state, me } = useRoom();
   const t = useT();
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [addGuest, setAddGuest] = useState(false);
   const code = state?.code ?? "";
   const joinUrl = `${WEB_URL}/join/${code}`;
 
@@ -47,7 +48,8 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
   ];
 
   return (
-    <aside className={css.sidebar}>
+    <aside className={`${css.sidebar} ${only ? css.partyOnly : ""}`}>
+      {!only && (
       <nav className={css.panel}>
         <div className={css.brand}>
           <Logo size={28} />
@@ -65,6 +67,7 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
           </button>
         ))}
       </nav>
+      )}
 
       <section className={`${css.panel} ${css.party}`}>
         <header className={css.partyHead}>
@@ -82,22 +85,32 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
             </button>
           </div>
         </div>
+        {actions}
         <h3 className={css.guestsTitle}>
           {t("host.guests")} <span className={css.muted}>{t("host.hereCount", { n: state.members.filter((m) => m.connected).length })}</span>
         </h3>
+        <div className={css.addGuest}>
+          <Button size="sm" variant="secondary" icon={<UserPlus size={16} />} onClick={() => setAddGuest(true)}>
+            {t("host.addGuest")}
+          </Button>
+        </div>
         <ul className={css.guests}>
           {members.map((m) => (
-            <GuestRow key={m.id} member={m} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} />
+            <GuestRow key={m.id} member={m} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
           ))}
         </ul>
       </section>
+      <AddGuestSheet open={addGuest} onClose={() => setAddGuest(false)} />
     </aside>
   );
 }
 
-function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; canManage: boolean }) {
+function GuestRow({ member, isMe, canManage, onAddFor }: { member: Member; isMe: boolean; canManage: boolean; onAddFor: () => void }) {
   const { send } = useRoom();
   const t = useT();
+  const sing = useSingWith();
+  const canAddFor = sing.canAddFor && !isMe;
+  const canKick = canManage || (member.phoneless && sing.canAddFor);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
 
@@ -128,6 +141,10 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
             </>
           ) : member.role === "cohost" ? (
             t("party.cohost")
+          ) : member.phoneless ? (
+            <>
+              <PhoneOff size={11} /> {t("party.noPhone")}
+            </>
           ) : member.connected ? (
             t("role.guest")
           ) : (
@@ -135,7 +152,7 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
           )}
         </span>
       </div>
-      {canManage && (
+      {(canManage || canAddFor || canKick) && (
         <button
           type="button"
           className={css.guestMore}
@@ -148,29 +165,47 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
       )}
       {open && (
         <div className={css.menu} role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              send({ type: "set_role", memberId: member.id, role: member.role === "cohost" ? "guest" : "cohost" });
-              setOpen(false);
-            }}
-          >
-            <ShieldCheck size={16} />
-            {member.role === "cohost" ? t("party.removeCohost") : t("party.makeCohost")}
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className={css.menuDanger}
-            onClick={() => {
-              send({ type: "kick", memberId: member.id });
-              setOpen(false);
-            }}
-          >
-            <UserMinus size={16} />
-            {t("party.removeGuest")}
-          </button>
+          {canAddFor && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                sing.setAs(member.id);
+                setOpen(false);
+                onAddFor();
+              }}
+            >
+              <ListPlus size={16} />
+              {t("party.addSongFor", { name: member.nickname })}
+            </button>
+          )}
+          {canManage && !member.phoneless && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                send({ type: "set_role", memberId: member.id, role: member.role === "cohost" ? "guest" : "cohost" });
+                setOpen(false);
+              }}
+            >
+              <ShieldCheck size={16} />
+              {member.role === "cohost" ? t("party.removeCohost") : t("party.makeCohost")}
+            </button>
+          )}
+          {canKick && (
+            <button
+              type="button"
+              role="menuitem"
+              className={css.menuDanger}
+              onClick={() => {
+                send({ type: "kick", memberId: member.id });
+                setOpen(false);
+              }}
+            >
+              <UserMinus size={16} />
+              {t("party.removeGuest")}
+            </button>
+          )}
         </div>
       )}
     </li>

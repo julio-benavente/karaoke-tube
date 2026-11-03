@@ -32,4 +32,5 @@ export { Toggle } from "./components/Toggle";
 export { Toast, ToastProvider, useToast } from "./components/Toast";
 export { Sheet, ActionList } from "./components/Sheet";
 export { EmptyState, Mark, Logo, Spinner, TextField, Banner } from "./components/EmptyState";
+export { AddGuestSheet } from "./components/AddGuestSheet";
 export { SingWithProvider, SingWithPicker, SingWithButton, useSingWith, type UseSingWith } from "./components/SingWith";

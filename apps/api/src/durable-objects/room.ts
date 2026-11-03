@@ -28,6 +28,9 @@ import { computeTitles } from "../titles";
 export const ENDED_TTL_MS = 60 * 60 * 1000;
 /** Each member may send one reaction per this many ms. */
 export const REACTION_INTERVAL_MS = 500;
+/** Most guests without a phone a host can add. */
+const MAX_PHONELESS = 30;
+
 /** How long after a performance members can give it awards. */
 export const AWARD_WINDOW_MS = 60 * 1000;
 /** Recaps stay readable at /recap/:id this long. */
@@ -49,6 +52,8 @@ type MemberRow = {
   role: Role;
   joined_at: number;
   key_hash: string;
+  /** 1 = added by a host, has no phone. */
+  phoneless?: number;
 };
 
 type ItemRow = {
@@ -116,6 +121,11 @@ export class Room extends DurableObject<Env> {
       } catch {
         // already there
       }
+    }
+    try {
+      this.sql.exec("ALTER TABLE members ADD COLUMN phoneless INTEGER NOT NULL DEFAULT 0");
+    } catch {
+      // already there
     }
   }
 
@@ -402,6 +412,7 @@ export class Room extends DurableObject<Env> {
         if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can change roles.");
         const target = this.memberRow(msg.memberId);
         if (!target || target.role === "host") throw new RoomError("not_allowed", "Can't change that member's role.");
+        if (target.phoneless) throw new RoomError("not_allowed", "A guest without a phone can't be a co-host.");
         this.sql.exec("UPDATE members SET role = ? WHERE id = ?", msg.role, target.id);
         break;
       }
@@ -436,6 +447,13 @@ export class Room extends DurableObject<Env> {
           this.sql.exec("UPDATE items SET status = 'waiting' WHERE status = 'pending'");
           await this.afterQueueChange();
         }
+        break;
+      }
+      case "add_guest": {
+        requireHost();
+        const count = this.memberRows().filter((m) => m.phoneless).length;
+        if (count >= MAX_PHONELESS) throw new RoomError("not_allowed", "That's a lot of guests without phones.");
+        await this.addMember(msg.nickname, msg.avatarSeed, "guest", true);
         break;
       }
       case "show_join": {
@@ -644,17 +662,18 @@ export class Room extends DurableObject<Env> {
     ws.serializeAttachment({ memberId, wantsPlayer: att.wantsPlayer, player } satisfies Attachment);
   }
 
-  private async addMember(nickname: string, avatarSeed: string, role: Role) {
+  private async addMember(nickname: string, avatarSeed: string, role: Role, phoneless = false) {
     const memberId = crypto.randomUUID();
     const key = randomKey();
     this.sql.exec(
-      "INSERT INTO members (id, nickname, avatar_seed, role, joined_at, key_hash) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO members (id, nickname, avatar_seed, role, joined_at, key_hash, phoneless) VALUES (?, ?, ?, ?, ?, ?, ?)",
       memberId,
       this.uniqueNickname(nickname),
       avatarSeed.slice(0, 64),
       role,
       Date.now(),
       await sha256(key),
+      phoneless ? 1 : 0,
     );
     return { memberId, key };
   }
@@ -806,8 +825,9 @@ export class Room extends DurableObject<Env> {
       nickname: m.nickname,
       avatarSeed: m.avatar_seed,
       role: m.role,
-      connected: connected.has(m.id),
+      connected: m.phoneless ? true : connected.has(m.id),
       joinedAt: m.joined_at,
+      ...(m.phoneless ? { phoneless: true } : {}),
     }));
     const playing = this.nowPlayingItem();
     return {
@@ -1080,6 +1100,9 @@ export function parseClientMessage(text: string): ClientMessage {
       break;
     case "kick":
       ok(isStr(m.memberId, 64));
+      break;
+    case "add_guest":
+      ok(isStr(m.nickname, 100) && typeof m.avatarSeed === "string");
       break;
     case "update_settings":
       ok(!!m.settings && typeof m.settings === "object");

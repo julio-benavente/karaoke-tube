@@ -1,13 +1,15 @@
 import { useLogParty } from "../account/AccountContext";
-import { CircleSlash, Lock, LockOpen, Tv, Power, Flame, QrCode } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CircleSlash, Home, ListMusic, Lock, LockOpen, PartyPopper, Search as SearchIcon, Settings as SettingsIcon, Tv, Power, Flame, QrCode } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
 import {
+  BottomTabs,
   Button,
   EmptyState,
   IconButton,
   LanguageSwitcher,
   Logo,
+  MiniPlayer,
   PlayerBar,
   PlayerBarDivider,
   RoomProvider,
@@ -27,6 +29,9 @@ import {
   type TFn,
 } from "@karaoke-tube/ui";
 import { useParams } from "react-router";
+import { TurnAlertBanner } from "../screens/TurnAlert";
+import { RemoteVideo } from "../watch/RemoteVideo";
+import { useWatchPref } from "../watch/pref";
 import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "./client";
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
@@ -35,7 +40,20 @@ import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
 import css from "./host.module.css";
 
-export type View = "home" | "search" | "settings";
+export type View = "home" | "search" | "settings" | "queue" | "party";
+
+/** Phones and narrow windows get the phone layout: one column, tabs at the bottom. */
+const MOBILE_QUERY = "(max-width: 820px)";
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const on = () => setMobile(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return mobile;
+}
 
 /** H1: the host app, full tab. Sidebar | main | queue, player bar at the bottom. */
 export function HostApp() {
@@ -77,6 +95,7 @@ function Host() {
   const [view, setView] = useState<View>("home");
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [queueOpen, setQueueOpen] = useState(true);
+  const mobile = useIsMobile();
 
   useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
 
@@ -128,6 +147,123 @@ function Host() {
   }
 
   const locked = state.settings.locked;
+
+  const endSheet = (
+    <Sheet open={confirmEnd} onClose={() => setConfirmEnd(false)} label={t("host.endLabel")}>
+      <div className={css.confirm}>
+        <h2 className={css.confirmTitle}>{t("host.endTitle")}</h2>
+        <p className={css.muted}>{t("host.endText")}</p>
+        <div className={css.confirmButtons}>
+          <Button variant="secondary" onClick={() => setConfirmEnd(false)}>
+            {t("host.keepSinging")}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              setConfirmEnd(false);
+              send({ type: "end_party" });
+            }}
+          >
+            {t("host.endLabel")}
+          </Button>
+        </div>
+      </div>
+    </Sheet>
+  );
+
+  if (mobile) {
+    const tab = view;
+    const tabIcon = (v: View, Icon: typeof Home) => <Icon strokeWidth={tab === v ? 2.6 : 2} />;
+    const playing = state.playback.state === "playing";
+    return (
+      <div className={css.mobileFrame}>
+        {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
+        {status === "open" && state.playerConnected === false && (
+          <div className={css.tvClosed} role="alert" data-testid="tv-banner">
+            <span>{t("host.noTv")}</span>
+            <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
+              {t("host.openTv")}
+            </Button>
+          </div>
+        )}
+        <main className={css.mobileMain}>
+          {view === "home" && <HomeView onSearch={() => setView("search")} />}
+          {view === "search" && <SearchView />}
+          {view === "queue" && (
+            <>
+              {state.nowPlaying && <WatchHere item={state.nowPlaying} playback={state.playback} />}
+              <QueuePanel />
+            </>
+          )}
+          {view === "party" && (
+            <Sidebar
+              view={view}
+              onView={setView}
+              only="party"
+              actions={
+                <div className={css.mobileActions}>
+                  <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
+                    {t("host.openTv")}
+                  </Button>
+                  {state.playerConnected && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={<QrCode size={16} />}
+                      onClick={() => {
+                        send({ type: "show_join" });
+                        toast.show(t("host.showCodeToast"));
+                      }}
+                    >
+                      {t("host.showCode")}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={locked ? <Lock size={16} /> : <LockOpen size={16} />}
+                    onClick={() => {
+                      send({ type: "update_settings", settings: { locked: !locked } });
+                      toast.show(locked ? t("host.unlocked") : t("host.lockedToast"));
+                    }}
+                  >
+                    {locked ? t("host.unlockShort") : t("host.lockShort")}
+                  </Button>
+                  <Button size="sm" variant="ghost" icon={<Power size={16} />} onClick={() => setConfirmEnd(true)}>
+                    {t("host.endLabel")}
+                  </Button>
+                </div>
+              }
+            />
+          )}
+          {view === "settings" && <SettingsView />}
+        </main>
+        <BottomTabs
+          active={tab}
+          onSelect={(k) => setView(k as View)}
+          tabs={[
+            { key: "home", label: t("tab.home"), icon: tabIcon("home", Home) },
+            { key: "search", label: t("tab.search"), icon: tabIcon("search", SearchIcon) },
+            { key: "queue", label: t("tab.queue"), icon: tabIcon("queue", ListMusic), badge: state.upNext.length || undefined },
+            { key: "party", label: t("tab.party"), icon: tabIcon("party", PartyPopper), badge: state.pending?.length || undefined },
+            { key: "settings", label: t("nav.settings"), icon: tabIcon("settings", SettingsIcon) },
+          ]}
+        >
+          {state.nowPlaying && (
+            <MiniPlayer
+              item={state.nowPlaying}
+              playback={state.playback}
+              members={state.members}
+              onOpen={() => setView("queue")}
+              onToggle={() => send({ type: playing ? "pause" : "resume" })}
+            />
+          )}
+        </BottomTabs>
+        {endSheet}
+        <TurnAlertBanner />
+      </div>
+    );
+  }
 
   return (
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
@@ -202,26 +338,22 @@ function Host() {
         />
       </div>
 
-      <Sheet open={confirmEnd} onClose={() => setConfirmEnd(false)} label={t("host.endLabel")}>
-        <div className={css.confirm}>
-          <h2 className={css.confirmTitle}>{t("host.endTitle")}</h2>
-          <p className={css.muted}>{t("host.endText")}</p>
-          <div className={css.confirmButtons}>
-            <Button variant="secondary" onClick={() => setConfirmEnd(false)}>
-              {t("host.keepSinging")}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                setConfirmEnd(false);
-                send({ type: "end_party" });
-              }}
-            >
-              {t("host.endLabel")}
-            </Button>
-          </div>
-        </div>
-      </Sheet>
+      {endSheet}
+      <TurnAlertBanner />
+    </div>
+  );
+}
+
+/** Host on a phone, away from the TV: the karaoke video here, in step with the room. */
+function WatchHere({ item, playback }: { item: NonNullable<ReturnType<typeof useRoom>["state"]>["nowPlaying"] & {}; playback: Parameters<typeof RemoteVideo>[0]["playback"] }) {
+  const t = useT();
+  const [on, setOn] = useWatchPref();
+  return (
+    <div className={css.watchHere}>
+      {on && <RemoteVideo item={item} playback={playback} />}
+      <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => setOn(!on)}>
+        {on ? t("watch.hide") : t("watch.on")}
+      </Button>
     </div>
   );
 }
