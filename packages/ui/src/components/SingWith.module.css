@@ -83,3 +83,18 @@
   color: var(--kt-text-2);
   font-size: var(--kt-text-md);
 }
+
+.groupLabel {
+  margin: var(--kt-space-3) 0 var(--kt-space-2);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+}
+
+.groupLabel:first-child {
+  margin-top: 0;
+}
+
+.noPhone {
+  opacity: 0.7;
+}

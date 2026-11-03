@@ -1,0 +1,16 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-4);
+  padding: var(--kt-space-4) var(--kt-space-6) var(--kt-space-6);
+}
+
+.title {
+  font-size: var(--kt-text-2xl);
+  font-weight: var(--kt-weight-bold);
+}
+
+.text {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+}

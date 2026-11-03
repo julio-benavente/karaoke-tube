@@ -24,6 +24,7 @@ import {
   useToast,
 } from "@karaoke-tube/ui";
 import { useParams } from "react-router";
+import { TurnAlertBanner } from "../screens/TurnAlert";
 import { RemoteVideo } from "../watch/RemoteVideo";
 import { useWatchPref } from "../watch/pref";
 import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "./client";
@@ -251,6 +252,7 @@ function Host() {
           )}
         </BottomTabs>
         {endSheet}
+        <TurnAlertBanner />
       </div>
     );
   }
@@ -328,6 +330,7 @@ function Host() {
       </div>
 
       {endSheet}
+      <TurnAlertBanner />
     </div>
   );
 }

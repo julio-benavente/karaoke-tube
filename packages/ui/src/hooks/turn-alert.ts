@@ -15,6 +15,29 @@ export type TurnAlert = {
  */
 export function turnAlertFor(state: RoomState | null | undefined, meId: string | null | undefined): TurnAlert | null {
   if (!state || !meId || !state.settings.turnAlerts) return null;
+  return ownTurnAlert(state, meId) ?? phonelessTurnAlert(state, meId);
+}
+
+/** Hosts hear about the turns of guests who have no phone, so they can call them over to the mic. */
+function phonelessTurnAlert(state: RoomState, meId: string): TurnAlert | null {
+  const me = state.members.find((m) => m.id === meId);
+  if (!me || (me.role !== "host" && me.role !== "cohost")) return null;
+  const { nowPlaying, upNext, playback } = state;
+  const names = (ids: string[]) => {
+    const list = state.members.filter((m) => m.phoneless && ids.includes(m.id)).map((m) => m.nickname);
+    return list.length ? list.join(" & ") : null;
+  };
+  if (nowPlaying && playback.state === "get_ready") {
+    const who = names(nowPlaying.singerIds);
+    if (who) return { key: `${nowPlaying.id}:pnow`, stage: "now", message: `${who}, you're up! Bring them the mic.` };
+  }
+  const next = upNext[0];
+  const who = next && names(next.singerIds);
+  if (next && who) return { key: `${next.id}:pnext`, stage: "next", message: `${who} is up next. Call them over.` };
+  return null;
+}
+
+function ownTurnAlert(state: RoomState, meId: string): TurnAlert | null {
   const { nowPlaying, upNext, playback } = state;
   if (nowPlaying?.singerIds.includes(meId)) {
     return playback.state === "get_ready"

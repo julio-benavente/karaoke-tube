@@ -853,3 +853,7 @@
   gap: var(--kt-space-2);
   padding: var(--kt-space-3) var(--kt-space-3) 0;
 }
+
+.addGuest {
+  padding: 0 var(--kt-space-2) var(--kt-space-2);
+}
