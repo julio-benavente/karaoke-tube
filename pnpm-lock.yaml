@@ -33,6 +33,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@karaoke-tube/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@karaoke-tube/shared':
         specifier: workspace:*
         version: link:../../packages/shared
