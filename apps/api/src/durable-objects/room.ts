@@ -35,6 +35,12 @@ const MAX_PHONELESS = 30;
 export const AWARD_WINDOW_MS = 60 * 1000;
 /** Recaps stay readable at /recap/:id this long. */
 export const RECAP_TTL_SEC = 30 * 24 * 60 * 60;
+/** While the real host is away: who is standing in, who the real host is, and what the stand-in was before. */
+type Succession = { originalId: string; actingId: string; actingWas: "cohost" | "guest" };
+
+/** The host has been offline this long: the co-host (or else a guest who is here) takes over. */
+const HOST_OFFLINE_MS = 60_000;
+
 /** An open party with nobody connected for this long ends itself. */
 export const IDLE_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_NICKNAME = 24;
@@ -236,6 +242,7 @@ export class Room extends DurableObject<Env> {
   private async onSocketGone(ws: WebSocket) {
     if (!attachment(ws).memberId) return;
     this.broadcastState(ws);
+    await this.checkHostPresence(ws);
     const anyoneLeft = this.ctx.getWebSockets().some((s) => s !== ws && attachment(s).memberId);
     if (!anyoneLeft && this.getMeta("code") !== null && this.status() === "open") {
       this.setMeta("idleSince", Date.now());
@@ -266,6 +273,12 @@ export class Room extends DurableObject<Env> {
       const item = this.nowPlayingItem();
       if (item && this.playback().state === "get_ready") this.sendPlay(item);
     }
+    // The host has been offline for a while and someone else is here: hand the party over.
+    const hostOfflineSince = this.getMeta<number>("hostOfflineSince");
+    if (hostOfflineSince && now >= hostOfflineSince + HOST_OFFLINE_MS) {
+      this.setMeta("hostOfflineSince", null);
+      if (this.succeedHost()) this.broadcastState();
+    }
     // Nobody has been connected for IDLE_TTL_MS: the party was abandoned.
     const idleSince = this.getMeta<number>("idleSince");
     const anyone = this.ctx.getWebSockets().some((s) => attachment(s).memberId);
@@ -275,6 +288,87 @@ export class Room extends DurableObject<Env> {
       return;
     }
     await this.scheduleAlarm();
+  }
+
+  /**
+   * Takes a member's songs out of the party: waiting and pending songs go (a duet stays if another singer is left),
+   * and if they are the only singer on screen that song is skipped.
+   */
+  private async removeMemberSongs(memberId: string) {
+    const waiting = [...this.upNext(), ...this.itemRows().filter((i) => i.status === "pending")];
+    for (const item of waiting) {
+      if (!item.singerIds.includes(memberId)) continue;
+      const rest = item.singerIds.filter((id) => id !== memberId);
+      if (rest.length === 0) this.sql.exec("DELETE FROM items WHERE id = ?", item.id);
+      else this.sql.exec("UPDATE items SET singer_ids = ? WHERE id = ?", JSON.stringify(rest), item.id);
+    }
+    this.normalisePins();
+    const current = this.nowPlayingItem();
+    if (current && current.singerIds.length === 1 && current.singerIds[0] === memberId) {
+      this.setItem(current.id, { status: "skipped" });
+      await this.advance();
+      if (!this.nowPlayingItem()) this.sendToPlayer({ type: "player_command", command: "pause" });
+    }
+  }
+
+  /** Is anyone connected as this member? `closing` is a socket that's going away and doesn't count. */
+  private isOnline(memberId: string, closing?: WebSocket): boolean {
+    return this.ctx.getWebSockets().some((s) => s !== closing && attachment(s).memberId === memberId);
+  }
+
+  /** Starts or stops the "host is offline" clock. It only runs while somebody else is here to take over. */
+  private async checkHostPresence(closing?: WebSocket) {
+    if (this.status() !== "open") return;
+    const host = this.memberRows().find((m) => m.role === "host");
+    if (!host) return;
+    const since = this.getMeta<number>("hostOfflineSince");
+    const othersHere = this.memberRows().some((m) => m.id !== host.id && !m.phoneless && this.isOnline(m.id, closing));
+    if (this.isOnline(host.id, closing) || !othersHere) {
+      if (since !== null) {
+        this.setMeta("hostOfflineSince", null);
+        await this.scheduleAlarm();
+      }
+      return;
+    }
+    if (since === null) {
+      this.setMeta("hostOfflineSince", Date.now());
+      await this.scheduleAlarm();
+    }
+  }
+
+  /**
+   * The host has been gone too long: the co-host who is here (earliest first), else the guest who has been here
+   * longest, becomes the temporary host. The real host is remembered and gets the role back as soon as they return.
+   */
+  private succeedHost(): boolean {
+    const host = this.memberRows().find((m) => m.role === "host");
+    const next = this.memberRows()
+      .filter((m) => m.role !== "host" && !m.phoneless && this.isOnline(m.id))
+      .sort((a, b) => Number(b.role === "cohost") - Number(a.role === "cohost") || a.joined_at - b.joined_at)[0];
+    if (!host || !next) return false;
+    const before = this.getMeta<Succession>("succession");
+    let originalId = host.id;
+    if (before && before.actingId === host.id) {
+      // The temporary host went offline too: they go back to what they were, the real host's seat stays reserved.
+      originalId = before.originalId;
+      this.sql.exec("UPDATE members SET role = ? WHERE id = ?", before.actingWas, host.id);
+    } else {
+      // The real host waits as a co-host until they are back.
+      this.sql.exec("UPDATE members SET role = 'cohost' WHERE id = ?", host.id);
+    }
+    this.sql.exec("UPDATE members SET role = 'host' WHERE id = ?", next.id);
+    this.setMeta("succession", { originalId, actingId: next.id, actingWas: next.role === "cohost" ? "cohost" : "guest" } satisfies Succession);
+    return true;
+  }
+
+  /** The real host is back: they are the host again and the temporary host returns to their previous role. */
+  private restoreHost(memberId: string): boolean {
+    const s = this.getMeta<Succession>("succession");
+    if (!s || s.originalId !== memberId) return false;
+    if (this.memberRow(s.actingId)) this.sql.exec("UPDATE members SET role = ? WHERE id = ?", s.actingWas, s.actingId);
+    this.sql.exec("UPDATE members SET role = 'host' WHERE id = ?", memberId);
+    this.setMeta("succession", null);
+    return true;
   }
 
   /** Sets the alarm to the earliest pending deadline, or clears it. */
@@ -287,6 +381,8 @@ export class Room extends DurableObject<Env> {
       if (this.getMeta<boolean>("countdownPending") && pb.state === "get_ready" && pb.countdownEndsAt) times.push(pb.countdownEndsAt);
       const idleSince = this.getMeta<number>("idleSince");
       if (idleSince) times.push(idleSince + IDLE_TTL_MS);
+      const hostOfflineSince = this.getMeta<number>("hostOfflineSince");
+      if (hostOfflineSince) times.push(hostOfflineSince + HOST_OFFLINE_MS);
     }
     if (times.length) await this.ctx.storage.setAlarm(Math.min(...times));
     else await this.ctx.storage.deleteAlarm();
@@ -421,21 +517,41 @@ export class Room extends DurableObject<Env> {
         const target = this.memberRow(msg.memberId);
         if (!target || target.role === "host" || target.id === me.id) throw new RoomError("not_allowed", "Can't remove that member.");
         if (me.role === "cohost" && target.role === "cohost") throw new RoomError("not_allowed", "Only the host can remove a co-host.");
-        const upNext = this.upNext();
+        await this.removeMemberSongs(target.id);
         this.sql.exec("DELETE FROM members WHERE id = ?", target.id);
-        // Drop their waiting songs (a duet stays if another singer is left).
-        for (const item of upNext) {
-          if (!item.singerIds.includes(target.id)) continue;
-          const rest = item.singerIds.filter((id) => id !== target.id);
-          if (rest.length === 0) this.sql.exec("DELETE FROM items WHERE id = ?", item.id);
-          else this.sql.exec("UPDATE items SET singer_ids = ? WHERE id = ?", JSON.stringify(rest), item.id);
-        }
-        this.normalisePins();
         for (const sock of this.socketsOf(target.id)) {
           this.send(sock, { type: "kicked" });
           sock.serializeAttachment({ memberId: null, wantsPlayer: false, player: false } satisfies Attachment);
           sock.close(4000, "kicked");
         }
+        break;
+      }
+      case "leave": {
+        // The host leaving on purpose ends the party. Anyone else leaves cleanly: their songs go with them.
+        const succession = this.getMeta<Succession>("succession");
+        if (me.role === "host" && succession?.actingId === me.id) {
+          // A temporary host leaving just gives the seat back; the party goes on for the real host.
+          this.sql.exec("UPDATE members SET role = 'host' WHERE id = ?", succession.originalId);
+          this.setMeta("succession", null);
+        } else if (me.role === "host") {
+          await this.endRoom();
+          return;
+        }
+        await this.removeMemberSongs(me.id);
+        this.sql.exec("DELETE FROM members WHERE id = ?", me.id);
+        for (const sock of this.socketsOf(me.id)) {
+          sock.serializeAttachment({ memberId: null, wantsPlayer: false, player: false } satisfies Attachment);
+          sock.close(1000, "left");
+        }
+        await this.checkHostPresence();
+        break;
+      }
+      case "remove_member_songs": {
+        // Hosts: clear everything a member still has in the queue (e.g. they went offline and won't be back).
+        requireHost();
+        const target = this.memberRow(msg.memberId);
+        if (!target) throw new RoomError("not_allowed", "Unknown member.");
+        await this.removeMemberSongs(target.id);
         break;
       }
       case "update_settings": {
@@ -634,14 +750,18 @@ export class Room extends DurableObject<Env> {
 
   /** Someone is connected again: stop the idle clock. */
   private async markActive() {
-    if (this.getMeta<number>("idleSince") === null) return;
-    this.setMeta("idleSince", null);
-    await this.scheduleAlarm();
+    if (this.getMeta<number>("idleSince") !== null) {
+      this.setMeta("idleSince", null);
+      await this.scheduleAlarm();
+    }
+    await this.checkHostPresence();
   }
 
   private async onRejoin(ws: WebSocket, memberId: string, key: string) {
     const member = this.memberRow(memberId);
     if (!member || member.key_hash !== (await sha256(key))) throw new RoomError("bad_key", "Can't rejoin; join again.");
+    // The real host is back: they are the host again (before their welcome, so they see the right role).
+    this.restoreHost(memberId);
     this.attach(ws, memberId);
     this.send(ws, { type: "welcome", memberId, key, state: this.state() });
     this.broadcastState(undefined, ws);
@@ -842,6 +962,7 @@ export class Room extends DurableObject<Env> {
       awardWindow: this.awardWindowState(),
       recap: this.status() === "ended" ? (this.getMeta<Recap>("recap") ?? null) : null,
       playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
+      tempHostId: this.getMeta<Succession>("succession")?.actingId ?? null,
     };
   }
 
@@ -1099,7 +1220,10 @@ export function parseClientMessage(text: string): ClientMessage {
       ok(isStr(m.memberId, 64) && (m.role === "cohost" || m.role === "guest"));
       break;
     case "kick":
+    case "remove_member_songs":
       ok(isStr(m.memberId, 64));
+      break;
+    case "leave":
       break;
     case "add_guest":
       ok(isStr(m.nickname, 100) && typeof m.avatarSeed === "string");

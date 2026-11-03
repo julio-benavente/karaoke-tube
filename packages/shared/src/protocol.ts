@@ -105,6 +105,11 @@ export type RoomState = {
    * False when the host closed the TV window (offer "Reopen TV window"). Undefined from older rooms.
    */
   playerConnected?: boolean;
+  /**
+   * Set while the real host is away: the member who is standing in as host (their role is "host" meanwhile).
+   * The real host gets the role back when they return and this member goes back to what they were.
+   */
+  tempHostId?: string | null;
   /** Songs waiting for a host's OK ("approval" mode), oldest first. v1.1. */
   pending?: QueueItem[];
   /** The performance members can give awards to right now, if any. v1.1. */
@@ -227,6 +232,10 @@ export type ClientMessage =
   | { type: "restart" } // hosts
   | { type: "set_role"; memberId: string; role: "cohost" | "guest" } // host only
   | { type: "kick"; memberId: string } // hosts
+  /** Leave the party for good: your waiting songs go with you. The host leaving ends the party. */
+  | { type: "leave" }
+  /** Hosts: take everything a member still has waiting out of the queue (e.g. they went offline). */
+  | { type: "remove_member_songs"; memberId: string }
   | { type: "update_settings"; settings: Partial<RoomSettings> } // hosts
   | { type: "end_party" } // host only
   /** Hosts: flash the join QR + code on the TV for a few seconds (the room replies to everyone with `join_flash`). */
