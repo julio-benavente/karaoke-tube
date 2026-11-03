@@ -36,6 +36,13 @@ export function useRoomClient(): RoomClient {
   return ctx.client;
 }
 
+/** The SearchApi given to RoomProvider. */
+export function useSearchApi(): SearchApi {
+  const ctx = useContext(RoomContext);
+  if (!ctx?.search) throw new Error("useSearchApi needs RoomProvider with `search`");
+  return ctx.search;
+}
+
 export type UseRoom = {
   state: RoomState | null;
   me: Member | null;

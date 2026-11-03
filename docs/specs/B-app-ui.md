@@ -60,7 +60,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 - States: connecting, reconnecting banner, kicked, party ended (simple "Thanks for singing" screen for now).
 - Choose the client by env: `VITE_USE_MOCK=1` uses the mock; otherwise `@karaoke-tube/client` (see Integration).
 
-### B3. Host app (`apps/extension/entrypoints/host/`)
+### B3. Host app (`apps/extension/entrypoints/host/`) ✅
 - A WXT unlisted page `host.html`, full-tab desktop layout H1: sidebar (mark, Home, Search, "Your party" with code, QR from `qrcode`, guests),
   main area (Home / Search / Settings views), right Queue panel with drag to reorder (`@dnd-kit/sortable`), bottom player bar
   (restart, pause/resume, skip, progress, reaction count, lock, "Show on TV", End party with an in-page confirm).
@@ -92,3 +92,8 @@ and nothing in the UI uses Spotify's name, logo, green or font.
 ## Requests for the other track
 - **Set `RoomClient.closeReason`** (new optional field, see README "Contract changes") in `createRoomClient` and
   `createExtensionRoomClient`: `"kicked"` on the `kicked` message, `"ended"` on `ended`, `"left"` after `close()`.
+- **`SHOW_ON_TV` message** (background): the host app's "Show on TV" button sends `{ type: "SHOW_ON_TV" }`. Please focus the
+  party's YouTube window and make the player full screen if you can, and reply `{ ok: true }`. Without a reply the host app
+  shows a hint ("drag the YouTube window onto the TV, press F").
+- **`WXT_WEB_URL`** in `apps/extension/.env.example` (and `wxt.config.ts` if needed): the guest web app's origin. The host
+  app's QR code and invite link use `${WXT_WEB_URL}/join/<CODE>`; it falls back to `http://localhost:5173`.

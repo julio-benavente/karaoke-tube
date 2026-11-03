@@ -149,5 +149,6 @@
     gap: 0;
     margin: 0 calc(-1 * var(--kt-space-3));
     padding: 0;
+    scroll-snap-type: none;
   }
 }
