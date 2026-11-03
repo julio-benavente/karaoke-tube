@@ -153,6 +153,7 @@ function GalleryBody() {
       </EmptyState>
 
       <div className={css.spacer} />
+      <h2>Host player bar</h2>
       {state && (
         <div className={css.playerBar}>
           <PlayerBar
@@ -166,6 +167,7 @@ function GalleryBody() {
           />
         </div>
       )}
+      <h2>Phone: bottom tabs + mini player</h2>
       <div className={css.phone}>
         <BottomTabs
           active={tab}

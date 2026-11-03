@@ -43,19 +43,23 @@
 }
 
 .spacer {
-  height: 220px;
+  height: var(--kt-space-4);
 }
 
+/* The host's player bar and the phone's tabs + mini player, shown in the page (not pinned to the window). */
 .playerBar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 120px;
-  z-index: 5;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--kt-radius-md);
+  background: var(--kt-bg-base, #070609);
 }
 
-@media (max-width: 767px) {
-  .playerBar {
-    display: none;
-  }
+.phone {
+  position: relative;
+  transform: translateZ(0); /* makes this the anchor for the tabs, which are pinned to the bottom of their container */
+  height: 150px;
+  max-width: 390px;
+  overflow: hidden;
+  border-radius: var(--kt-radius-md);
+  background: var(--kt-bg-base, #070609);
 }
