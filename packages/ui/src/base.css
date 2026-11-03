@@ -90,7 +90,7 @@ a {
   color: var(--kt-accent-ink);
 }
 
-/* Spotify-like thin scrollbars on desktop */
+/* Thin scrollbars on desktop */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--kt-white-30) transparent;

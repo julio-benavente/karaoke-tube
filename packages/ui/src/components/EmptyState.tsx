@@ -56,7 +56,7 @@ export function Spinner({ size = 28, className }: { size?: number; className?: s
   return <span className={clsx(css.spinner, className)} style={{ width: size, height: size }} role="status" aria-label="Loading" />;
 }
 
-/** Text input with the Spotify-like filled style. */
+/** Text input with the filled style. */
 export function TextField({
   label,
   hideLabel,

@@ -72,7 +72,7 @@ those variables; no CSS-in-JS runtime. Respect `prefers-reduced-motion`.
 Small Spotify-style card. No party: nickname + avatar + "Start a party" (sends `{ type: "START_PARTY", nickname, avatarSeed }` to the background).
 Party running: code, guest count, "Open host app", "End party" (`END_PARTY`), and `GET_PARTY` on open.
 
-### B5. TV overlay components
+### B5. TV overlay components ✅
 Presentational only, props in and nothing else, exported from `packages/ui/src/tv/`:
 `TvOverlay` (T1: now-singing chip, up-next chip, QR + code, floating reactions), `GetReadyCard` (T2: avatar, name, song, countdown from `countdownEndsAt`).
 They must render inside a shadow root: no global CSS and no `document`-level styles, and the CSS must be importable as a string.
@@ -99,5 +99,13 @@ and nothing in the UI uses Spotify's name, logo, green or font.
   `START_PARTY` → `{ ok: true, code }` or `{ ok: false, error }`; `GET_PARTY` → `{ ok: true, party: { code, guestCount } | null }`;
   `END_PARTY` → `{ ok: true }`. Until `GET_PARTY` replies with an `ok` boolean, the popup runs in a local "Demo" mode.
   "Open host app" opens or focuses `host.html` itself.
+- **TV overlay mount** (content script): `import { TvOverlay, GetReadyCard, tvCss, TV_REACTION_MS } from "@karaoke-tube/ui/tv"`.
+  Put `<style>{tvCss}</style>` and the React root in a shadow root on a host element that covers `#movie_player`
+  (`position: absolute; inset: 0`). Show `GetReadyCard` while `playback.state === "get_ready"`, otherwise `TvOverlay`.
+  Keep each reaction in `reactions` for `TV_REACTION_MS`, then drop it. Make the QR with `qrcode`'s `toDataURL(joinUrl)`.
+  `apps/web/src/dev/TvPreview.tsx` shows the exact wiring.
+- **Figtree on the TV**: `@font-face` doesn't work inside a shadow root, so the overlay falls back to the system font
+  unless the content script adds Figtree at document level: list the `@fontsource/figtree` woff2 files (400/700/800) in
+  `web_accessible_resources` and inject `@font-face` rules that use `browser.runtime.getURL(...)`.
 - **`WXT_WEB_URL`** in `apps/extension/.env.example` (and `wxt.config.ts` if needed): the guest web app's origin. The host
   app's QR code and invite link use `${WXT_WEB_URL}/join/<CODE>`; it falls back to `http://localhost:5173`.

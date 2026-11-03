@@ -30,7 +30,7 @@ export function ToastProvider({ children, offset = 24 }: { children: ReactNode; 
 
   const show = useCallback((message: ReactNode, options: ToastOptions = {}) => {
     const id = seq.current++;
-    // One toast at a time, like Spotify: the new one replaces the old.
+    // One toast at a time: the new one replaces the old.
     setItems([{ id, message, ...options }]);
     after(() => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, leaving: true } : x))), options.duration ?? 3000);
     after(() => setItems((xs) => xs.filter((x) => x.id !== id)), (options.duration ?? 3000) + 250);

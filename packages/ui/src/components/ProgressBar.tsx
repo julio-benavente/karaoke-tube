@@ -13,7 +13,7 @@ export type ProgressBarProps = {
   label?: string;
 };
 
-/** Spotify-style progress: thin track, white fill that turns pink with a knob on hover. Read-only. */
+/** Progress: thin track, white fill that turns pink with a knob on hover. Read-only. */
 export function ProgressBar({ value, max, showTimes, variant = "default", className, label = "Song progress" }: ProgressBarProps) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   const bar = (

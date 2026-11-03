@@ -14,7 +14,7 @@ export function hueOf(text: string): number {
   return hue < 80 ? hue : hue + 90;
 }
 
-/** Dark tint for a song, used like Spotify's artwork colour (mini player, now-playing gradient). */
+/** Dark tint for a song, used as its artwork colour (mini player, now-playing gradient). */
 export function tintOf(key: string, lightness = 26): string {
   return `hsl(${hueOf(key)} 42% ${lightness}%)`;
 }

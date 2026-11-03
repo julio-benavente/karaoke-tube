@@ -5,7 +5,7 @@
   padding: 0 var(--kt-space-4);
 }
 
-/* Spotify-like colour wash at the top, tinted by the current song. */
+/* Colour wash at the top, tinted by the current song. */
 .home::before {
   content: "";
   position: absolute;
