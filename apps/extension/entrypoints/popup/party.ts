@@ -1,12 +1,20 @@
 // Popup ↔ background messages (Spec A implements the background side; see "Requests for the other track" in B's spec).
 
-export type PartyInfo = { code: string; guestCount: number };
+/** `tvOpen`: whether the party's YouTube window (the TV) is open. */
+export type PartyInfo = { code: string; guestCount: number; tvOpen?: boolean };
 
 export type PopupMessage =
   | { type: "START_PARTY"; nickname: string; avatarSeed: string } // → { ok: true, code } | { ok: false, error }
   | { type: "GET_PARTY" } // → { ok: true, party: PartyInfo | null }
   | { type: "END_PARTY" } // → { ok: true }
-  | { type: "OPEN_HOST" }; // background opens or focuses the host app on the website
+  | { type: "OPEN_HOST" } // background opens or focuses the host app on the website
+  | { type: "SHOW_ON_TV" }; // background reopens/focuses the YouTube window
+
+/** Reopen (or bring forward) the party's TV window. */
+export async function reopenTv() {
+  await send({ type: "SHOW_ON_TV" });
+  window.close();
+}
 
 type Reply = { ok?: boolean; code?: string; error?: string; party?: PartyInfo | null } | undefined;
 

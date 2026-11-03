@@ -1,11 +1,13 @@
 import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Navigate, useNavigate, useParams } from "react-router";
 import type { ErrorCode } from "@karaoke-tube/shared";
 import { AvatarPicker, Button, Logo, TextField, errorText } from "@karaoke-tube/ui";
 import {
+  canResume,
   dropRoomClient,
   getRoomClient,
+  resumableRoom,
   getSearchApi,
   loadIdentity,
   markJoined,
@@ -15,8 +17,16 @@ import {
 } from "../session";
 import css from "./Join.module.css";
 
-/** G1: code, avatar with re-roll, nickname, Join. */
+/** G1: code, avatar with re-roll, nickname, Join. Already a member (closed the tab, came back)? Straight back in. */
 export function JoinScreen() {
+  const params = useParams();
+  const linked = normalizeCode(params.code ?? "");
+  const resume = linked ? (canResume(linked) ? linked : null) : resumableRoom();
+  if (resume) return <Navigate to={`/r/${resume}`} replace />;
+  return <JoinForm />;
+}
+
+function JoinForm() {
   const params = useParams();
   const navigate = useNavigate();
   const initial = loadIdentity();

@@ -71,3 +71,6 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
   mode `"approval"` with item status `"pending"` and `RoomState.pending`; `QueueItem.everyone` and
   `add_song.everyone`; `approve_song` / `decline_song` / `give_award` messages; `AWARDS`, `AwardWindow`,
   `RoomState.awardWindow`; `TITLES`, `TITLE_INFO`, `Recap`, `RoomState.recap`; `GET /api/recaps/:id` → `RecapResponse`.
+- `RoomState.playerConnected?` and `ClientMessage` `player_status { tabOpen }` (resilience): the extension's player
+  reports whether its YouTube window is open; the room exposes `playerConnected` (player socket attached and window
+  open) so the host app can offer "Reopen TV window".

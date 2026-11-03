@@ -90,6 +90,11 @@ export type RoomState = {
   upNext: QueueItem[];
   playback: Playback;
   settings: RoomSettings;
+  /**
+   * Whether the TV can play: the extension's player is connected AND its YouTube window is open.
+   * False when the host closed the TV window (offer "Reopen TV window"). Undefined from older rooms.
+   */
+  playerConnected?: boolean;
   /** Songs waiting for a host's OK ("approval" mode), oldest first. v1.1. */
   pending?: QueueItem[];
   /** The performance members can give awards to right now, if any. v1.1. */
@@ -215,6 +220,8 @@ export type ClientMessage =
   | { type: "update_settings"; settings: Partial<RoomSettings> } // hosts
   | { type: "end_party" } // host only
   | { type: "react"; reaction: Reaction }
+  /** Sent only by the extension's player: whether its YouTube window (the TV) is open. */
+  | { type: "player_status"; tabOpen: boolean }
   /** Sent only by the extension's YouTube player (authenticated as the host). */
   | {
       type: "player_event";

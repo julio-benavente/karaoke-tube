@@ -1,8 +1,8 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { ExternalLink, Power, Users } from "lucide-react";
+import { ExternalLink, Power, Tv, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { AvatarPicker, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
-import { createPartyApi, type PartyApi, type PartyInfo } from "./party";
+import { createPartyApi, reopenTv, type PartyApi, type PartyInfo } from "./party";
 import css from "./popup.module.css";
 
 const ID_KEY = "kt:identity";
@@ -120,6 +120,11 @@ function Running({ api, party, onEnded }: { api: PartyApi; party: PartyInfo; onE
       <Button variant="light" block icon={<ExternalLink size={16} />} onClick={() => api.openHost()}>
         Open host app
       </Button>
+      {party.tvOpen === false && (
+        <Button variant="secondary" block icon={<Tv size={16} />} onClick={() => void reopenTv()}>
+          Reopen TV window
+        </Button>
+      )}
       {confirm ? (
         <div className={css.confirm}>
           <span>End the party for everyone?</span>

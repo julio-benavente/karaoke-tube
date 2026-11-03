@@ -14,12 +14,19 @@ import { PLAYER_PORT, type PlayerPortToBackground, type PlayerPortToTab } from "
 
 type Port = Browser.runtime.Port;
 
-/** What survives a service worker restart (chrome.storage.session, cleared when the browser closes). */
+/**
+ * The running party. Kept in chrome.storage.local so it survives service worker restarts, extension reloads
+ * and browser restarts; removed only when the party ends or the room is gone.
+ */
 type SavedParty = { code: string; memberId: string; key: string; youtubeTabId: number | null; hostTabId?: number | null };
 const PARTY_KEY = "party";
 const YOUTUBE_URL = "https://www.youtube.com/";
 /** How long the TV keeps the awards show up after the party ends, before it goes back to normal. */
 const AWARDS_SHOW_MS = 60_000;
+/** A party tab that doesn't connect within this long has an orphaned content script: reload it. */
+const ORPHAN_CHECK_MS = 6000;
+/** Navigating to the next song drops the tab's port for a moment; only report "TV closed" after this. */
+const TAB_GONE_GRACE_MS = 5000;
 
 let party: SavedParty | null = null;
 let room: RoomClient | null = null;
@@ -32,6 +39,12 @@ export default defineBackground(() => {
   console.log("[bg] service worker started");
   // Listeners must be registered synchronously; handlers wait for `ready` (the saved party) themselves.
   ready = restore();
+
+  // After an extension update/reload the party tab's content script is orphaned: reload the tab.
+  browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason !== "update") return;
+    void ready.then(() => reloadPartyTab("extension updated"));
+  });
 
   browser.runtime.onMessage.addListener((msg: ExtMessage, _sender, sendResponse) => {
     handleMessage(msg)
@@ -62,6 +75,7 @@ export default defineBackground(() => {
       console.log("[bg] party YouTube tab closed");
       party.youtubeTabId = null;
       void save();
+      reportTab(false);
     }
     if (party && party.hostTabId === tabId) {
       party.hostTabId = null;
@@ -171,7 +185,7 @@ async function endParty(): Promise<EndPartyResponse> {
 function getParty(): GetPartyResponse {
   if (!party) return { ok: true, party: null };
   const guestCount = room?.state?.members.filter((m) => m.role !== "host").length ?? 0;
-  return { ok: true, party: { code: party.code, guestCount } };
+  return { ok: true, party: { code: party.code, guestCount, tvOpen: party.youtubeTabId !== null } };
 }
 
 /** Bring the party's YouTube window forward, full screen, with the player filling it. */
@@ -193,16 +207,87 @@ async function showOnTv(): Promise<ShowOnTvResponse> {
 // ── The room connection ──────────────────────────────────────────────────
 
 async function restore() {
-  const saved = (await browser.storage.session.get(PARTY_KEY))[PARTY_KEY] as SavedParty | undefined;
+  const saved = (await browser.storage.local.get(PARTY_KEY))[PARTY_KEY] as SavedParty | undefined;
   if (!saved) return;
   console.log("[bg] restoring party", saved.code);
+  // Tab ids don't survive a browser restart; forget the ones that are gone.
+  // (A reused id would be some other page, so check the page too.)
+  saved.youtubeTabId = await existingTab(saved.youtubeTabId, (url) => /^https:\/\/([a-z]+\.)?youtube\.com\//.test(url));
+  saved.hostTabId = await existingTab(saved.hostTabId ?? null, (url) => url.startsWith(`${WEB_URL}/host/${saved.code}`));
   party = saved;
+  await save();
   connectRoom();
+  // The party tab is still open but its content script may be from before an extension reload.
+  if (party.youtubeTabId !== null) {
+    setTimeout(() => {
+      if (party?.youtubeTabId != null && !playerPort) void reloadPartyTab("party tab didn't reconnect");
+    }, ORPHAN_CHECK_MS);
+  }
+}
+
+async function existingTab(id: number | null, isRightPage: (url: string) => boolean): Promise<number | null> {
+  if (id === null) return null;
+  try {
+    const tab = await browser.tabs.get(id);
+    const url = tab.url ?? tab.pendingUrl;
+    return url === undefined || url === "" || isRightPage(url) ? id : null; // no "tabs" permission: the url may be hidden
+  } catch {
+    return null;
+  }
+}
+
+async function reloadPartyTab(why: string) {
+  if (party?.youtubeTabId == null) return;
+  console.log(`[bg] reloading the party tab (${why})`);
+  try {
+    await browser.tabs.reload(party.youtubeTabId);
+  } catch {
+    party.youtubeTabId = null;
+    await save();
+    reportTab(false);
+  }
 }
 
 async function save() {
-  if (party) await browser.storage.session.set({ [PARTY_KEY]: party });
-  else await browser.storage.session.remove(PARTY_KEY);
+  if (party) await browser.storage.local.set({ [PARTY_KEY]: party });
+  else await browser.storage.local.remove(PARTY_KEY);
+}
+
+// ── TV window status ─────────────────────────────────────────────────────
+
+let tabOpenSent: boolean | null = null;
+let tabGoneTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Tells the room whether the TV window is there (`player_status`), so the host app can offer "Reopen TV window".
+ * A dropped port is reported only after a grace period: moving to the next song reloads the tab.
+ */
+function reportTab(open: boolean, { immediate = false } = {}) {
+  if (tabGoneTimer) clearTimeout(tabGoneTimer);
+  tabGoneTimer = null;
+  if (!open && !immediate && party?.youtubeTabId != null) {
+    tabGoneTimer = setTimeout(() => {
+      tabGoneTimer = null;
+      if (!playerPort) sendTabStatus(false);
+    }, TAB_GONE_GRACE_MS);
+    return;
+  }
+  sendTabStatus(open);
+}
+
+function sendTabStatus(open: boolean) {
+  tabOpenSent = open;
+  room?.send({ type: "player_status", tabOpen: open });
+}
+
+/** Where a song that's already going is now, so a reopened TV window resumes there (0 for a new song). */
+function startAtFor(item: QueueItem): number {
+  const state = room?.state;
+  if (!state || state.nowPlaying?.id !== item.id) return 0;
+  const pb = state.playback;
+  if (pb.state === "playing") return pb.positionSec + Math.max(0, Date.now() - pb.updatedAt) / 1000;
+  if (pb.state === "paused") return pb.positionSec;
+  return 0;
 }
 
 function connectRoom() {
@@ -216,8 +301,13 @@ function connectRoom() {
     onServerMessage: onServerMessage,
   });
   room = client;
+  let wasOpen = false;
   client.subscribe(() => {
     if (room !== client) return;
+    // Every (re)connection: tell the room whether the TV window is there.
+    const open = client.status === "open";
+    if (open && !wasOpen) sendTabStatus(playerPort !== null || (tabOpenSent === true && party?.youtubeTabId != null));
+    wasOpen = open;
     onRoomChange(client);
   });
   client.onReaction((e) => postPlayer({ type: "reaction", ...e }));
@@ -233,7 +323,8 @@ function onServerMessage(msg: ServerMessage) {
     case "play":
       console.log("[bg] play", msg.item.song.title);
       currentPlay = msg.item;
-      postPlayer({ type: "play", item: msg.item });
+      // The room resends `play` when the player reconnects mid-song: resume where it was.
+      postPlayer({ type: "play", item: msg.item, startAt: startAtFor(msg.item) });
       break;
     case "player_command":
       postPlayer({ type: "command", command: msg.command });
@@ -264,6 +355,9 @@ async function endLocal() {
   room = null;
   party = null;
   currentPlay = null;
+  tabOpenSent = null;
+  if (tabGoneTimer) clearTimeout(tabGoneTimer);
+  tabGoneTimer = null;
   await save();
   // With a recap, the TV keeps the awards show up for a while before it goes back to normal.
   const port = playerPort;
@@ -293,8 +387,11 @@ async function onPlayerPort(port: Port) {
   console.log("[bg] player tab connected", tabId);
   playerPort?.disconnect();
   playerPort = port;
+  reportTab(true);
   port.onDisconnect.addListener(() => {
-    if (playerPort === port) playerPort = null;
+    if (playerPort !== port) return;
+    playerPort = null;
+    reportTab(false);
   });
   port.onMessage.addListener((raw) => {
     const msg = raw as PlayerPortToBackground;
@@ -312,9 +409,9 @@ async function onPlayerPort(port: Port) {
 
   const state = room?.state ?? null;
   port.postMessage({ type: "party", code: party.code, state } satisfies PlayerPortToTab);
-  // A reloaded tab picks the current song up again.
+  // A reloaded or reopened tab picks the current song up again, where it was.
   if (currentPlay && state?.nowPlaying?.id === currentPlay.id) {
-    port.postMessage({ type: "play", item: currentPlay } satisfies PlayerPortToTab);
+    port.postMessage({ type: "play", item: currentPlay, startAt: startAtFor(currentPlay) } satisfies PlayerPortToTab);
     if (state.playback.state === "paused") port.postMessage({ type: "command", command: "pause" } satisfies PlayerPortToTab);
   }
 }

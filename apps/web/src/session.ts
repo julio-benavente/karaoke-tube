@@ -1,4 +1,4 @@
-import { createRoomClient, createSearchApi } from "@karaoke-tube/client";
+import { createRoomClient, createSearchApi, localStorageCredentials } from "@karaoke-tube/client";
 import { normalizeRoomCode, type ErrorCode, type Role, type RoomClient, type SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, MOCK_CODES, randomSeed, type MockRoomClient } from "@karaoke-tube/ui";
 
@@ -39,12 +39,38 @@ export function saveIdentity(id: Identity) {
   }
 }
 
+const LAST_ROOM_KEY = "kt:last-room";
+
 export function markJoined(code: string, joined: boolean) {
   try {
-    if (joined) storage()?.setItem(JOINED_KEY(code), "1");
-    else storage()?.removeItem(JOINED_KEY(code));
+    if (joined) {
+      storage()?.setItem(JOINED_KEY(code), "1");
+      storage()?.setItem(LAST_ROOM_KEY, code);
+    } else {
+      storage()?.removeItem(JOINED_KEY(code));
+      if (storage()?.getItem(LAST_ROOM_KEY) === code) storage()?.removeItem(LAST_ROOM_KEY);
+    }
   } catch {
     // ignore
+  }
+}
+
+/**
+ * True when this browser is already a member of `code` and can rejoin without asking (it joined, and the
+ * member key is still saved). Used to send people straight back after they closed the tab.
+ */
+export function canResume(code: string): boolean {
+  if (!code || !hasJoined(code)) return false;
+  return USE_MOCK || localStorageCredentials().load(code) !== null;
+}
+
+/** The party this browser joined last, if it can still rejoin it. */
+export function resumableRoom(): string | null {
+  try {
+    const code = storage()?.getItem(LAST_ROOM_KEY) ?? null;
+    return code && canResume(code) ? code : null;
+  } catch {
+    return null;
   }
 }
 

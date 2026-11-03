@@ -119,7 +119,14 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
         icon={<WifiOff />}
         title="Lost connection"
         text={`We couldn't stay connected to party ${code}.`}
-        action={<Button onClick={retry}>Try again</Button>}
+        action={
+          <>
+            <Button onClick={retry}>Try again</Button>
+            <Button variant="secondary" onClick={leave}>
+              Join another party
+            </Button>
+          </>
+        }
       />
     );
   }

@@ -27,6 +27,9 @@ export type CreateRoomClientOptions = {
 };
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 10000];
+/** How often to check the socket is really alive, and how long to wait for the answer. */
+const HEARTBEAT_MS = 25_000;
+const PONG_TIMEOUT_MS = 10_000;
 
 export const storageKey = (code: string) => `kt:room:${normalizeRoomCode(code)}`;
 
@@ -103,7 +106,43 @@ class WebSocketRoomClient extends BaseRoomClient {
     this.memberId = this.store.load(this.code)?.memberId ?? null;
     this.connect();
     if (typeof window !== "undefined") window.addEventListener("online", this.onOnline);
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", this.onVisible);
   }
+
+  private heartbeat: ReturnType<typeof setInterval> | null = null;
+  private pongTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Sends "ping" (the room answers "pong" without waking up). No pong in `timeoutMs` = the socket is dead
+   * even if the browser hasn't noticed (laptop slept, phone locked, Wi-Fi changed): replace it now.
+   */
+  private ping(timeoutMs = PONG_TIMEOUT_MS) {
+    const ws = this.ws;
+    if (!ws || ws.readyState !== this.WS.OPEN || this.pongTimer) return;
+    try {
+      ws.send("ping");
+    } catch {
+      return this.onDown(ws);
+    }
+    this.pongTimer = setTimeout(() => {
+      this.pongTimer = null;
+      if (this.ws === ws) this.onDown(ws);
+    }, timeoutMs);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeat) clearInterval(this.heartbeat);
+    if (this.pongTimer) clearTimeout(this.pongTimer);
+    this.heartbeat = null;
+    this.pongTimer = null;
+  }
+
+  /** Back from a locked phone / sleeping laptop: check the socket right away instead of waiting. */
+  private onVisible = () => {
+    if (document.visibilityState !== "visible" || this.closedByUser) return;
+    if (this.status === "reconnecting") return this.onOnline();
+    this.ping(4000);
+  };
 
   send(msg: ClientMessage) {
     if (this.closedByUser) return;
@@ -119,8 +158,10 @@ class WebSocketRoomClient extends BaseRoomClient {
   close() {
     this.closeReason ??= "left";
     this.closedByUser = true;
+    this.stopHeartbeat();
     if (this.retryTimer) clearTimeout(this.retryTimer);
     if (typeof window !== "undefined") window.removeEventListener("online", this.onOnline);
+    if (typeof document !== "undefined") document.removeEventListener("visibilitychange", this.onVisible);
     this.ws?.close(1000, "bye");
     this.ws = null;
     this.setStatus("closed");
@@ -138,12 +179,19 @@ class WebSocketRoomClient extends BaseRoomClient {
     const ws = new this.WS(this.url);
     this.ws = ws;
     ws.onopen = () => {
+      this.stopHeartbeat();
+      this.heartbeat = setInterval(() => this.ping(), HEARTBEAT_MS);
       const creds = this.store.load(this.code);
       if (creds) ws.send(JSON.stringify({ type: "rejoin", ...creds } satisfies ClientMessage));
       else if (this.opts.identity) ws.send(JSON.stringify({ type: "join", ...this.opts.identity } satisfies ClientMessage));
       else this.flush(true); // a join the UI queued up
     };
     ws.onmessage = (e) => {
+      if (e.data === "pong") {
+        if (this.pongTimer) clearTimeout(this.pongTimer);
+        this.pongTimer = null;
+        return;
+      }
       let msg: ServerMessage;
       try {
         msg = JSON.parse(typeof e.data === "string" ? e.data : "");
@@ -162,6 +210,7 @@ class WebSocketRoomClient extends BaseRoomClient {
     if (this.ws !== ws) return;
     this.ws = null;
     this.joined = false;
+    this.stopHeartbeat();
     try {
       ws.close();
     } catch {

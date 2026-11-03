@@ -84,8 +84,19 @@ function Host() {
   if (status === "closed") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title="Not connected" action={<Button onClick={() => location.reload()}>Reconnect</Button>}>
-          The host app lost its connection to the party.
+        <EmptyState
+          icon={<CircleSlash />}
+          title="Can't reach this party"
+          action={
+            <>
+              <Button onClick={() => location.reload()}>Try again</Button>
+              <Button variant="secondary" onClick={() => (location.href = "/")}>
+                Done
+              </Button>
+            </>
+          }
+        >
+          The party may have ended or been removed. If it's still running, check your connection and try again.
         </EmptyState>
       </div>
     );
@@ -113,6 +124,14 @@ function Host() {
   return (
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
       {status === "reconnecting" && <div className={css.reconnecting}>Reconnecting to the party…</div>}
+      {status === "open" && state.playerConnected === false && (
+        <div className={css.tvClosed} role="alert">
+          The TV window is closed
+          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show)}>
+            Reopen TV window
+          </Button>
+        </div>
+      )}
       <Sidebar view={view} onView={setView} />
       <main className={css.main}>
         {view === "home" && <HomeView onSearch={() => setView("search")} />}
