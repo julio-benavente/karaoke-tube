@@ -386,4 +386,13 @@ export const en = {
   "popup.endAsk": "End the party for everyone?",
   "popup.cancel": "Cancel",
   "popup.endShort": "End",
+  "shell.kicked": "You were removed from the party",
+  "shell.kickedText": "The host removed you. You can join again if they invite you back.",
+  "shell.backToStart": "Back to start",
+  "shell.lost": "Lost connection",
+  "shell.lostText": "We couldn't stay connected to party {code}.",
+  "shell.another": "Join another party",
+  "shell.thanks": "Thanks for singing!",
+  "shell.thanksText": "The party has ended. That was a good one.",
+  "nav.main": "Main",
 } as const;

@@ -389,4 +389,13 @@ export const es: Dict = {
   "popup.endAsk": "¿Terminar la fiesta para todos?",
   "popup.cancel": "Cancelar",
   "popup.endShort": "Terminar",
+  "shell.kicked": "Te sacaron de la fiesta",
+  "shell.kickedText": "El anfitrión te sacó. Puedes volver a unirte si te invita otra vez.",
+  "shell.backToStart": "Volver al inicio",
+  "shell.lost": "Se perdió la conexión",
+  "shell.lostText": "No pudimos mantener la conexión con la fiesta {code}.",
+  "shell.another": "Unirme a otra fiesta",
+  "shell.thanks": "¡Gracias por cantar!",
+  "shell.thanksText": "La fiesta terminó. Estuvo buenísima.",
+  "nav.main": "Principal",
 };
