@@ -108,6 +108,14 @@ function Host() {
   return (
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
       {status === "reconnecting" && <div className={css.reconnecting}>Reconnecting to the party…</div>}
+      {status === "open" && state.playerConnected === false && (
+        <div className={css.tvClosed} role="alert">
+          The TV window is closed
+          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show)}>
+            Reopen TV window
+          </Button>
+        </div>
+      )}
       <Sidebar view={view} onView={setView} />
       <main className={css.main}>
         {view === "home" && <HomeView onSearch={() => setView("search")} />}
