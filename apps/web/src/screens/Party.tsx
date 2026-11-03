@@ -80,7 +80,7 @@ export function PartyScreen() {
               </div>
               {m.role === "host" && (
                 <Pill tone="accent">
-                  <Crown size={11} /> {t("role.host")}
+                  <Crown size={11} /> {m.id === state.tempHostId ? t("party.tempHost") : t("role.host")}
                 </Pill>
               )}
               {m.role === "cohost" && <Pill>{t("party.cohost")}</Pill>}
@@ -95,16 +95,16 @@ export function PartyScreen() {
       </section>
 
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={() => setConfirmLeave(true)} className={css.leave}>
-        Leave party
+        {t("party.leaveLabel")}
       </Button>
 
       <Sheet open={confirmLeave} onClose={() => setConfirmLeave(false)} label={t("party.leaveLabel")}>
         <div className={css.confirm}>
           <h2 className={css.h2}>{t("party.leaveTitle")}</h2>
-          <p className={css.muted}>Your songs stay in the queue. You can join again with code {code}.</p>
+          <p className={css.muted}>{me.role === "host" && me.id !== state.tempHostId ? t("party.leaveHostText") : t("party.leaveText", { code: formatRoomCode(code) })}</p>
           <div className={css.confirmButtons}>
             <Button variant="secondary" onClick={() => setConfirmLeave(false)}>
-              Stay
+              {t("party.stay")}
             </Button>
             <Button onClick={leave}>{t("party.leave")}</Button>
           </div>

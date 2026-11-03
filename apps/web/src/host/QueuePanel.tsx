@@ -101,7 +101,7 @@ export function QueuePanel({ onClose }: { onClose?: () => void }) {
         )}
         <h3 className={css.queueSub}>{t("queue.nowSinging")}</h3>
         {state.nowPlaying ? (
-          <QueueRow item={state.nowPlaying} members={state.members} playing compact />
+          <QueueRow item={state.nowPlaying} members={state.members} playing compact showOffline onRemoveAllOf={(m) => send({ type: "remove_member_songs", memberId: m.id })} />
         ) : (
           <p className={css.muted}>{t("host.nothingYet")}</p>
         )}
@@ -117,7 +117,13 @@ export function QueuePanel({ onClose }: { onClose?: () => void }) {
             <SortableContext items={items.map((q) => q.id)} strategy={verticalListSortingStrategy}>
               <ol className={css.queueList}>
                 {items.map((q) => (
-                  <SortableRow key={q.id} item={q} members={state.members} onRemove={() => send({ type: "remove_song", itemId: q.id })} />
+                  <SortableRow
+                    key={q.id}
+                    item={q}
+                    members={state.members}
+                    onRemove={() => send({ type: "remove_song", itemId: q.id })}
+                    onRemoveAll={(m) => send({ type: "remove_member_songs", memberId: m.id })}
+                  />
                 ))}
               </ol>
             </SortableContext>
@@ -128,7 +134,7 @@ export function QueuePanel({ onClose }: { onClose?: () => void }) {
   );
 }
 
-function SortableRow({ item, members, onRemove }: { item: QueueItem; members: Member[]; onRemove: () => void }) {
+function SortableRow({ item, members, onRemove, onRemoveAll }: { item: QueueItem; members: Member[]; onRemove: () => void; onRemoveAll: (m: Member) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   return (
     <li
@@ -142,6 +148,8 @@ function SortableRow({ item, members, onRemove }: { item: QueueItem; members: Me
         dragging={isDragging}
         dragHandle={{ ...attributes, ...listeners }}
         onRemove={onRemove}
+        showOffline
+        onRemoveAllOf={onRemoveAll}
       />
     </li>
   );

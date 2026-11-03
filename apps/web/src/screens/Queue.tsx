@@ -110,7 +110,7 @@ export function QueueScreen() {
         <section className={css.section}>
           <h2 className={css.h2}>{t("queue.nowSinging")}</h2>
           <button type="button" className={css.nowBtn} onClick={openNowSinging} aria-label={t("player.openNow")}>
-            <QueueRow item={nowPlaying} members={members} playing mine={singingNow} meId={me.id} />
+            <QueueRow item={nowPlaying} members={members} playing mine={singingNow} meId={me.id} showOffline={isHost} />
           </button>
         </section>
       ) : null}
@@ -138,6 +138,8 @@ export function QueueScreen() {
                     mine={q.singerIds.includes(me.id)}
                     meId={me.id}
                     onRemove={mine && !isHost ? () => send({ type: "remove_song", itemId: q.id }) : undefined}
+                    showOffline={isHost}
+                    onRemoveAllOf={isHost ? (m) => send({ type: "remove_member_songs", memberId: m.id }) : undefined}
                     actions={
                       isHost ? (
                         <button

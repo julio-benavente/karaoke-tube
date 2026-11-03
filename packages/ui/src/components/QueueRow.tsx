@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { GripVertical, X } from "lucide-react";
+import { GripVertical, ListX, X } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
 import { singerLabel, songParts } from "../format";
@@ -21,6 +21,10 @@ export type QueueRowProps = {
   meId?: string;
   position?: number;
   onRemove?: () => void;
+  /** Hosts: tag singers who are offline ("Offline"), so a missing person's turn doesn't come as a surprise. */
+  showOffline?: boolean;
+  /** Hosts: with `showOffline`, a button to clear every song of the first offline singer. */
+  onRemoveAllOf?: (member: Member) => void;
   /** Menu button or other actions. */
   actions?: ReactNode;
   /** Props for the drag handle (dnd-kit listeners/attributes). Shows the handle when set. */
@@ -42,6 +46,8 @@ export function QueueRow({
   meId,
   position,
   onRemove,
+  showOffline,
+  onRemoveAllOf,
   actions,
   dragHandle,
   dragging,
@@ -50,6 +56,7 @@ export function QueueRow({
   const t = useT();
   const { title, artist } = songParts(item.song);
   const singers = item.singerIds.map((id) => members.find((m) => m.id === id));
+  const offline = showOffline ? singers.filter((m): m is Member => !!m && !m.connected) : [];
   return (
     <div className={clsx(css.row, compact && css.compact, dragging && css.dragging)}>
       {dragHandle && (
@@ -75,10 +82,22 @@ export function QueueRow({
             <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={16} />
           )}
           <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId, t) : t("singer.you")) : singerNames(item, members, t)}</span>
+          {offline.length > 0 && <span className={css.offlineTag}>{t("queue.offline")}</span>}
           <span className={css.dotSep}>·</span>
           <span className={css.artist}>{artist}</span>
         </div>
       </div>
+      {offline[0] && onRemoveAllOf && (
+        <button
+          type="button"
+          className={css.action}
+          onClick={() => onRemoveAllOf(offline[0]!)}
+          aria-label={t("queue.removeAllOf", { name: offline[0].nickname })}
+          title={t("queue.removeAllOf", { name: offline[0].nickname })}
+        >
+          <ListX />
+        </button>
+      )}
       {actions}
       {onRemove && (
         <button type="button" className={css.action} onClick={onRemove} aria-label={t("queue.removeNamed", { title })} title={t("queue.remove")}>

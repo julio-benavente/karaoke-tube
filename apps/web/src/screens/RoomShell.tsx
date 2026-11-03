@@ -20,6 +20,7 @@ import {
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
 import { useLogParty } from "../account/AccountContext";
+import { useRoleToast } from "../useRoleToast";
 import { AwardPrompt } from "./AwardPrompt";
 import { EndStory } from "./EndStory";
 import { NowSingingSheet } from "./NowSinging";
@@ -72,6 +73,8 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   const nowOpen = search.get("now") === "1";
   useLogParty(code, !!me, state?.status === "ended");
 
+  useRoleToast();
+
   useRoomErrors((e) => {
     if (e.code === "queue_limit") {
       const n = state?.settings.maxWaitingPerMember ?? 2;
@@ -96,10 +99,16 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   }, [location.key, navigate, search, setSearch]);
 
   const leave = useCallback(() => {
+    // Tell the room first (it removes you and your waiting songs); then forget the spot on this device.
+    try {
+      if (status === "open" && state?.status === "open") getRoomClient(code).send({ type: "leave" });
+    } catch {
+      // not connected: just leave locally
+    }
     markJoined(code, false);
     dropRoomClient(code);
     navigate("/join", { replace: true });
-  }, [code, navigate]);
+  }, [code, navigate, status, state?.status]);
 
   const ctx = useMemo(() => ({ openNowSinging, code, leave }), [openNowSinging, code, leave]);
 

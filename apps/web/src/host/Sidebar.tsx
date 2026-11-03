@@ -96,7 +96,7 @@ export function Sidebar({ view, onView, only, actions }: { view: View; onView: (
         </div>
         <ul className={css.guests}>
           {members.map((m) => (
-            <GuestRow key={m.id} member={m} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
+            <GuestRow key={m.id} member={m} temp={m.id === state.tempHostId} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
           ))}
         </ul>
       </section>
@@ -105,7 +105,7 @@ export function Sidebar({ view, onView, only, actions }: { view: View; onView: (
   );
 }
 
-function GuestRow({ member, isMe, canManage, onAddFor }: { member: Member; isMe: boolean; canManage: boolean; onAddFor: () => void }) {
+function GuestRow({ member, temp, isMe, canManage, onAddFor }: { member: Member; temp: boolean; isMe: boolean; canManage: boolean; onAddFor: () => void }) {
   const { send } = useRoom();
   const t = useT();
   const sing = useSingWith();
@@ -137,7 +137,7 @@ function GuestRow({ member, isMe, canManage, onAddFor }: { member: Member; isMe:
         <span className={css.guestRole}>
           {member.role === "host" ? (
             <>
-              <Crown size={11} /> {t("role.host")}
+              <Crown size={11} /> {temp ? t("party.tempHost") : t("role.host")}
             </>
           ) : member.role === "cohost" ? (
             t("party.cohost")

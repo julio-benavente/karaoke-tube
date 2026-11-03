@@ -527,6 +527,7 @@ export class Room extends DurableObject<Env> {
         break;
       }
       case "leave": {
+        if (this.status() === "ended") return; // the party is over: nothing to leave (the recap keeps its members)
         // The host leaving on purpose ends the party. Anyone else leaves cleanly: their songs go with them.
         const succession = this.getMeta<Succession>("succession");
         if (me.role === "host" && succession?.actingId === me.id) {

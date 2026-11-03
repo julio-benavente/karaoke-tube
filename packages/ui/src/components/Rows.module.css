@@ -244,3 +244,13 @@
     transform: scaleY(0.6);
   }
 }
+
+.offlineTag {
+  flex: none;
+  padding: 1px var(--kt-space-2);
+  border-radius: var(--kt-radius-pill, 999px);
+  background: var(--kt-warning, #f5a623);
+  color: #1a1204;
+  font-size: var(--kt-text-xs);
+  font-weight: var(--kt-weight-bold);
+}

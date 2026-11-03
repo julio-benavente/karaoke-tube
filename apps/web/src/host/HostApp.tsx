@@ -1,5 +1,6 @@
 import { useLogParty } from "../account/AccountContext";
 import { useLiveParties } from "../account/useLiveParties";
+import { useRoleToast } from "../useRoleToast";
 import { adoptLiveParty, markHosting } from "../session";
 import { CircleSlash, Home, ListMusic, Lock, LockOpen, PartyPopper, Search as SearchIcon, Settings as SettingsIcon, Tv, Power, Flame, QrCode } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -125,6 +126,7 @@ function Host() {
   const mobile = useIsMobile();
 
   useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
+  useRoleToast();
 
   if (closeReason === "forgotten") {
     markHosting(routeCode, false);
