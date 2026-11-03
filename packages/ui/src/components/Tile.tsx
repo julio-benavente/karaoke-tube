@@ -2,6 +2,7 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Artwork } from "./Artwork";
 import { PlayButton } from "./Button";
+import { useT } from "../i18n/context";
 import css from "./Tile.module.css";
 
 /** "Browse all" colour tile: bold title top-left, tilted artwork bottom-right. */
@@ -34,7 +35,7 @@ export function ShortcutTile({
   label,
   onClick,
   onPlay,
-  playLabel = "Add to queue",
+  playLabel,
   trailing,
 }: {
   title: string;
@@ -46,6 +47,7 @@ export function ShortcutTile({
   playLabel?: string;
   trailing?: ReactNode;
 }) {
+  const t = useT();
   return (
     <div className={css.shortcut}>
       <button type="button" className={css.shortcutHit} onClick={onClick} aria-label={title} />
@@ -54,7 +56,7 @@ export function ShortcutTile({
       {trailing}
       {onPlay && (
         <span className={css.shortcutPlay}>
-          <PlayButton playing={false} size={32} onClick={onPlay} label={playLabel} />
+          <PlayButton playing={false} size={32} onClick={onPlay} label={playLabel ?? t("home.add")} />
         </span>
       )}
     </div>

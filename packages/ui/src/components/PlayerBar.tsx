@@ -9,6 +9,7 @@ import { Avatar } from "./Avatar";
 import { IconButton, PlayButton } from "./Button";
 import { ProgressBar } from "./ProgressBar";
 import { singerNames } from "./QueueRow";
+import { useT } from "../i18n/context";
 import css from "./PlayerBar.module.css";
 
 export type PlayerBarProps = {
@@ -27,6 +28,7 @@ export type PlayerBarProps = {
 
 /** Desktop bottom bar: now singing on the left, controls + progress in the middle, extras on the right. */
 export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, onRestart, right, onOpen }: PlayerBarProps) {
+  const t = useT();
   const position = usePlaybackPosition(playback, item?.song.durationSec);
   const countdown = useCountdown(playback.state === "get_ready" ? playback.countdownEndsAt : null);
   const playing = playback.state === "playing";
@@ -39,28 +41,28 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
       <div className={css.left}>
         {item && parts ? (
           <>
-            <button type="button" className={css.artBtn} onClick={onOpen} aria-label="Open now singing">
+            <button type="button" className={css.artBtn} onClick={onOpen} aria-label={t("player.openNow")}>
               <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={56} />
             </button>
             <div className={css.meta}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>
                 {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={16} />}
-                <span className={css.singer}>{singerNames(item, members)}</span>
+                <span className={css.singer}>{singerNames(item, members, t)}</span>
                 <span>·</span>
                 <span className={css.artist}>{parts.artist}</span>
               </div>
             </div>
           </>
         ) : (
-          <div className={css.idle}>Nothing playing. Add a song to start the party.</div>
+          <div className={css.idle}>{t("player.nothing")}</div>
         )}
       </div>
 
       <div className={css.center}>
         {controls && (
           <div className={css.controls}>
-            <IconButton label="Restart song" size="sm" onClick={onRestart} disabled={!item}>
+            <IconButton label={t("player.restart")} size="sm" onClick={onRestart} disabled={!item}>
               <RotateCcw size={18} />
             </IconButton>
             <PlayButton
@@ -68,16 +70,16 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
               size={36}
               className={css.play}
               onClick={playing ? onPause : onResume}
-              label={playing ? "Pause" : "Resume"}
+              label={playing ? t("player.pause") : t("player.resume")}
             />
-            <IconButton label="Skip song" size="sm" onClick={onSkip} disabled={!item}>
+            <IconButton label={t("player.skip")} size="sm" onClick={onSkip} disabled={!item}>
               <SkipForward size={20} fill="currentColor" />
             </IconButton>
           </div>
         )}
         {playback.state === "get_ready" ? (
           <div className={css.getReady}>
-            Get ready{item ? `, ${singerNames(item, members)}` : ""}… <b>{countdown}</b>
+            {item ? t("player.getReadyFor", { names: singerNames(item, members, t) }) : t("player.getReady")} <b>{countdown}</b>
           </div>
         ) : (
           <ProgressBar value={position} max={item?.song.durationSec ?? 0} showTimes className={css.progress} />

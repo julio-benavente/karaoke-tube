@@ -9,6 +9,7 @@ import {
   type CreateRoomResponse,
   type ErrorCode,
   type Member,
+  type PartyLogEntry,
   type Playback,
   type QueueItem,
   type Recap,
@@ -37,6 +38,9 @@ const MAX_NICKNAME = 24;
 
 /** Kept on each socket with `serializeAttachment`, so it survives hibernation. */
 type Attachment = { memberId: string | null; wantsPlayer: boolean; player: boolean };
+
+/** A member's part in a party, for the account party log. */
+export type MemberSummary = Omit<PartyLogEntry, never>;
 
 type MemberRow = {
   id: string;
@@ -118,17 +122,47 @@ export class Room extends DurableObject<Env> {
   // ── RPC from the Worker ────────────────────────────────────────────────
 
   /** Sets up a new room with its host. Returns null when the code is already in use. */
-  async init(code: string, nickname: string, avatarSeed: string): Promise<CreateRoomResponse | null> {
+  async init(code: string, nickname: string, avatarSeed: string, settings?: Partial<RoomSettings>): Promise<CreateRoomResponse | null> {
     if (this.getMeta("code") !== null) return null;
     this.setMeta("code", code);
     this.setMeta("status", "open");
-    this.setMeta("settings", DEFAULT_SETTINGS);
+    // `settings` = the host account's saved room settings (accounts are optional; guests get the defaults).
+    this.setMeta("settings", { ...DEFAULT_SETTINGS, ...(settings ? sanitizeSettings(settings) : {}) });
     this.setMeta("playback", idlePlayback());
     const { memberId, key } = await this.addMember(nickname, avatarSeed, "host");
     // Nobody is connected yet: if the host never shows up, the idle clock still ends the party.
     this.setMeta("idleSince", Date.now());
     await this.scheduleAlarm();
     return { code, memberId, key };
+  }
+
+  /**
+   * For an account's party log: what this member did, checked against their room key (null = not a member / bad key).
+   * Songs sung and titles come from the recap once the party has ended; while it is open, from played songs.
+   */
+  async memberSummary(memberId: string, key: string): Promise<MemberSummary | null> {
+    if (this.getMeta("code") === null) return null;
+    const member = this.memberRow(memberId);
+    if (!member || member.key_hash !== (await sha256(key))) return null;
+    const recap = this.getMeta<Recap>("recap");
+    const mine = recap
+      ? recap.performances.filter((p) => p.item.singerIds.includes(memberId))
+      : this.itemRows()
+          .filter((i) => i.status === "played" && i.singerIds.includes(memberId))
+          .map((i) => ({ item: publicItem(i), cheers: 0, awards: {} }) as RecapPerformance);
+    const top = mine.reduce<RecapPerformance | null>((best, p) => (p.cheers > (best?.cheers ?? -1) ? p : best), null);
+    return {
+      code: this.getMeta<string>("code") ?? "",
+      role: member.role,
+      joinedAt: member.joined_at,
+      endedAt: recap?.endedAt ?? null,
+      recapId: recap?.id ?? null,
+      songsSung: mine.length,
+      cheers: mine.reduce((n, p) => n + p.cheers, 0),
+      titles: recap?.titles[memberId] ?? [],
+      members: this.memberRows().length,
+      topSong: top?.item.song ?? null,
+    };
   }
 
   async info(): Promise<RoomInfoResponse> {

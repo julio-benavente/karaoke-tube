@@ -10,3 +10,4 @@ export type HealthResponse = {
 
 // The contract between the tracks (domain types, WebSocket messages, HTTP responses, client interfaces).
 export * from "./protocol";
+export * from "./accounts";

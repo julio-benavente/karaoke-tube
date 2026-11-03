@@ -9,9 +9,11 @@ import {
   SongRow,
   Tile,
   parseYouTubeId,
+  presetName,
   useRoom,
   useSearch,
   useSearchApi,
+  useT,
 } from "@karaoke-tube/ui";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
@@ -19,6 +21,7 @@ import css from "./host.module.css";
 /** Host Search: field, Browse all tiles, results with ⊕. Pasted YouTube links work too. */
 export function SearchView() {
   const { state } = useRoom();
+  const t = useT();
   const search = useSearch();
   const add = useHostAdd();
   const api = useSearchApi();
@@ -45,9 +48,9 @@ export function SearchView() {
   if (!state) return null;
   const queued = new Set(state.upNext.map((q) => q.song.videoId));
 
-  const runPreset = (t: string, q: string) => {
-    setTitle(t);
-    search.setQuery(t, { run: false });
+  const runPreset = (name: string, q: string) => {
+    setTitle(name);
+    search.setQuery(name, { run: false });
     search.run(q);
   };
 
@@ -56,7 +59,7 @@ export function SearchView() {
       <header className={css.viewTop}>
         <label className={css.searchField}>
           <SearchIcon size={20} className={css.searchIcon} aria-hidden />
-          <span className="kt-sr-only">Search songs</span>
+          <span className="kt-sr-only">{t("search.songs")}</span>
           <input
             ref={inputRef}
             value={search.query}
@@ -64,14 +67,14 @@ export function SearchView() {
               setTitle(null);
               search.setQuery(e.target.value, { run: !parseYouTubeId(e.target.value) });
             }}
-            placeholder="What do you want to sing? Or paste a YouTube link"
+            placeholder={t("search.placeholderHost")}
             type="search"
           />
           {search.query && (
             <button
               type="button"
               className={css.searchClear}
-              aria-label="Clear search"
+              aria-label={t("search.clear")}
               onClick={() => {
                 setTitle(null);
                 search.setQuery("", { run: false });
@@ -87,12 +90,12 @@ export function SearchView() {
 
       {!search.query.trim() ? (
         <section>
-          <h2 className={css.h2}>Browse all</h2>
+          <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
             {BROWSE_PRESETS.map((p, i) => (
               <Tile
                 key={p.id}
-                title={p.title}
+                title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => runPreset(p.title, p.query)}
@@ -102,11 +105,11 @@ export function SearchView() {
         </section>
       ) : (
         <section>
-          <h2 className={css.h2}>{linkId ? "From your link" : (title ?? "Songs")}</h2>
+          <h2 className={css.h2}>{linkId ? t("search.fromLink") : (title ?? t("search.songs.heading"))}</h2>
           {search.error ? (
-            <EmptyState title="Search is resting">Paste a YouTube link instead.</EmptyState>
+            <EmptyState title={t("search.resting")}>{t("search.restingHostHint")}</EmptyState>
           ) : search.loading && !search.results.length ? (
-            <p className={css.muted}>Searching…</p>
+            <p className={css.muted}>{t("search.searching")}</p>
           ) : (
             <div className={css.results}>
               {(linkId ? (linkSong ? [linkSong] : []) : search.results).map((s, i) => (
@@ -119,7 +122,7 @@ export function SearchView() {
                 />
               ))}
               {!search.loading && search.resultsFor && !search.results.length && (
-                <p className={css.muted}>No results for "{search.resultsFor}".</p>
+                <p className={css.muted}>{t("search.noResultsHost", { query: search.resultsFor })}</p>
               )}
             </div>
           )}

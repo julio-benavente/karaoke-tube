@@ -2,13 +2,14 @@ import { ArrowDown, ArrowUp, Check, ChevronsUp, ListMusic, MoreHorizontal, Trash
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import type { QueueItem } from "@karaoke-tube/shared";
-import { ActionList, Banner, Button, EmptyState, QueueRow, Sheet, songParts, useRoom } from "@karaoke-tube/ui";
+import { ActionList, Banner, Button, EmptyState, QueueRow, Sheet, songParts, useRoom, useT } from "@karaoke-tube/ui";
 import { useShell } from "./RoomShell";
 import css from "./Queue.module.css";
 
 /** G5: now singing, "You're up in N songs", next up with singers, ✕ on own songs, ⋯ for hosts. */
 export function QueueScreen() {
   const { state, me, isHost, send } = useRoom();
+  const t = useT();
   const { openNowSinging, code } = useShell();
   const navigate = useNavigate();
   const [menuItem, setMenuItem] = useState<QueueItem | null>(null);
@@ -26,19 +27,19 @@ export function QueueScreen() {
   const myPending = pending.filter((q) => q.addedBy === me.id || q.singerIds.includes(me.id));
 
   let banner: string | null = null;
-  if (singingNow) banner = state.playback.state === "get_ready" ? "Get ready, you're up!" : "You're singing now. Go get 'em!";
-  else if (myIndex === 0) banner = "You're up next!";
+  if (singingNow) banner = state.playback.state === "get_ready" ? t("queue.banner.getReady") : t("queue.banner.singing");
+  else if (myIndex === 0) banner = t("queue.banner.next");
   else if (myIndex > 0) {
     // Songs that finish before yours: the current one plus those ahead of you.
     const n = myIndex + (nowPlaying ? 1 : 0);
-    banner = `You're up in ${n} song${n === 1 ? "" : "s"}`;
+    banner = t("queue.banner.soon", { count: n });
   }
 
   const menuIndex = menuItem ? upNext.findIndex((q) => q.id === menuItem.id) : -1;
 
   return (
     <div className={css.page}>
-      <h1 className={css.title}>Queue</h1>
+      <h1 className={css.title}>{t("tab.queue")}</h1>
 
       {banner && (
         <div className={css.banner}>
@@ -49,7 +50,7 @@ export function QueueScreen() {
       {isHost && pending.length > 0 && (
         <section className={css.section} data-testid="pending-approve">
           <h2 className={css.h2}>
-            Needs your OK <span className={css.count}>{pending.length}</span>
+            {t("queue.needsOk")} <span className={css.count}>{pending.length}</span>
           </h2>
           <ul className={css.list}>
             {pending.map((q) => (
@@ -64,7 +65,7 @@ export function QueueScreen() {
                         type="button"
                         className={css.decline}
                         onClick={() => send({ type: "decline_song", itemId: q.id })}
-                        aria-label={`Decline ${songParts(q.song).title}`}
+                        aria-label={t("queue.decline", { title: songParts(q.song).title })}
                       >
                         <X />
                       </button>
@@ -72,7 +73,7 @@ export function QueueScreen() {
                         type="button"
                         className={css.approve}
                         onClick={() => send({ type: "approve_song", itemId: q.id })}
-                        aria-label={`Approve ${songParts(q.song).title}`}
+                        aria-label={t("queue.approve", { title: songParts(q.song).title })}
                       >
                         <Check />
                       </button>
@@ -87,8 +88,8 @@ export function QueueScreen() {
 
       {!isHost && myPending.length > 0 && (
         <section className={css.section} data-testid="pending-mine">
-          <h2 className={css.h2}>Waiting for the host's OK</h2>
-          <p className={css.hint}>The host picks what plays tonight. Your song joins the queue once they say yes.</p>
+          <h2 className={css.h2}>{t("queue.waitingOk")}</h2>
+          <p className={css.hint}>{t("queue.waitingHint")}</p>
           <ul className={css.list}>
             {myPending.map((q) => (
               <li key={q.id} className={css.item}>
@@ -107,22 +108,22 @@ export function QueueScreen() {
 
       {nowPlaying ? (
         <section className={css.section}>
-          <h2 className={css.h2}>Now singing</h2>
-          <button type="button" className={css.nowBtn} onClick={openNowSinging} aria-label="Open now singing">
+          <h2 className={css.h2}>{t("queue.nowSinging")}</h2>
+          <button type="button" className={css.nowBtn} onClick={openNowSinging} aria-label={t("player.openNow")}>
             <QueueRow item={nowPlaying} members={members} playing mine={singingNow} meId={me.id} />
           </button>
         </section>
       ) : null}
 
       <section className={css.section}>
-        <h2 className={css.h2}>Next up</h2>
+        <h2 className={css.h2}>{t("queue.nextUp")}</h2>
         {upNext.length === 0 ? (
           <EmptyState
             icon={<ListMusic />}
-            title={nowPlaying ? "Nothing up next" : "The queue is empty"}
-            action={<Button onClick={() => navigate(`/r/${code}/search`)}>Find a song</Button>}
+            title={nowPlaying ? t("queue.nothingNext") : t("queue.empty")}
+            action={<Button onClick={() => navigate(`/r/${code}/search`)}>{t("queue.findSong")}</Button>}
           >
-            Add a song and it'll show up here.
+            {t("queue.emptyHint")}
           </EmptyState>
         ) : (
           <ol className={css.list}>
@@ -143,7 +144,7 @@ export function QueueScreen() {
                           type="button"
                           className={css.more}
                           onClick={() => setMenuItem(q)}
-                          aria-label={`More options for ${songParts(q.song).title}`}
+                          aria-label={t("queue.moreOptions", { title: songParts(q.song).title })}
                         >
                           <MoreHorizontal />
                         </button>
@@ -157,7 +158,7 @@ export function QueueScreen() {
         )}
       </section>
 
-      <Sheet open={!!menuItem} onClose={() => setMenuItem(null)} label="Song options">
+      <Sheet open={!!menuItem} onClose={() => setMenuItem(null)} label={t("queue.songOptions")}>
         {menuItem && (
           <>
             <p className={css.sheetTitle}>{songParts(menuItem.song).title}</p>
@@ -167,13 +168,13 @@ export function QueueScreen() {
                   ? [
                       {
                         key: "top",
-                        label: "Play next",
+                        label: t("queue.playNext"),
                         icon: <ChevronsUp />,
                         onClick: () => send({ type: "move_song", itemId: menuItem.id, toIndex: 0 }),
                       },
                       {
                         key: "up",
-                        label: "Move up",
+                        label: t("queue.moveUp"),
                         icon: <ArrowUp />,
                         onClick: () => send({ type: "move_song", itemId: menuItem.id, toIndex: menuIndex - 1 }),
                       },
@@ -183,7 +184,7 @@ export function QueueScreen() {
                   ? [
                       {
                         key: "down",
-                        label: "Move down",
+                        label: t("queue.moveDown"),
                         icon: <ArrowDown />,
                         onClick: () => send({ type: "move_song", itemId: menuItem.id, toIndex: menuIndex + 1 }),
                       },
@@ -191,7 +192,7 @@ export function QueueScreen() {
                   : []),
                 {
                   key: "remove",
-                  label: "Remove from queue",
+                  label: t("queue.removeFromQueue"),
                   icon: <Trash2 />,
                   danger: true,
                   onClick: () => send({ type: "remove_song", itemId: menuItem.id }),

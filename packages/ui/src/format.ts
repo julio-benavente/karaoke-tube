@@ -1,4 +1,5 @@
 import type { Member, QueueItem, Song } from "@karaoke-tube/shared";
+import { makeT, type TFn } from "./i18n/core";
 
 export function formatTime(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) sec = 0;
@@ -27,12 +28,12 @@ export function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]!);
 }
 
-export function greeting(date = new Date()): string {
+export function greeting(date = new Date(), t: TFn = makeT("en")): string {
   const h = date.getHours();
-  if (h < 5) return "Good night";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 5) return t("greeting.night");
+  if (h < 12) return t("greeting.morning");
+  if (h < 18) return t("greeting.afternoon");
+  return t("greeting.evening");
 }
 
 /** Extract a YouTube video id from a pasted link (watch, youtu.be, shorts, embed) or a bare id. */
@@ -56,11 +57,12 @@ export function parseYouTubeId(input: string): string | null {
 }
 
 /** Who sings an item: "Ana", "Ana & Ben", "Ana, Ben & Cy", or "Everyone" for a group song. */
-export function singerLabel(item: Pick<QueueItem, "singerIds" | "everyone">, members: Pick<Member, "id" | "nickname">[], meId?: string): string {
-  if (item.everyone) return "Everyone";
+export function singerLabel(item: Pick<QueueItem, "singerIds" | "everyone">, members: Pick<Member, "id" | "nickname">[], meId?: string, t: TFn = makeT("en")): string {
+  if (item.everyone) return t("singer.everyone");
   // "You" goes first: "You & Ben".
   const ids = meId && item.singerIds.includes(meId) ? [meId, ...item.singerIds.filter((id) => id !== meId)] : item.singerIds;
-  const names = ids.map((id) => (id === meId ? "You" : (members.find((m) => m.id === id)?.nickname ?? "Someone")));
-  if (names.length <= 2) return names.join(" & ");
-  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+  const names = ids.map((id) => (id === meId ? t("singer.you") : (members.find((m) => m.id === id)?.nickname ?? t("singer.someone"))));
+  const and = ` ${t("singer.and")} `;
+  if (names.length <= 2) return names.join(and);
+  return `${names.slice(0, -1).join(", ")}${and}${names[names.length - 1]}`;
 }

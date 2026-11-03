@@ -3,7 +3,7 @@ import { Check, Copy, Crown, Home, MoreHorizontal, Search, Settings, ShieldCheck
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { Avatar, Logo, Pill, useRoom } from "@karaoke-tube/ui";
+import { Avatar, Logo, Pill, useRoom, useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "./client";
 import type { View } from "./HostApp";
 import css from "./host.module.css";
@@ -11,6 +11,7 @@ import css from "./host.module.css";
 /** Left column: brand + nav panel, then "Your party" with code, QR and guests. */
 export function Sidebar({ view, onView }: { view: View; onView: (v: View) => void }) {
   const { state, me } = useRoom();
+  const t = useT();
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const code = state?.code ?? "";
@@ -40,9 +41,9 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
   };
 
   const nav: Array<{ key: View; label: string; icon: typeof Home }> = [
-    { key: "home", label: "Home", icon: Home },
-    { key: "search", label: "Search", icon: Search },
-    { key: "settings", label: "Settings", icon: Settings },
+    { key: "home", label: t("tab.home"), icon: Home },
+    { key: "search", label: t("tab.search"), icon: Search },
+    { key: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
   return (
@@ -67,22 +68,22 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
 
       <section className={`${css.panel} ${css.party}`}>
         <header className={css.partyHead}>
-          <h2 className={css.partyTitle}>Your party</h2>
-          {state.settings.locked && <Pill tone="warning">Locked</Pill>}
+          <h2 className={css.partyTitle}>{t("party.title")}</h2>
+          {state.settings.locked && <Pill tone="warning">{t("host.locked")}</Pill>}
         </header>
         <div className={css.joinCard}>
-          <div className={css.qr}>{qr ? <img src={qr} alt={`QR code to join party ${code}`} /> : <span />}</div>
+          <div className={css.qr}>{qr ? <img src={qr} alt={t("host.qrAlt", { code })} /> : <span />}</div>
           <div className={css.joinText}>
-            <span className={css.codeLabel}>Code</span>
+            <span className={css.codeLabel}>{t("host.code")}</span>
             <span className={css.code}>{formatRoomCode(code)}</span>
             <button type="button" className={css.copy} onClick={copy}>
               {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "Copied" : "Copy link"}
+              {copied ? t("host.copied") : t("host.copyLink")}
             </button>
           </div>
         </div>
         <h3 className={css.guestsTitle}>
-          Guests <span className={css.muted}>{state.members.filter((m) => m.connected).length} here</span>
+          {t("host.guests")} <span className={css.muted}>{t("host.hereCount", { n: state.members.filter((m) => m.connected).length })}</span>
         </h3>
         <ul className={css.guests}>
           {members.map((m) => (
@@ -96,6 +97,7 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
 
 function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; canManage: boolean }) {
   const { send } = useRoom();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
 
@@ -117,19 +119,19 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
       <div className={css.guestText}>
         <span className={css.guestName}>
           {member.nickname}
-          {isMe && <span className={css.muted}> (you)</span>}
+          {isMe && <span className={css.muted}> {t("party.you")}</span>}
         </span>
         <span className={css.guestRole}>
           {member.role === "host" ? (
             <>
-              <Crown size={11} /> Host
+              <Crown size={11} /> {t("role.host")}
             </>
           ) : member.role === "cohost" ? (
-            "Co-host"
+            t("party.cohost")
           ) : member.connected ? (
-            "Guest"
+            t("role.guest")
           ) : (
-            "Away"
+            t("party.away")
           )}
         </span>
       </div>
@@ -138,7 +140,7 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
           type="button"
           className={css.guestMore}
           onClick={() => setOpen(!open)}
-          aria-label={`Options for ${member.nickname}`}
+          aria-label={t("host.optionsFor", { name: member.nickname })}
           aria-expanded={open}
         >
           <MoreHorizontal size={18} />
@@ -155,7 +157,7 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
             }}
           >
             <ShieldCheck size={16} />
-            {member.role === "cohost" ? "Remove co-host" : "Make co-host"}
+            {member.role === "cohost" ? t("party.removeCohost") : t("party.makeCohost")}
           </button>
           <button
             type="button"
@@ -167,7 +169,7 @@ function GuestRow({ member, isMe, canManage }: { member: Member; isMe: boolean; 
             }}
           >
             <UserMinus size={16} />
-            Remove from party
+            {t("party.removeGuest")}
           </button>
         </div>
       )}

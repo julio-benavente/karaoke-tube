@@ -1,25 +1,26 @@
 import { useCallback } from "react";
 import type { Song } from "@karaoke-tube/shared";
-import { ordinal, songParts, useAddSong, useSingWith, useToast } from "@karaoke-tube/ui";
+import { songParts, useAddSong, useSingWith, useT, useToast } from "@karaoke-tube/ui";
 
 /** useAddSong + the "Added to queue · you're 3rd" toast. Sends the "Sing with…" choice, then goes back to solo. */
 export function useAddWithToast() {
   const toast = useToast();
+  const t = useT();
   const sing = useSingWith();
   const { add, pending } = useAddSong(({ song, position, awaitingApproval }) => {
     const { title } = songParts(song);
     if (awaitingApproval) {
       toast.show(
         <>
-          <b>{title}</b> · waiting for the host's OK
+          <b>{title}</b> · {t("add.waiting")}
         </>,
       );
       return;
     }
-    const where = position === 0 ? "you're up now!" : position === 1 ? "you're next" : `you're ${ordinal(position)}`;
+    const where = position === 0 ? t("add.upNow") : position === 1 ? t("add.next") : t("add.nth", { n: position });
     toast.show(
       <>
-        Added <b>{title}</b> · {where}
+        {t("add.added")} <b>{title}</b> · {where}
       </>,
     );
   });

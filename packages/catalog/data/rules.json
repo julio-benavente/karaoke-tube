@@ -1,0 +1,489 @@
+{
+ "title": [
+  {
+   "re": "\\b(christmas|xmas|navidad|noel|noël|jingle bells|silent night|santa claus|santa baby|reindeer|sleigh|mistletoe|winter wonderland|white christmas|deck the halls|feliz navidad|little drummer boy|o holy night|away in a manger|joy to the world|hark the herald|jingle bell|let it snow|frosty|rudolph|snowman|holly jolly|nutcracker)\\b",
+   "g": [
+    "christmas"
+   ],
+   "m": [
+    "christmas"
+   ]
+  },
+  {
+   "re": "\\b(villancico|carol|oh come all ye faithful|o come all ye faithful|angels we have heard|first noel|twelve days|good king wenceslas)\\b",
+   "g": [
+    "carols",
+    "christmas"
+   ],
+   "m": [
+    "christmas"
+   ]
+  },
+  {
+   "re": "\\b(happy birthday|cumpleaños|las mañanitas|birthday)\\b",
+   "m": [
+    "birthday",
+    "singalong"
+   ]
+  },
+  {
+   "re": "\\b(wedding|marry me|bridal|bride|groom|i do|wedding day|walk down the aisle|at last|marry you|forever and ever|first dance)\\b",
+   "m": [
+    "wedding",
+    "romantic"
+   ]
+  },
+  {
+   "re": "\\b(lullaby|nana|arrullo|twinkle twinkle|rock a bye|rock-a-bye|brahms)\\b",
+   "g": [
+    "nursery-rhyme",
+    "kids"
+   ],
+   "m": [
+    "kids-family"
+   ]
+  },
+  {
+   "re": "\\b(nursery|old macdonald|wheels on the bus|itsy bitsy|incy wincy|baa baa|humpty dumpty|row row row|head shoulders knees|if you're happy and you know it|abc song|alphabet song|baby shark|five little|ten in the bed|bingo)\\b",
+   "g": [
+    "nursery-rhyme",
+    "kids"
+   ],
+   "m": [
+    "kids-family",
+    "easy",
+    "singalong"
+   ]
+  },
+  {
+   "re": "\\b(theme (?:song|from)?|main title|opening theme|tv theme|(?:end|closing) credits)\\b",
+   "g": [
+    "tv-theme"
+   ],
+   "m": [
+    "tv"
+   ]
+  },
+  {
+   "re": "\\b(disney|from frozen|from moana|from encanto|from tangled|from aladdin|from the lion king|from coco|from mulan|from hercules|from pocahontas|from beauty and the beast|from the little mermaid|from cinderella|from sleeping beauty|from snow white|from peter pan|from the jungle book|from tarzan|from bambi|from dumbo|from pinocchio)\\b",
+   "g": [
+    "disney"
+   ],
+   "m": [
+    "movie",
+    "kids-family"
+   ]
+  },
+  {
+   "re": "\\b(from (?:the )?(?:motion picture|movie|film|soundtrack)|motion picture|original soundtrack|ost)\\b",
+   "g": [
+    "soundtrack"
+   ],
+   "m": [
+    "movie"
+   ]
+  },
+  {
+   "re": "\\b(musical|broadway|from the musical|west end|original cast)\\b",
+   "g": [
+    "musical-theatre"
+   ]
+  },
+  {
+   "re": "\\b(hallelujah|amazing grace|how great thou art|ave maria|abide with me|be thou my vision|in christ alone|10,000 reasons|great is thy faithfulness|holy holy holy|it is well|how great is our god|what a friend we have in jesus|jesus loves me|swing low|go tell it on the mountain|when the saints|old rugged cross|blessed assurance|nearer my god to thee|onward christian soldiers|mighty fortress|hosanna|alleluia|come thou fount|o holy night)\\b",
+   "g": [
+    "gospel"
+   ]
+  },
+  {
+   "re": "\\b(halloween|thriller|monster mash|ghostbusters|this is halloween|spooky|ghost|witch|zombie|vampire)\\b",
+   "m": [
+    "halloween"
+   ]
+  },
+  {
+   "re": "\\b(summer|verano|beach|sunshine|surfin|sunny|vacation|holiday in the sun|island|tropical|palm|sunset|paradise|ocean|sea)\\b",
+   "m": [
+    "summer"
+   ]
+  },
+  {
+   "re": "\\b(goodbye|farewell|adios|adiós|breakup|break up|broken|heartbreak|tears|alone|without you|sin ti|sin tu amor|leaving|lonely|miss you|missing you|over you|moving on|should've said no|let her go|we are never|dime|olvidarte|olvidar|adiós amor|despedida|me dejaste|sufro|duele|dolor|llorar|lágrimas|lagrimas|soledad)\\b",
+   "m": [
+    "breakup",
+    "sad"
+   ]
+  },
+  {
+   "re": "\\b(love|lover|loves|loving|amor|te amo|te quiero|romance|romantic|kiss|beso|besos|darling|honey|sweetheart|heart|corazón|corazon|valentine|forever|always|angel|beautiful|perfect|marry|wife|husband|together|i do|my girl|my guy|je t'aime|ti amo|te adoro|mi vida|mi amor|cariño|cielito|querida|querido|tesoro|tuyo|tuya|contigo|siempre|eternamente|enamorado|enamorada|enamorados|enamoré|enamore|mía|mia|mío|mio)\\b",
+   "m": [
+    "love"
+   ]
+  },
+  {
+   "re": "\\b(fiesta|party|dance|dancing|bailar|baila|bailando|disco|rave|club|boogie|shake|twist|rock around|let's go|good time|friday|saturday|weekend|party rock|celebration|celebrate|baile|rumba|groove|get down|turn it up|move it|booty|party in|happy)\\b",
+   "m": [
+    "party",
+    "upbeat"
+   ]
+  },
+  {
+   "re": "\\b(drink|drinking|whiskey|whisky|beer|cerveza|tequila|wine|vino|shots|pub|booze|moonshine|vodka|margarita|champagne|brindis|cheers|trago|copa|borracho|borracha|cantina)\\b",
+   "m": [
+    "drinking"
+   ]
+  },
+  {
+   "re": "\\b(road|highway|truck|carretera|camino|travelin|traveling|on the road|route 66|country roads|take me home|born to run|life is a highway|take it easy|hit the road|brand new day)\\b",
+   "m": [
+    "road-trip"
+   ]
+  },
+  {
+   "re": "\\b(star spangled|god bless america|god bless the usa|land of the free|stars and stripes|born in the u\\.?s\\.?a|this land is your land|battle hymn|dixie|oh canada|god save the|rule britannia|land of hope|jerusalem|flower of scotland|danny boy|molly malone|wild rover|fields of athenry|himno|cielito lindo|la golondrina|mexico lindo|viva mexico|american pie|proud to be an american|party in the u\\.?s\\.?a)\\b",
+   "m": [
+    "patriotic"
+   ]
+  },
+  {
+   "re": "\\b(graduat|farewell|time of your life|good riddance|see you again|auld lang syne|forever young|so long|that's what friends are for|lean on me|you've got a friend|wind beneath|with a little help|count on me|stand by me|thank you for being a friend)\\b",
+   "m": [
+    "graduation"
+   ]
+  },
+  {
+   "re": "\\b(duet|duo|dúo|a duo|as a duet|duet version|male part|female part)\\b",
+   "m": [
+    "duet",
+    "duet-friendly"
+   ]
+  },
+  {
+   "re": "\\b(power ballad|slow dance|slow song|slow jam|last dance|slow motion|slow|lento)\\b",
+   "m": [
+    "slow-dance"
+   ]
+  },
+  {
+   "re": "\\b(sing along|singalong|sing-along|everybody|na na na|la la la|sha la la|shalala|hey hey|all together now)\\b",
+   "m": [
+    "singalong"
+   ]
+  },
+  {
+   "re": "\\b(piano karaoke|karaoke piano)\\b",
+   "m": []
+  }
+ ],
+ "artist": [
+  {
+   "re": "\\b(christmas|carols?|villancicos|navidad)\\b",
+   "g": [
+    "christmas"
+   ],
+   "m": [
+    "christmas"
+   ]
+  },
+  {
+   "re": "\\b(cast|soundtrack|ost|original cast|broadway|musical|the musical)\\b",
+   "g": [
+    "musical-theatre"
+   ]
+  },
+  {
+   "re": "\\b(children|kids (?:songs|karaoke|choir|chorus)|nursery|toddler|lullab|preschool|cocomelon|bluey|sesame)\\b",
+   "g": [
+    "kids"
+   ],
+   "m": [
+    "kids-family"
+   ]
+  },
+  {
+   "re": "\\b(disney|pixar|princess|frozen|moana|encanto|tangled|aladdin|mulan|descendants)\\b",
+   "g": [
+    "disney"
+   ],
+   "m": [
+    "movie"
+   ]
+  },
+  {
+   "re": "\\b(hymn|gospel|worship|church|choir|praise|christian|jesus|lord|god)\\b",
+   "g": [
+    "gospel"
+   ]
+  },
+  {
+   "re": "\\b(standard|standards|swing|jazz|big band|cabaret)\\b",
+   "g": [
+    "swing-standards"
+   ]
+  },
+  {
+   "re": "\\b(irish|celtic|ireland|gaelic)\\b",
+   "g": [
+    "celtic"
+   ]
+  },
+  {
+   "re": "\\b(tv series|tv show|television|theme)\\b",
+   "g": [
+    "tv-theme"
+   ],
+   "m": [
+    "tv"
+   ]
+  },
+  {
+   "re": "\\b(movie|film|motion picture)\\b",
+   "g": [
+    "soundtrack"
+   ],
+   "m": [
+    "movie"
+   ]
+  },
+  {
+   "re": "\\b(mariachi)\\b",
+   "g": [
+    "mariachi"
+   ],
+   "l": "es"
+  },
+  {
+   "re": "\\b(orquesta|sonora|trio|trío|mariachi|ballet|aguila|aguilas|águilas|hermanos)\\b",
+   "l": "es"
+  },
+  {
+   "re": "^(los|las|el|la|grupo|banda|conjunto|orquesta|sonora)\\s",
+   "l": "es"
+  }
+ ],
+ "channel": {
+  "Kids Karaoke Songs": {
+   "g": [
+    "kids"
+   ],
+   "m": [
+    "kids-family",
+    "easy",
+    "singalong"
+   ]
+  }
+ },
+ "artistTags": [
+  {
+   "m": [
+    "hard"
+   ],
+   "a": [
+    "Celine Dion",
+    "Céline Dion",
+    "Whitney Houston",
+    "Mariah Carey",
+    "Adele",
+    "Christina Aguilera",
+    "Aretha Franklin",
+    "Barbra Streisand",
+    "Beyoncé",
+    "Beyonce",
+    "Jennifer Hudson",
+    "Idina Menzel",
+    "Lea Salonga",
+    "Regine Velasquez",
+    "Sarah Brightman",
+    "Josh Groban",
+    "Andrea Bocelli",
+    "Il Divo",
+    "Freddie Mercury",
+    "Queen",
+    "Bonnie Tyler",
+    "Meat Loaf",
+    "Journey",
+    "Toni Braxton",
+    "Leona Lewis",
+    "Alicia Keys",
+    "Kelly Clarkson",
+    "Jessie J",
+    "Ariana Grande",
+    "Demi Lovato",
+    "Sia",
+    "Lara Fabian",
+    "Laura Pausini",
+    "Luis Miguel",
+    "Whitney Houston",
+    "Sam Smith",
+    "Lewis Capaldi",
+    "Linda Eder",
+    "Cynthia Erivo",
+    "Ben Platt",
+    "Michael Bolton"
+   ]
+  },
+  {
+   "m": [
+    "easy"
+   ],
+   "a": [
+    "Johnny Cash",
+    "Bob Dylan",
+    "Leonard Cohen",
+    "Neil Young",
+    "Tom Petty",
+    "Lou Reed",
+    "Billie Eilish",
+    "Lana Del Rey",
+    "Ed Sheeran",
+    "Jack Johnson",
+    "Jason Mraz",
+    "John Denver",
+    "Willie Nelson",
+    "Kris Kristofferson",
+    "Cat Stevens",
+    "Elvis Presley",
+    "Dean Martin",
+    "Frank Sinatra",
+    "Nat King Cole",
+    "Louis Armstrong",
+    "Bob Marley",
+    "UB40",
+    "The Beatles",
+    "Simon & Garfunkel",
+    "Tracy Chapman",
+    "Leon Bridges",
+    "Hozier",
+    "Passenger",
+    "Vance Joy",
+    "Noah Kahan",
+    "Zach Bryan",
+    "Morgan Wallen",
+    "Luke Combs",
+    "George Strait",
+    "Alan Jackson",
+    "Johnny Cash",
+    "Kenny Rogers",
+    "Don Williams",
+    "Jim Reeves",
+    "Patsy Cline"
+   ]
+  },
+  {
+   "m": [
+    "rap-heavy"
+   ],
+   "a": [
+    "Eminem",
+    "Drake",
+    "Kendrick Lamar",
+    "Jay-Z",
+    "50 Cent",
+    "Nelly",
+    "Snoop Dogg",
+    "2Pac",
+    "Tupac",
+    "The Notorious B.I.G.",
+    "Notorious B.I.G.",
+    "Nas",
+    "Ice Cube",
+    "LL Cool J",
+    "Run-DMC",
+    "Beastie Boys",
+    "Vanilla Ice",
+    "MC Hammer",
+    "Coolio",
+    "Salt-N-Pepa",
+    "Nicki Minaj",
+    "Cardi B",
+    "Megan Thee Stallion",
+    "Post Malone",
+    "Travis Scott",
+    "Lil Wayne",
+    "Ludacris",
+    "Flo Rida",
+    "Pitbull",
+    "Missy Elliott",
+    "Outkast",
+    "Macklemore",
+    "Wiz Khalifa",
+    "Juice WRLD",
+    "Childish Gambino",
+    "Kanye West",
+    "DMX",
+    "Busta Rhymes",
+    "Wu-Tang Clan",
+    "Fugees",
+    "Bone Thugs-N-Harmony",
+    "Lil Nas X",
+    "Jack Harlow",
+    "Run The Jewels",
+    "Machine Gun Kelly",
+    "G-Eazy",
+    "Logic",
+    "Chance the Rapper",
+    "J. Cole",
+    "Future",
+    "21 Savage",
+    "Lil Baby",
+    "Lil Uzi Vert",
+    "Migos",
+    "Cypress Hill",
+    "House of Pain",
+    "Sir Mix-A-Lot",
+    "Will Smith"
+   ]
+  },
+  {
+   "m": [
+    "nostalgic"
+   ],
+   "a": [
+    "The Beatles",
+    "Elvis Presley",
+    "Frank Sinatra",
+    "Dean Martin",
+    "Nat King Cole",
+    "Engelbert Humperdinck",
+    "Cliff Richard",
+    "Neil Diamond",
+    "The Carpenters",
+    "Carpenters",
+    "ABBA",
+    "Bee Gees",
+    "Simon & Garfunkel",
+    "The Beach Boys",
+    "Fleetwood Mac",
+    "Eagles",
+    "Queen",
+    "Elton John",
+    "Billy Joel",
+    "Barry Manilow",
+    "Johnny Cash",
+    "Patsy Cline",
+    "Roy Orbison",
+    "Buddy Holly",
+    "The Platters",
+    "The Everly Brothers",
+    "Ricky Nelson",
+    "The Supremes",
+    "The Temptations",
+    "Dionne Warwick",
+    "Dusty Springfield",
+    "Petula Clark",
+    "Tom Jones",
+    "Bobby Darin",
+    "Connie Francis",
+    "Brenda Lee",
+    "Perry Como",
+    "Andy Williams",
+    "Bing Crosby",
+    "Doris Day",
+    "Judy Garland",
+    "Ella Fitzgerald",
+    "Billie Holiday",
+    "Louis Armstrong"
+   ]
+  }
+ ]
+}

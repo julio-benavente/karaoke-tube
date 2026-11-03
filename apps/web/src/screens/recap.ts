@@ -1,4 +1,5 @@
 import type { Recap, RecapPerformance } from "@karaoke-tube/shared";
+import { makeT, detectLang, type TFn } from "@karaoke-tube/ui";
 
 export const recapUrl = (id: string) => `${location.origin}/recap/${id}`;
 
@@ -14,9 +15,9 @@ export const singerCount = (recap: Recap) => new Set(recap.performances.flatMap(
 export type ShareResult = "shared" | "copied" | "failed";
 
 /** The Web Share sheet when the device has one, otherwise the link goes to the clipboard. */
-export async function shareRecap(recap: Recap): Promise<ShareResult> {
+export async function shareRecap(recap: Recap, t: TFn = makeT(detectLang())): Promise<ShareResult> {
   const url = recapUrl(recap.id);
-  const data = { title: "Our karaoke night", text: "Look what we did at karaoke night!", url };
+  const data = { title: t("share.title"), text: t("share.text"), url };
   try {
     if (typeof navigator.share === "function" && (!navigator.canShare || navigator.canShare(data))) {
       await navigator.share(data);

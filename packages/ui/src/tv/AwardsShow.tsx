@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { TITLE_INFO, type Recap } from "@karaoke-tube/shared";
+import { detectLang, makeT, type TFn } from "../i18n/core";
+import { titleDesc, titleName } from "../i18n/labels";
 import { avatarUri } from "../avatar";
 import { songParts } from "../format";
 
 export type AwardsShowProps = {
   recap: Recap;
+  /** Translator (shadow-root safe). Default: the saved/browser language. */
+  t?: TFn;
   /** Where the recap lives, shown on the last card (for example "karaoke.example/recap/abc"). */
   recapText?: string;
   /** QR code (data URL) that points at the recap page. */
@@ -38,7 +42,7 @@ const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
  * C5: the end-of-night awards show for the TV. Cycles through everyone's titles, then the moment of the night
  * and a thank-you card, and starts over until the content script takes it away. Presentational; shadow-root safe.
  */
-export function AwardsShow({ recap, recapText, qrSrc, speed = 1 }: AwardsShowProps) {
+export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detectLang()) }: AwardsShowProps) {
   // Not memoized on `recap`: the room sends a fresh copy with every state, and the timers must not restart.
   const slides = ((): Slide[] => {
     const out: Slide[] = [{ kind: "intro", ms: INTRO_MS }];
@@ -78,10 +82,10 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1 }: AwardsShowPro
       </div>
 
       <div className="kt-tv-aw-stage" key={`${index}-${slide.kind}`}>
-        {slide.kind === "intro" && <Intro recap={recap} />}
-        {slide.kind === "member" && <MemberSlide recap={recap} memberId={slide.memberId} />}
-        {slide.kind === "moment" && <Moment recap={recap} />}
-        {slide.kind === "finale" && <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} />}
+        {slide.kind === "intro" && <Intro recap={recap} t={t} />}
+        {slide.kind === "member" && <MemberSlide recap={recap} memberId={slide.memberId} t={t} />}
+        {slide.kind === "moment" && <Moment recap={recap} t={t} />}
+        {slide.kind === "finale" && <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} />}
       </div>
 
       <div className="kt-tv-aw-dots" aria-hidden>
@@ -93,23 +97,23 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1 }: AwardsShowPro
   );
 }
 
-function Intro({ recap }: { recap: Recap }) {
+function Intro({ recap, t }: { recap: Recap; t: TFn }) {
   const songs = recap.performances.length;
   const singers = new Set(recap.performances.flatMap((p) => p.item.singerIds)).size;
   return (
     <div className="kt-tv-aw-center">
-      <span className="kt-tv-aw-kicker">That's a wrap</span>
-      <span className="kt-tv-aw-big">And the awards go to…</span>
+      <span className="kt-tv-aw-kicker">{t("story.wrap")}</span>
+      <span className="kt-tv-aw-big">{t("tv.awardsGo")}</span>
       <span className="kt-tv-aw-sub">
         {songs === 0
-          ? `${recap.members.length} ${recap.members.length === 1 ? "person" : "people"} came to the party`
-          : `${songs} ${songs === 1 ? "song" : "songs"} · ${singers} ${singers === 1 ? "singer" : "singers"} · ${recap.members.length} at the party`}
+          ? t("tv.came", { count: recap.members.length })
+          : `${songs} ${t("unit.song", { count: songs })} · ${singers} ${t("unit.singer", { count: singers })} · ${recap.members.length} ${t("recap.atParty")}`}
       </span>
     </div>
   );
 }
 
-function MemberSlide({ recap, memberId }: { recap: Recap; memberId: string }) {
+function MemberSlide({ recap, memberId, t }: { recap: Recap; memberId: string; t: TFn }) {
   const member = recap.members.find((m) => m.id === memberId);
   const titles = recap.titles[memberId] ?? [];
   if (!member) return null;
@@ -125,8 +129,8 @@ function MemberSlide({ recap, memberId }: { recap: Recap; memberId: string }) {
               <div className="kt-tv-aw-title" key={id} style={{ animationDelay: `${0.6 + i * 1.7}s` }}>
                 <span className="kt-tv-aw-emoji">{info.emoji}</span>
                 <span className="kt-tv-aw-titletext">
-                  <b>{info.name}</b>
-                  <span>{info.description}</span>
+                  <b>{titleName(t, id)}</b>
+                  <span>{titleDesc(t, id)}</span>
                 </span>
               </div>
             );
@@ -137,32 +141,32 @@ function MemberSlide({ recap, memberId }: { recap: Recap; memberId: string }) {
   );
 }
 
-function Moment({ recap }: { recap: Recap }) {
+function Moment({ recap, t }: { recap: Recap; t: TFn }) {
   const moment = recap.topMoment;
   if (!moment) return null;
   const { title, artist } = songParts(moment.item.song);
-  const names = moment.item.singerIds.map((id) => recap.members.find((m) => m.id === id)?.nickname ?? "Someone");
+  const names = moment.item.singerIds.map((id) => recap.members.find((m) => m.id === id)?.nickname ?? t("singer.someone"));
   const first = recap.members.find((m) => m.id === moment.item.singerIds[0]);
   return (
     <div className="kt-tv-aw-member">
       <img className="kt-tv-aw-avatar" src={avatarUri(first?.avatarSeed ?? moment.item.id)} alt="" />
       <div className="kt-tv-aw-text">
-        <span className="kt-tv-aw-kicker">Moment of the night</span>
+        <span className="kt-tv-aw-kicker">{t("tv.moment")}</span>
         <span className="kt-tv-aw-name">{title}</span>
         <span className="kt-tv-aw-sub">
-          {artist} · {names.join(" & ")}
+          {artist} · {names.join(` ${t("singer.and")} `)}
         </span>
-        <span className="kt-tv-aw-cheers">🙌 {moment.cheers} cheers</span>
+        <span className="kt-tv-aw-cheers">🙌 {t("recap.cheersCount", { count: moment.cheers })}</span>
       </div>
     </div>
   );
 }
 
-function Finale({ recap, recapText, qrSrc }: { recap: Recap; recapText?: string; qrSrc?: string }) {
+function Finale({ recap, recapText, qrSrc, t }: { recap: Recap; recapText?: string; qrSrc?: string; t: TFn }) {
   return (
     <div className="kt-tv-aw-center">
-      <span className="kt-tv-aw-kicker">Thanks for singing</span>
-      <span className="kt-tv-aw-big">See you at the next one</span>
+      <span className="kt-tv-aw-kicker">{t("tv.thanks")}</span>
+      <span className="kt-tv-aw-big">{t("tv.seeYou")}</span>
       <div className="kt-tv-aw-faces" aria-hidden>
         {recap.members.slice(0, 8).map((m, i) => (
           <img key={m.id} src={avatarUri(m.avatarSeed)} alt="" style={{ animationDelay: `${i * 120}ms` }} />
@@ -172,7 +176,7 @@ function Finale({ recap, recapText, qrSrc }: { recap: Recap; recapText?: string;
         <div className="kt-tv-aw-recap">
           {qrSrc && <img src={qrSrc} alt="" />}
           <span>
-            Your recap
+            {t("tv.yourRecap")}
             {recapText && <b>{recapText}</b>}
           </span>
         </div>

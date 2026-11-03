@@ -19,6 +19,7 @@ import {
   useT,
 } from "@karaoke-tube/ui";
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
+import { useLogParty } from "../account/AccountContext";
 import { AwardPrompt } from "./AwardPrompt";
 import { EndStory } from "./EndStory";
 import { NowSingingSheet } from "./NowSinging";
@@ -69,11 +70,12 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   const [search, setSearch] = useSearchParams();
   const toast = useToast();
   const nowOpen = search.get("now") === "1";
+  useLogParty(code, !!me, state?.status === "ended");
 
   useRoomErrors((e) => {
     if (e.code === "queue_limit") {
       const n = state?.settings.maxWaitingPerMember ?? 2;
-      toast.show(`You've got ${n} song${n === 1 ? "" : "s"} waiting. Add more after one plays.`, { tone: "error" });
+      toast.show(t("search.limitToast", { count: n }), { tone: "error" });
     } else {
       toast.show(errorText(e.code), { tone: "error" });
     }
@@ -106,9 +108,9 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
     return (
       <EndScreen
         icon={<CircleSlash />}
-        title="You were removed from the party"
-        text="The host removed you. You can join again if they invite you back."
-        action={<Button onClick={leave}>Back to start</Button>}
+        title={t("shell.kicked")}
+        text={t("shell.kickedText")}
+        action={<Button onClick={leave}>{t("shell.backToStart")}</Button>}
       />
     );
   }
@@ -119,13 +121,13 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
     return (
       <EndScreen
         icon={<WifiOff />}
-        title="Lost connection"
-        text={`We couldn't stay connected to party ${code}.`}
+        title={t("shell.lost")}
+        text={t("shell.lostText", { code })}
         action={
           <>
-            <Button onClick={retry}>Try again</Button>
+            <Button onClick={retry}>{t("common.tryAgain")}</Button>
             <Button variant="secondary" onClick={leave}>
-              Join another party
+              {t("shell.another")}
             </Button>
           </>
         }
@@ -208,16 +210,17 @@ function EndScreen({ icon, title, text, action }: { icon: ReactNode; title: stri
 }
 
 function ThanksScreen({ onDone }: { onDone: () => void }) {
+  const t = useT();
   return (
     <div className={css.thanks}>
       <div className={css.thanksInner}>
         <div className={css.confetti} aria-hidden>
           🎤
         </div>
-        <h1 className={css.thanksTitle}>Thanks for singing!</h1>
-        <p className={css.thanksText}>The party has ended. That was a good one.</p>
+        <h1 className={css.thanksTitle}>{t("shell.thanks")}</h1>
+        <p className={css.thanksText}>{t("shell.thanksText")}</p>
         <Button size="lg" variant="light" onClick={onDone}>
-          Done
+          {t("common.done")}
         </Button>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { Download, MicOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import type { ApiErrorResponse, Recap, RecapResponse } from "@karaoke-tube/shared";
-import { Button, EmptyState, Logo, Spinner } from "@karaoke-tube/ui";
+import { Button, EmptyState, Logo, Spinner, useT } from "@karaoke-tube/ui";
 import { RecapView, ShareRecapButton } from "./RecapView";
 import { saveRecapImage } from "./recap-image";
 import css from "./RecapPage.module.css";
@@ -12,6 +12,7 @@ type Load = { state: "loading" } | { state: "gone" } | { state: "error" } | { st
 /** /recap/:id: public, no login. The recap card with Share and Save as image; friendly when it has expired. */
 export function RecapPage({ preload }: { preload?: Recap } = {}) {
   const { id = "" } = useParams();
+  const t = useT();
   const [load, setLoad] = useState<Load>(preload ? { state: "ready", recap: preload } : { state: "loading" });
 
   useEffect(() => {
@@ -38,19 +39,19 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
       {load.state === "gone" && (
         <EmptyState
           icon={<MicOff />}
-          title="This recap has expired"
+          title={t("recap.expired")}
           action={
             <Link to="/join" className={css.link}>
-              <Button>Join a party</Button>
+              <Button>{t("recap.joinParty")}</Button>
             </Link>
           }
         >
-          Recaps are kept for 30 days after the party. Ask whoever hosted if they saved a copy.
+          {t("recap.expiredHint")}
         </EmptyState>
       )}
       {load.state === "error" && (
-        <EmptyState icon={<MicOff />} title="Couldn't load this recap" action={<Button onClick={() => location.reload()}>Try again</Button>}>
-          Check your connection and try again.
+        <EmptyState icon={<MicOff />} title={t("recap.loadError")} action={<Button onClick={() => location.reload()}>{t("common.tryAgain")}</Button>}>
+          {t("recap.loadErrorHint")}
         </EmptyState>
       )}
       {load.state === "ready" && (
@@ -58,12 +59,12 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
           <RecapView recap={load.recap} />
           <div className={css.actions}>
             <ShareRecapButton recap={load.recap} />
-            <Button size="lg" variant="secondary" icon={<Download size={18} />} onClick={() => void saveRecapImage(load.recap)}>
-              Save as image
+            <Button size="lg" variant="secondary" icon={<Download size={18} />} onClick={() => void saveRecapImage(load.recap, t)}>
+              {t("recap.save")}
             </Button>
           </div>
           <p className={css.foot}>
-            Made with Karaoke Tube. <Link to="/join">Join a party</Link>
+            {t("recap.madeWith")} <Link to="/join">{t("recap.joinParty")}</Link>
           </p>
         </>
       )}

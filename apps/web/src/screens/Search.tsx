@@ -15,8 +15,10 @@ import {
   Tile,
   SAMPLE_SONGS,
   parseYouTubeId,
+  presetName,
   useRoom,
   useSearch,
+  useT,
 } from "@karaoke-tube/ui";
 import { getSearchApi } from "../session";
 import { useAddWithToast } from "./useAdd";
@@ -25,6 +27,7 @@ import css from "./Search.module.css";
 /** G3 (browse) / G4 (results): search field, Browse all tiles, results with ⊕, paste a link. */
 export function SearchScreen() {
   const { state, me, isHost } = useRoom();
+  const t = useT();
   const search = useSearch();
   const { add, pending } = useAddWithToast();
   const [presetTitle, setPresetTitle] = useState<string | null>(null);
@@ -109,24 +112,24 @@ export function SearchScreen() {
 
   return (
     <div className={css.page}>
-      <h1 className={css.title}>Search</h1>
+      <h1 className={css.title}>{t("tab.search")}</h1>
       <div className={css.sticky}>
         <label className={css.field}>
           <SearchIcon className={css.fieldIcon} aria-hidden />
-          <span className="kt-sr-only">Search songs</span>
+          <span className="kt-sr-only">{t("search.songs")}</span>
           <input
             ref={inputRef}
             className={css.input}
             value={search.query}
             onChange={(e) => onType(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !linkId && search.run(search.query)}
-            placeholder="What do you want to sing?"
+            placeholder={t("search.placeholder")}
             type="search"
             enterKeyHint="search"
             autoComplete="off"
           />
           {search.query && (
-            <button type="button" className={css.clear} onClick={clear} aria-label="Clear search">
+            <button type="button" className={css.clear} onClick={clear} aria-label={t("search.clear")}>
               <X />
             </button>
           )}
@@ -134,33 +137,33 @@ export function SearchScreen() {
         <ChipRow className={css.chips}>
           <SingWithButton />
           <Chip icon={<Link2 size={16} />} onClick={pasteFromClipboard}>
-            Paste a YouTube link
+            {t("search.paste")}
           </Chip>
           {BROWSE_PRESETS.slice(0, 5).map((p) => (
             <Chip key={p.id} selected={presetTitle === p.title} onClick={() => runPreset(p.title, p.query)}>
-              {p.title}
+              {presetName(t, p.id)}
             </Chip>
           ))}
         </ChipRow>
       </div>
 
       {blocked && (
-        <Banner icon={<Info />}>Only the hosts can add songs right now.</Banner>
+        <Banner icon={<Info />}>{t("search.onlyHosts")}</Banner>
       )}
       {atLimit && (
         <Banner icon={<Info />}>
-          You've got {limit} song{limit === 1 ? "" : "s"} waiting, the most this party allows. Add more after one plays.
+          {t("search.limit", { count: limit })}
         </Banner>
       )}
 
       {showBrowse ? (
         <section>
-          <h2 className={css.h2}>Browse all</h2>
+          <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
             {BROWSE_PRESETS.map((p, i) => (
               <Tile
                 key={p.id}
-                title={p.title}
+                title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => runPreset(p.title, p.query)}
@@ -170,22 +173,22 @@ export function SearchScreen() {
         </section>
       ) : linkId ? (
         <section>
-          <h2 className={css.h2}>From your link</h2>
+          <h2 className={css.h2}>{t("search.fromLink")}</h2>
           {linkState === "loading" && <SkeletonRows n={1} />}
-          {linkState === "error" && <p className={css.muted}>We couldn't open that video. Check the link.</p>}
+          {linkState === "error" && <p className={css.muted}>{t("search.linkError")}</p>}
           {linkSong && row(linkSong)}
         </section>
       ) : searchUnavailable ? (
         <EmptyState
           icon={<Link2 />}
-          title="Search is resting"
+          title={t("search.resting")}
           action={
             <Button variant="light" icon={<Clipboard size={18} />} onClick={pasteFromClipboard}>
-              Paste a link instead
+              {t("search.pasteInstead")}
             </Button>
           }
         >
-          Find the song on YouTube, copy its link and paste it here.
+          {t("search.restingHint")}
         </EmptyState>
       ) : (
         <section>
@@ -195,8 +198,8 @@ export function SearchScreen() {
           ) : search.results.length ? (
             <div className={css.results}>{search.results.map(row)}</div>
           ) : search.resultsFor ? (
-            <EmptyState icon={<SearchIcon />} title={`No results for "${search.resultsFor}"`}>
-              Check the spelling, or try the artist's name.
+            <EmptyState icon={<SearchIcon />} title={t("search.noResults", { query: search.resultsFor })}>
+              {t("search.noResultsHint")}
             </EmptyState>
           ) : (
             <SkeletonRows n={8} />
@@ -232,11 +235,12 @@ function SkeletonRows({ n }: { n: number }) {
   );
 }
 
-function PasteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (t: string) => void }) {
+function PasteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (text: string) => void }) {
+  const t = useT();
   const [text, setText] = useState("");
   const valid = !!parseYouTubeId(text);
   return (
-    <Sheet open={open} onClose={onClose} label="Paste a YouTube link">
+    <Sheet open={open} onClose={onClose} label={t("search.paste")}>
       <form
         className={css.paste}
         onSubmit={(e) => {
@@ -245,18 +249,18 @@ function PasteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () =>
           setText("");
         }}
       >
-        <h2 className={css.h2}>Paste a YouTube link</h2>
+        <h2 className={css.h2}>{t("search.paste")}</h2>
         <TextField
-          label="Link"
+          label={t("search.link")}
           hideLabel
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="https://youtu.be/…"
-          error={text && !valid ? "That doesn't look like a YouTube link." : null}
+          error={text && !valid ? t("search.badLink") : null}
           autoFocus
         />
         <Button type="submit" block disabled={!valid}>
-          Find this song
+          {t("search.findSong")}
         </Button>
       </form>
     </Sheet>

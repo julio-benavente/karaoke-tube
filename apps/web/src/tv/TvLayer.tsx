@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { Reaction, RoomState } from "@karaoke-tube/shared";
 import { AwardsShow, GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
+import { useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "../host/client";
 
 export type ReactionFeed = (listener: (e: { memberId: string; reaction: Reaction }) => void) => () => void;
@@ -45,6 +46,7 @@ function ShadowMount({ children }: { children: ReactNode }) {
 
 /** The TV overlay (now singing, up next, QR, reactions, get-ready card, awards show) over the player. */
 export function TvLayer({ state, onReaction, flash = false }: { state: RoomState; onReaction: ReactionFeed; flash?: boolean }) {
+  const t = useT();
   const qr = useQr(`${WEB_URL}/join/${state.code}`);
   const [recapQr, setRecapQr] = useState<string>();
   const [reactions, setReactions] = useState<TvReaction[]>([]);
@@ -84,13 +86,14 @@ export function TvLayer({ state, onReaction, flash = false }: { state: RoomState
   return (
     <ShadowMount>
       {state.recap ? (
-        <AwardsShow recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
+        <AwardsShow t={t} recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
       ) : playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
-        <GetReadyCard item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec}
+        <GetReadyCard t={t} item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec}
           join={flash || joinInfo !== "start" ? { code: state.code, qrSrc: qr, joinText } : undefined}
         />
       ) : (
         <TvOverlay
+          t={t}
           nowPlaying={nowPlaying}
           upNext={state.upNext}
           members={state.members}

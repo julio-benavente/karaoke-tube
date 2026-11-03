@@ -86,7 +86,9 @@ async function videosById(apiKey: string | undefined, ids: string[]): Promise<Ma
   const data = await call<{ items?: VideoResource[] }>(apiKey, "videos", { part: "snippet,contentDetails,status", id: ids.join(",") });
   const songs = new Map<string, Song>();
   for (const v of data.items ?? []) {
-    if (v.status?.embeddable === false || v.snippet?.liveBroadcastContent === "live") continue;
+    // Not filtered on `embeddable`: the extension plays on youtube.com/watch, which works for videos that refuse embeds
+    // (most of KaraFun and Sing King).
+    if (v.snippet?.liveBroadcastContent === "live") continue;
     const song = toSong(v);
     if (song) songs.set(v.id, song);
   }
@@ -98,7 +100,6 @@ export async function searchYouTube(apiKey: string | undefined, query: string): 
   const data = await call<{ items?: Array<{ id?: { videoId?: string } }> }>(apiKey, "search", {
     part: "id",
     type: "video",
-    videoEmbeddable: "true",
     maxResults: String(SEARCH_RESULTS),
     q: `${query} karaoke`,
   });

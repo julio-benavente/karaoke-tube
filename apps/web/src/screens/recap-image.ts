@@ -1,5 +1,5 @@
 import { TITLE_INFO, type Recap } from "@karaoke-tube/shared";
-import { avatarUri, songParts } from "@karaoke-tube/ui";
+import { avatarUri, detectLang, makeT, songParts, titleName, type TFn } from "@karaoke-tube/ui";
 import { singerCount } from "./recap";
 
 const W = 1080;
@@ -15,7 +15,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 /** Draws the recap as a share-sized picture (1080 wide) and returns it as a PNG blob. */
-export async function recapImage(recap: Recap): Promise<Blob | null> {
+export async function recapImage(recap: Recap, t: TFn = makeT(detectLang())): Promise<Blob | null> {
   const people = recap.members.filter((m) => (recap.titles[m.id]?.length ?? 0) > 0).slice(0, 8);
   const rowH = 120;
   const moment = recap.topMoment && recap.topMoment.cheers > 0 ? recap.topMoment : null;
@@ -36,15 +36,15 @@ export async function recapImage(recap: Recap): Promise<Blob | null> {
   g.textBaseline = "alphabetic";
   g.fillStyle = "#ff4f8b";
   g.font = `800 34px ${FONT}`;
-  g.fillText("KARAOKE NIGHT", 72, 130);
+  g.fillText(t("recap.kicker").toUpperCase(), 72, 130);
   g.fillStyle = "#fff";
   g.font = `800 112px ${FONT}`;
-  g.fillText("What a night", 72, 250);
+  g.fillText(t("recap.title"), 72, 250);
   g.fillStyle = "#b0a8b8";
   g.font = `700 38px ${FONT}`;
   const songs = recap.performances.length;
   g.fillText(
-    `${songs} ${songs === 1 ? "song" : "songs"} · ${singerCount(recap)} ${singerCount(recap) === 1 ? "singer" : "singers"} · ${recap.members.length} at the party`,
+    `${songs} ${t("unit.song", { count: songs })} · ${singerCount(recap)} ${t("unit.singer", { count: singerCount(recap) })} · ${recap.members.length} ${t("recap.atParty")}`,
     72,
     320,
   );
@@ -57,14 +57,14 @@ export async function recapImage(recap: Recap): Promise<Blob | null> {
     g.fill();
     g.fillStyle = "#ff4f8b";
     g.font = `800 28px ${FONT}`;
-    g.fillText("MOST-CHEERED MOMENT", 112, y + 56);
+    g.fillText(t("recap.moment").toUpperCase(), 112, y + 56);
     g.fillStyle = "#fff";
     g.font = `800 48px ${FONT}`;
     const { title } = songParts(moment.item.song);
     g.fillText(title.length > 28 ? `${title.slice(0, 27)}…` : title, 112, y + 114);
     g.fillStyle = "#b0a8b8";
     g.font = `700 32px ${FONT}`;
-    g.fillText(`🙌 ${moment.cheers} cheers`, 112, y + 158);
+    g.fillText(`🙌 ${t("recap.cheersCount", { count: moment.cheers })}`, 112, y + 158);
     y += 230;
   }
 
@@ -87,7 +87,7 @@ export async function recapImage(recap: Recap): Promise<Blob | null> {
     g.font = `700 30px ${FONT}`;
     g.fillText(
       (recap.titles[m.id] ?? [])
-        .map((t) => `${TITLE_INFO[t].emoji} ${TITLE_INFO[t].name}`)
+        .map((id) => `${TITLE_INFO[id].emoji} ${titleName(t, id)}`)
         .join("   ")
         .slice(0, 60),
       188,
@@ -103,13 +103,13 @@ export async function recapImage(recap: Recap): Promise<Blob | null> {
 }
 
 /** Downloads the recap picture (or opens the share sheet with it where files can be shared). */
-export async function saveRecapImage(recap: Recap): Promise<void> {
-  const blob = await recapImage(recap);
+export async function saveRecapImage(recap: Recap, t: TFn = makeT(detectLang())): Promise<void> {
+  const blob = await recapImage(recap, t);
   if (!blob) return;
   const file = new File([blob], "karaoke-night.png", { type: "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: "Our karaoke night" });
+      await navigator.share({ files: [file], title: t("share.title") });
       return;
     } catch (e) {
       if ((e as DOMException).name === "AbortError") return;

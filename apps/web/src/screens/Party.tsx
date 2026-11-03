@@ -56,7 +56,7 @@ export function PartyScreen() {
 
       <section>
         <h2 className={css.h2}>
-          Guests <span className={css.count}>{online} here</span>
+          {t("host.guests")} <span className={css.count}>{t("host.hereCount", { n: online })}</span>
         </h2>
         <ul className={css.list}>
           {members.map((m) => (
@@ -71,7 +71,7 @@ export function PartyScreen() {
               </div>
               {m.role === "host" && (
                 <Pill tone="accent">
-                  <Crown size={11} /> Host
+                  <Crown size={11} /> {t("role.host")}
                 </Pill>
               )}
               {m.role === "cohost" && <Pill>{t("party.cohost")}</Pill>}

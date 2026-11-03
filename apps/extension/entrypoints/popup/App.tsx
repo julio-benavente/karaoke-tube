@@ -1,7 +1,7 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
 import { ExternalLink, Power, Tv, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { AvatarPicker, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
+import { AvatarPicker, Button, LanguageSwitcher, Logo, Spinner, TextField, randomSeed, useLang, useT } from "@karaoke-tube/ui";
 import { createPartyApi, reopenTv, type PartyApi, type PartyInfo } from "./party";
 import css from "./popup.module.css";
 
@@ -19,8 +19,19 @@ function loadIdentity(): { nickname: string; avatarSeed: string } {
 
 /** Toolbar popup: start a party, or see the running one. */
 export function App() {
+  const t = useT();
+  const [lang] = useLang();
   const [api, setApi] = useState<PartyApi | null>(null);
   const [party, setParty] = useState<PartyInfo | null | undefined>(undefined);
+
+  // The content script (TV overlay on YouTube) reads the language from extension storage.
+  useEffect(() => {
+    try {
+      void browser.storage.local.set({ "kt:lang": lang });
+    } catch {
+      // not running as an extension (dev preview)
+    }
+  }, [lang]);
 
   useEffect(() => {
     let alive = true;
@@ -39,7 +50,8 @@ export function App() {
     <main className={css.popup}>
       <header className={css.head}>
         <Logo size={24} />
-        {api?.demo && <span className={css.demo}>Demo</span>}
+        {api?.demo && <span className={css.demo}>{t("popup.demo")}</span>}
+        <LanguageSwitcher />
       </header>
       {!api || party === undefined ? (
         <div className={css.loading}>
@@ -55,6 +67,7 @@ export function App() {
 }
 
 function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) => void }) {
+  const t = useT();
   const initial = loadIdentity();
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
@@ -75,19 +88,19 @@ function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) =>
     const r = await api.start(name, seed);
     setBusy(false);
     if (r.ok) onStarted(r.code);
-    else setError(r.error);
+    else setError(t("popup.startError"));
   };
 
   return (
     <form className={css.body} onSubmit={submit}>
-      <h1 className={css.title}>Start a karaoke party</h1>
-      <p className={css.lead}>We'll open the host app and a YouTube window for your TV.</p>
+      <h1 className={css.title}>{t("popup.title")}</h1>
+      <p className={css.lead}>{t("popup.lead")}</p>
       <AvatarPicker value={seed} onChange={setSeed} previewSize={72} compact />
       <TextField
-        label="Your name"
+        label={t("newparty.name")}
         value={nickname}
         onChange={(e) => setNickname(e.target.value.slice(0, 20))}
-        placeholder="Host name"
+        placeholder={t("newparty.namePlaceholder")}
         autoFocus
         className={css.name}
       />
@@ -97,40 +110,41 @@ function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) =>
         </p>
       )}
       <Button type="submit" block disabled={busy || !nickname.trim()}>
-        {busy ? "Starting…" : "Start a party"}
+        {busy ? t("newparty.starting") : t("popup.start")}
       </Button>
     </form>
   );
 }
 
 function Running({ api, party, onEnded }: { api: PartyApi; party: PartyInfo; onEnded: () => void }) {
+  const t = useT();
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
     <div className={css.body}>
       <section className={css.card}>
         <span className={css.live}>
-          <span className={css.dot} /> Party running
+          <span className={css.dot} /> {t("popup.running")}
         </span>
         <span className={css.code}>{formatRoomCode(party.code)}</span>
         <span className={css.guests}>
-          <Users size={14} /> {party.guestCount} {party.guestCount === 1 ? "guest" : "guests"}
+          <Users size={14} /> {t("popup.guests", { count: party.guestCount })}
         </span>
       </section>
       <Button variant="light" block icon={<ExternalLink size={16} />} onClick={() => api.openHost()}>
-        Open host app
+        {t("popup.openHost")}
       </Button>
       {party.tvOpen === false && (
         <Button variant="secondary" block icon={<Tv size={16} />} onClick={() => void reopenTv()}>
-          Reopen TV window
+          {t("popup.reopenTv")}
         </Button>
       )}
       {confirm ? (
         <div className={css.confirm}>
-          <span>End the party for everyone?</span>
+          <span>{t("popup.endAsk")}</span>
           <div className={css.confirmButtons}>
             <Button size="sm" variant="secondary" onClick={() => setConfirm(false)}>
-              Cancel
+              {t("popup.cancel")}
             </Button>
             <Button
               size="sm"
@@ -142,13 +156,13 @@ function Running({ api, party, onEnded }: { api: PartyApi; party: PartyInfo; onE
                 onEnded();
               }}
             >
-              End
+              {t("popup.endShort")}
             </Button>
           </div>
         </div>
       ) : (
         <Button variant="ghost" block icon={<Power size={16} />} onClick={() => setConfirm(true)}>
-          End party
+          {t("host.endLabel")}
         </Button>
       )}
     </div>
