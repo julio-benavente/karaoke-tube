@@ -40,6 +40,16 @@ const SCHEMA = [
     entry TEXT NOT NULL,
     PRIMARY KEY (user_id, code, joined_at)
   )`,
+  // The room credentials of parties this account is in, so it can get back in on another device (host or co-host).
+  // Only parties that are still open are handed out again, and only to the signed-in owner.
+  `CREATE TABLE IF NOT EXISTS party_keys (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    member_id TEXT NOT NULL,
+    member_key TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, code)
+  )`,
 ];
 
 let ready: Promise<unknown> | null = null;

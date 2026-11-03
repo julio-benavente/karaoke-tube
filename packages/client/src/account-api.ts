@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   FavoritesResponse,
   FriendsResponse,
+  LivePartiesResponse,
   LogPartyRequest,
   MeResponse,
   PartiesResponse,
@@ -110,6 +111,7 @@ export function createAccountApi(opts: { baseUrl?: string; tokens?: TokenStore }
     acceptFriend: (id: string) => call<FriendsResponse>("POST", `/friends/${encodeURIComponent(id)}/accept`, {}),
     removeFriend: (id: string) => call<FriendsResponse>("DELETE", `/friends/${encodeURIComponent(id)}`),
     parties: () => call<PartiesResponse>("GET", "/parties"),
+    liveParties: () => call<LivePartiesResponse>("GET", "/parties/live"),
     logParty: (req: LogPartyRequest) => call<{ party: PartyLogEntry }>("POST", "/parties", req),
   };
 }

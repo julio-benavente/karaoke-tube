@@ -232,6 +232,7 @@ export const accountRoutes = new Hono<{ Bindings: Env; Variables: Vars }>()
       c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(u.id),
       c.env.DB.prepare("DELETE FROM favorites WHERE user_id = ?").bind(u.id),
       c.env.DB.prepare("DELETE FROM parties WHERE user_id = ?").bind(u.id),
+      c.env.DB.prepare("DELETE FROM party_keys WHERE user_id = ?").bind(u.id),
       c.env.DB.prepare("DELETE FROM friendships WHERE a = ?1 OR b = ?1").bind(u.id),
       c.env.DB.prepare("DELETE FROM users WHERE id = ?").bind(u.id),
     ]);
@@ -325,7 +326,40 @@ export const accountRoutes = new Hono<{ Bindings: Env; Variables: Vars }>()
     )
       .bind(c.get("user").id, code, summary.joinedAt, JSON.stringify(summary))
       .run();
+    // Remember the credentials so this account can rejoin from another device or after clearing the browser.
+    await c.env.DB.prepare(
+      "INSERT INTO party_keys (user_id, code, member_id, member_key, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id, code) DO UPDATE SET member_id = excluded.member_id, member_key = excluded.member_key, updated_at = excluded.updated_at",
+    )
+      .bind(c.get("user").id, code, body.memberId, body.key, Date.now())
+      .run();
     return c.json({ party: summary });
+  })
+
+  // Parties still open that this account is a member of, with the credentials to get back in. The room re-checks each
+  // one, so ended parties, expired rooms and removed members drop out (and their stored keys are deleted).
+  .get("/parties/live", async (c: Ctx) => {
+    const userId = c.get("user").id;
+    const rows = await c.env.DB.prepare(
+      "SELECT code, member_id, member_key FROM party_keys WHERE user_id = ? ORDER BY updated_at DESC LIMIT 8",
+    )
+      .bind(userId)
+      .all<{ code: string; member_id: string; member_key: string }>();
+    const checked = await Promise.all(
+      rows.results.map(async (r) => {
+        const summary = await c.env.ROOM.get(c.env.ROOM.idFromName(r.code))
+          .memberSummary(r.member_id, r.member_key)
+          .catch(() => undefined);
+        return { r, summary };
+      }),
+    );
+    const stale = checked.filter((x) => x.summary === null || (x.summary && x.summary.endedAt !== null));
+    if (stale.length) {
+      await c.env.DB.batch(stale.map((x) => c.env.DB.prepare("DELETE FROM party_keys WHERE user_id = ? AND code = ?").bind(userId, x.r.code)));
+    }
+    const parties = checked
+      .filter((x) => x.summary && x.summary.endedAt === null)
+      .map((x) => ({ code: x.r.code, role: x.summary!.role, memberId: x.r.member_id, key: x.r.member_key, joinedAt: x.summary!.joinedAt }));
+    return c.json({ parties });
   });
 
 async function listFriends(db: D1Database, userId: string): Promise<Friend[]> {

@@ -64,6 +64,9 @@ export type PartyLogEntry = {
 /** GET /api/account/parties; POST /parties logs or refreshes a party (proves membership with the room key). */
 export type PartiesResponse = { parties: PartyLogEntry[] };
 export type LogPartyRequest = { code: string; memberId: string; key: string };
+/** A party this account can still get back into: its room credentials. GET /api/account/parties/live */
+export type LiveParty = { code: string; role: Role; memberId: string; key: string; joinedAt: number };
+export type LivePartiesResponse = { parties: LiveParty[] };
 
 /** Body of a non-2xx /api/account response. */
 export type AccountErrorCode = "bad_request" | "unauthorized" | "username_taken" | "bad_credentials" | "not_found" | "too_many_requests";

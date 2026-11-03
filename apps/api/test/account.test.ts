@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import type { AuthResponse, FavoritesResponse, FriendsResponse, MeResponse, PartiesResponse, RoomState } from "@karaoke-tube/shared";
+import type { AuthResponse, FavoritesResponse, FriendsResponse, LivePartiesResponse, MeResponse, PartiesResponse, RoomState } from "@karaoke-tube/shared";
 import { BASE, TestClient, createRoom, song } from "./helpers";
 
 let n = 0;
@@ -124,6 +124,25 @@ describe("accounts", () => {
 
     const me = await (await api("/me", { token: a.token })).json<MeResponse>();
     expect(me.stats).toMatchObject({ parties: 1, hosted: 1 });
+  });
+
+  it("hands the account its open parties back (with room credentials) until they end, only to its owner", async () => {
+    const a = await signUp();
+    const other = await signUp();
+    const created = await createRoom("Ana");
+    const host = await TestClient.open(created.code, "?player=1");
+    await host.request({ type: "rejoin", memberId: created.memberId, key: created.key }, "welcome");
+    const live = async (token: string) => (await (await api("/parties/live", { token })).json<LivePartiesResponse>()).parties;
+
+    expect(await live(a.token)).toEqual([]); // nothing logged yet
+    await api("/parties", { token: a.token, body: { code: created.code, memberId: created.memberId, key: created.key } });
+    expect(await live(a.token)).toEqual([expect.objectContaining({ code: created.code, role: "host", memberId: created.memberId, key: created.key })]);
+    expect(await live(other.token)).toEqual([]); // someone else's account never sees them
+    expect((await api("/parties/live")).status).toBe(401);
+
+    await host.act({ type: "end_party" });
+    expect(await live(a.token)).toEqual([]); // ended parties are not offered again
+    expect(await live(a.token)).toEqual([]); // and the stored key was dropped
   });
 
   it("changes password (other devices signed out) and deletes the account", async () => {
