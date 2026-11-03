@@ -63,8 +63,9 @@ New workspace package `@karaoke-tube/client`:
 - `createSearchApi(baseUrl)` implements `SearchApi`.
 - No React in this package. Spec B adds the React hooks.
 
-### A5. Tests
-Use `@cloudflare/vitest-pool-workers` for the API. Put the queue-ordering logic in a pure function (`apps/api/src/queue.ts`)
+### A5. Tests ✅
+Use `@cloudflare/vitest-pool-workers` for the API. (Renamed upstream to `@cloudflare/vitest-plugin`, which is what's installed.
+Tests are in `apps/api/test/`: `queue`, `room`, `playback`, `search`.) Put the queue-ordering logic in a pure function (`apps/api/src/queue.ts`)
 and test it directly as well. `pnpm --filter @karaoke-tube/api test` passes.
 
 ### A6. Extension: party session + YouTube player
