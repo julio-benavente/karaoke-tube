@@ -254,3 +254,9 @@
   font-size: var(--kt-text-xs);
   font-weight: var(--kt-weight-bold);
 }
+
+/* Long result lists: rows far off screen aren't laid out or painted until you scroll near them. */
+.row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--kt-row-height, 64px);
+}

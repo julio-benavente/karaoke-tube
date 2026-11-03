@@ -93,6 +93,8 @@ export const es: Dict = {
   "tvscreen.size.largeDesc": "Proyector, sala grande o bar, lejos de la pantalla.",
   "tvpair.renews": "El código cambia en {time}",
   "tvpair.newCode": "Nuevo código",
+  "search.showMore": "Ver más",
+  "search.loadingMore": "Cargando…",
   "party.invite": "Invitar amigos",
   "party.copied": "Enlace copiado",
   "party.you": "(tú)",

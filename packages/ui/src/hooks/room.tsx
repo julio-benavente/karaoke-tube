@@ -119,7 +119,17 @@ export type UseSearch = {
   error: string | null;
   /** The query `results` belong to. */
   resultsFor: string;
+  /** More songs can be loaded for these results (the last page came back full). */
+  hasMore: boolean;
+  loadingMore: boolean;
+  /** Loads the next page of the current search or browse and adds it to `results`. */
+  loadMore: () => void;
 };
+
+/** Results arrive this many at a time. */
+export const SEARCH_PAGE = 40;
+
+type Source = { kind: "search"; q: string } | { kind: "browse"; filter: BrowseFilter; label: string };
 
 /** Debounced search. Takes a SearchApi, or uses the one given to RoomProvider. */
 export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
@@ -130,30 +140,41 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   const [results, setResults] = useState<Song[]>([]);
   const [resultsFor, setResultsFor] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reqId = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** What the current results came from, so "load more" asks for the same thing. */
+  const source = useRef<Source | null>(null);
+  const count = useRef(0);
+  count.current = results.length;
 
   const run = useCallback(
     (q: string) => {
       if (timer.current) clearTimeout(timer.current);
       const id = ++reqId.current;
       const trimmed = q.trim();
+      setLoadingMore(false);
       if (!trimmed) {
+        source.current = null;
         setResults([]);
         setResultsFor("");
+        setHasMore(false);
         setLoading(false);
         setError(null);
         return;
       }
+      source.current = { kind: "search", q: trimmed };
       setLoading(true);
       setError(null);
       searchApi
-        .search(trimmed)
+        .search(trimmed, { limit: SEARCH_PAGE })
         .then((res) => {
           if (id !== reqId.current) return;
           setResults(res.results);
           setResultsFor(trimmed);
+          setHasMore(res.results.length >= SEARCH_PAGE);
         })
         .catch((e: unknown) => {
           if (id !== reqId.current) return;
@@ -171,17 +192,21 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
       if (timer.current) clearTimeout(timer.current);
       const id = ++reqId.current;
       setLoading(true);
+      setLoadingMore(false);
       setError(null);
-      const finish = (songs: Song[]) => {
+      const limit = opts.limit ?? SEARCH_PAGE;
+      source.current = opts.shuffle ? null : { kind: "browse", filter, label: opts.label ?? "" };
+      const finish = (songs: Song[], more: boolean) => {
         if (id !== reqId.current) return;
         const out = opts.shuffle ? [...songs].sort(() => Math.random() - 0.5) : songs;
         setResults(out);
         setResultsFor(opts.label ?? "");
+        setHasMore(more && !opts.shuffle);
       };
-      (searchApi.browse ? searchApi.browse(filter, opts.limit) : Promise.resolve([] as Song[]))
+      (searchApi.browse ? searchApi.browse(filter, limit, 0) : Promise.resolve([] as Song[]))
         .then(async (songs) => {
-          if (songs.length || !opts.fallbackQuery) return finish(songs);
-          finish((await searchApi.search(opts.fallbackQuery)).results);
+          if (songs.length || !opts.fallbackQuery) return finish(songs, songs.length >= limit);
+          finish((await searchApi.search(opts.fallbackQuery)).results, false);
         })
         .catch((e: unknown) => {
           if (id !== reqId.current) return;
@@ -193,6 +218,31 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
     },
     [searchApi],
   );
+
+  const loadMore = useCallback(() => {
+    const src = source.current;
+    if (!src || loadingMore || loading) return;
+    const id = reqId.current;
+    const offset = count.current;
+    setLoadingMore(true);
+    const page: Promise<Song[]> =
+      src.kind === "search"
+        ? searchApi.search(src.q, { offset, limit: SEARCH_PAGE }).then((r) => r.results)
+        : searchApi.browse
+          ? searchApi.browse(src.filter, SEARCH_PAGE, offset)
+          : Promise.resolve([]);
+    page
+      .then((songs) => {
+        if (id !== reqId.current) return; // a newer search started meanwhile
+        setResults((prev) => {
+          const seen = new Set(prev.map((s) => s.videoId));
+          return [...prev, ...songs.filter((s) => !seen.has(s.videoId))];
+        });
+        setHasMore(songs.length >= SEARCH_PAGE);
+      })
+      .catch(() => id === reqId.current && setHasMore(false))
+      .finally(() => id === reqId.current && setLoadingMore(false));
+  }, [searchApi, loadingMore, loading]);
 
   const setQuery = useCallback(
     (q: string, opts?: { run?: boolean }) => {
@@ -206,7 +256,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  return { query, setQuery, run, browse, results, loading, error, resultsFor };
+  return { query, setQuery, run, browse, results, loading, error, resultsFor, hasMore, loadingMore, loadMore };
 }
 
 /** Current playback position in seconds, extrapolated while playing. Re-renders ~4×/s. */

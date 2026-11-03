@@ -90,6 +90,8 @@ export const en = {
   "tvscreen.size.largeDesc": "Projector, big room or bar, far from the screen.",
   "tvpair.renews": "The code changes in {time}",
   "tvpair.newCode": "New code",
+  "search.showMore": "Show more",
+  "search.loadingMore": "Loading…",
   "party.invite": "Invite friends",
   "party.copied": "Link copied",
   "party.you": "(you)",

@@ -20,10 +20,10 @@ scope.onmessage = async (e) => {
         scope.postMessage({ id: m.id, ok: true, result: true });
         break;
       case "search":
-        scope.postMessage({ id: m.id, ok: true, result: index?.search(m.q) ?? [] });
+        scope.postMessage({ id: m.id, ok: true, result: index?.search(m.q, m.limit, m.offset) ?? [] });
         break;
       case "browse":
-        scope.postMessage({ id: m.id, ok: true, result: index?.browse(m.filter, m.limit) ?? [] });
+        scope.postMessage({ id: m.id, ok: true, result: index?.browse(m.filter, m.limit, m.offset) ?? [] });
         break;
       case "video":
         scope.postMessage({ id: m.id, ok: true, result: index?.byVideoId(m.videoId) ?? null });

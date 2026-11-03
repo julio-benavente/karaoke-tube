@@ -22,6 +22,7 @@ import {
 } from "@karaoke-tube/ui";
 import { getSearchApi } from "../session";
 import { useSearchUrl } from "../useSearchUrl";
+import { LoadMore } from "../LoadMore";
 import { useAddWithToast } from "./useAdd";
 import css from "./Search.module.css";
 
@@ -198,7 +199,10 @@ export function SearchScreen() {
           {search.loading && !search.results.length ? (
             <SkeletonRows n={8} />
           ) : search.results.length ? (
-            <div className={css.results}>{search.results.map(row)}</div>
+            <>
+              <div className={css.results}>{search.results.map(row)}</div>
+              <LoadMore search={search} />
+            </>
           ) : search.resultsFor ? (
             <EmptyState icon={<SearchIcon />} title={t("search.noResults", { query: search.resultsFor })}>
               {t("search.noResultsHint")}

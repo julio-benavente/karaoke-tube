@@ -10,8 +10,8 @@ import { isCatalog, type AnyCatalog } from "./types";
 /** Messages between the page and the catalog worker. */
 export type WorkerRequestBody =
   | { op: "load"; url: string }
-  | { op: "search"; q: string }
-  | { op: "browse"; filter: SongFilter; limit: number }
+  | { op: "search"; q: string; limit: number; offset: number }
+  | { op: "browse"; filter: SongFilter; limit: number; offset: number }
   | { op: "video"; videoId: string };
 export type WorkerRequest = WorkerRequestBody & { id: number };
 export type WorkerReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
@@ -39,11 +39,11 @@ type Doc = { id: number; t: string; a: string };
 export type CatalogIndex = {
   /** Number of songs. */
   size: number;
-  search(query: string, limit?: number): Song[];
+  search(query: string, limit?: number, offset?: number): Song[];
   /** A catalog song by YouTube video id (primary or alternate version). */
   byVideoId(videoId: string): Song | null;
   /** Songs with the given labels (genre, decade, language, tags), most popular first. Empty for a catalog without labels. */
-  browse(filter: SongFilter, limit?: number): Song[];
+  browse(filter: SongFilter, limit?: number, offset?: number): Song[];
   /** True when the catalog carries genre/decade/language/tag labels (v2). */
   hasLabels: boolean;
 };
@@ -109,22 +109,25 @@ function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
   return {
     size: songs.t.length,
     hasLabels: catalog.v >= 2,
-    browse: (filter, limit = RESULTS) => filterSongs(catalog, filter, limit).map((i) => toSong(i)),
-    search(query, limit = RESULTS) {
+    browse: (filter, limit = RESULTS, offset = 0) =>
+      filterSongs(catalog, filter, offset + limit)
+        .slice(offset)
+        .map((i) => toSong(i)),
+    search(query, limit = RESULTS, offset = 0) {
       const words = tokenize(query).join(" ");
       if (!words) return [];
       // Re-rank the best 60: a query that IS a song's title ("love story") or an artist's name ("queen") should beat
       // songs that only contain those words.
       return mini
         .search(query)
-        .slice(0, 60)
+        .slice(0, Math.max(60, offset + limit))
         .map((r) => {
           const i = r.id as number;
           const exact = tokenize(songs.t[i]!).join(" ") === words ? 3 : tokenize(artistOf(i)).join(" ") === words ? 2 : 1;
           return { i, score: r.score * exact };
         })
         .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
+        .slice(offset, offset + limit)
         .map(({ i }) => toSong(i));
     },
     byVideoId(videoId) {
@@ -176,8 +179,8 @@ function whenIdle(work: () => void) {
 type Engine = {
   /** Download, parse and index the catalog. Resolves true when it can answer, false when it can't be loaded. */
   load(): Promise<boolean>;
-  search(query: string): Promise<Song[]>;
-  browse(filter: SongFilter, limit: number): Promise<Song[]>;
+  search(query: string, limit: number, offset: number): Promise<Song[]>;
+  browse(filter: SongFilter, limit: number, offset: number): Promise<Song[]>;
   byVideoId(videoId: string): Promise<Song | null>;
 };
 
@@ -189,8 +192,8 @@ function inThreadEngine(url: string, load: (url: string) => Promise<AnyCatalog>)
         .then((catalog) => createCatalogIndexAsync(catalog))
         .then((built) => ((index = built), true))
         .catch(() => false),
-    search: async (q) => index?.search(q) ?? [],
-    browse: async (filter, limit) => index?.browse(filter, limit) ?? [],
+    search: async (q, limit, offset) => index?.search(q, limit, offset) ?? [],
+    browse: async (filter, limit, offset) => index?.browse(filter, limit, offset) ?? [],
     byVideoId: async (id) => index?.byVideoId(id) ?? null,
   };
 }
@@ -230,8 +233,8 @@ function workerEngine(url: string): Engine | null {
 
   return {
     load: () => call<boolean>({ op: "load", url }).catch(() => false),
-    search: (q) => call<Song[]>({ op: "search", q }).catch(() => []),
-    browse: (filter, limit) => call<Song[]>({ op: "browse", filter, limit }).catch(() => []),
+    search: (q, limit, offset) => call<Song[]>({ op: "search", q, limit, offset }).catch(() => []),
+    browse: (filter, limit, offset) => call<Song[]>({ op: "browse", filter, limit, offset }).catch(() => []),
     byVideoId: (id) => call<Song | null>({ op: "video", videoId: id }).catch(() => null),
   };
 }
@@ -275,11 +278,14 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
   return {
     preload: () => ensure(),
 
-    async search(query) {
+    async search(query, opts = {}) {
       const q = query.trim();
+      const limit = opts.limit ?? RESULTS;
+      const offset = opts.offset ?? 0;
       if (!q) return { query, results: [] };
-      const local = (await readyOrWait()) ? await engine.search(q) : [];
-      if (local.length >= MIN_LOCAL || q.length < 3) return { query, results: local };
+      const local = (await readyOrWait()) ? await engine.search(q, limit, offset) : [];
+      // Later pages are the catalog only; YouTube is the backup for the first page when the catalog has almost nothing.
+      if (offset > 0 || local.length >= MIN_LOCAL || q.length < 3) return { query, results: local };
 
       // The catalog has (almost) nothing: ask YouTube, keep what the catalog found first.
       try {
@@ -292,8 +298,8 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
       }
     },
 
-    async browse(filter, limit = RESULTS) {
-      return (await readyOrWait()) ? engine.browse(filter, limit) : [];
+    async browse(filter, limit = RESULTS, offset = 0) {
+      return (await readyOrWait()) ? engine.browse(filter, limit, offset) : [];
     },
 
     async video(videoId): Promise<VideoResponse> {

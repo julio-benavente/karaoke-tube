@@ -16,6 +16,7 @@ import {
   useT,
 } from "@karaoke-tube/ui";
 import { useSearchUrl } from "../useSearchUrl";
+import { LoadMore } from "../LoadMore";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
 
@@ -126,6 +127,7 @@ export function SearchView() {
               {!search.loading && search.resultsFor && !search.results.length && (
                 <p className={css.muted}>{t("search.noResultsHost", { query: search.resultsFor })}</p>
               )}
+              {!linkId && <LoadMore search={search} />}
             </div>
           )}
         </section>

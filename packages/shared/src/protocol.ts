@@ -388,10 +388,14 @@ export type BrowseFilter = {
   tag?: string | string[];
 };
 
+/** Paging for search and browse: `offset` songs already seen, `limit` more wanted. */
+export type PageOpts = { offset?: number; limit?: number };
+
 export interface SearchApi {
-  search(query: string): Promise<SearchResponse>;
+  /** `opts` pages through our own catalog; an implementation without one may ignore it (and then has no more pages). */
+  search(query: string, opts?: PageOpts): Promise<SearchResponse>;
   /** Songs from our own catalog with these labels, most popular first. Not every implementation has a catalog. */
-  browse?(filter: BrowseFilter, limit?: number): Promise<Song[]>;
+  browse?(filter: BrowseFilter, limit?: number, offset?: number): Promise<Song[]>;
   video(videoId: string): Promise<VideoResponse>;
   roomInfo(code: string): Promise<RoomInfoResponse>;
 }

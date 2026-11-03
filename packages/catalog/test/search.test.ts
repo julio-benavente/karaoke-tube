@@ -32,6 +32,37 @@ const { catalog } = buildCatalog(videos, channels, new Date("2026-01-01"));
 
 const titles = (songs: Song[]) => songs.map((s) => s.title);
 
+describe("paging", () => {
+  const index = createCatalogIndex(catalog);
+
+  it("search pages line up: page 1 + page 2 is the same as one bigger page, with no repeats", () => {
+    const all = index.search("queen", 10);
+    const pages = [...index.search("queen", 1, 0), ...index.search("queen", 1, 1), ...index.search("queen", 1, 2)];
+    expect(titles(pages)).toEqual(titles(all.slice(0, 3)));
+    expect(new Set(titles(pages)).size).toBe(pages.length);
+    expect(index.search("queen", 5, 50)).toEqual([]); // past the end
+  });
+
+  it("browse pages line up too", () => {
+    const all = index.browse({}, 8);
+    const pages = [...index.browse({}, 3, 0), ...index.browse({}, 3, 3), ...index.browse({}, 3, 6)];
+    expect(titles(pages)).toEqual(titles(all));
+    expect(index.browse({}, 5, 100)).toEqual([]);
+  });
+
+  it("the search API only pages the catalog: later pages never ask YouTube", async () => {
+    const remote = { search: vi.fn(), video: vi.fn(), roomInfo: vi.fn() } as unknown as SearchApi;
+    const api = createCatalogSearchApi(remote, { autoLoad: false, fetchCatalog: async () => catalog });
+    const first = await api.search("queen", { limit: 3 });
+    expect(first.results).toHaveLength(3); // enough from the catalog: no YouTube
+    expect(remote.search).not.toHaveBeenCalled();
+    const second = await api.search("queen", { limit: 3, offset: 3 });
+    expect(second.results).toEqual([]); // past the end of the catalog's matches, and still no YouTube
+    expect((await api.search("zzzzqq nothing here", { limit: 3, offset: 3 })).results).toEqual([]);
+    expect(remote.search).not.toHaveBeenCalled();
+  });
+});
+
 describe("createCatalogIndexAsync", () => {
   it("builds in small chunks, yielding to the event loop, and answers exactly like the one-shot build", async () => {
     let turns = 0;
