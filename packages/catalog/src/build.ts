@@ -4,6 +4,7 @@
 
 import { artistKey, orient, parseTitle, titleKey, type Order, type ParsedTitle } from "./parse.ts";
 import type { Catalog } from "./types.ts";
+import type { Labeler } from "./labels.ts";
 
 export type ChannelConfig = {
   key: string;
@@ -105,6 +106,7 @@ export function buildCatalog(
   videos: Iterable<RawVideo>,
   channels: ChannelConfig[],
   now = new Date(),
+  labeler?: Labeler,
 ): { catalog: Catalog; report: BuildReport } {
   const byKey = new Map(channels.map((c, i) => [c.key, { c, i }]));
   const excluded: Record<string, number> = {};
@@ -205,12 +207,21 @@ export function buildCatalog(
   const artists: string[] = [];
   const artistIdx = new Map<string, number>();
   const catalog: Catalog = {
-    v: 1,
+    v: 2,
     built: now.toISOString(),
     channels: channels.map((c) => c.title),
     artists,
-    songs: { t: [], a: [], id: [], d: [], c: [], p: [] },
+    genres: [],
+    tags: [],
+    songs: { t: [], a: [], id: [], d: [], c: [], p: [], g: [], y: [], l: [], m: [] },
     alts: {},
+  };
+  const genreIdx = new Map<string, number>();
+  const tagIdx = new Map<string, number>();
+  const intern = (list: string[], map: Map<string, number>, id: string) => {
+    let i = map.get(id);
+    if (i === undefined) map.set(id, (i = list.push(id) - 1));
+    return i;
   };
   songs.forEach((s, i) => {
     const { best } = s;
@@ -228,6 +239,11 @@ export function buildCatalog(
     catalog.songs.d.push(best.video.durationSec);
     catalog.songs.c.push(best.channelIdx);
     catalog.songs.p.push(Math.min(255, Math.round(Math.log10(s.views + 1) * 25)));
+    const labels = labeler?.({ title: best.title, artist: best.artist, channel: best.channel.title });
+    catalog.songs.g.push((labels?.g ?? []).map((id) => intern(catalog.genres, genreIdx, id)));
+    catalog.songs.y.push(labels?.y ?? 0);
+    catalog.songs.l.push(labels?.l ?? "");
+    catalog.songs.m.push((labels?.m ?? []).map((id) => intern(catalog.tags, tagIdx, id)));
     if (s.rest.length) {
       catalog.alts[i] = s.rest.map((r) => [r.video.id, r.channelIdx, r.video.durationSec, r.parsed.variant]);
     }

@@ -7,13 +7,16 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./build": "./src/build.ts"
+    "./build": "./src/build.ts",
+    "./labels": "./src/labels.ts",
+    "./load-data": "./src/load-data.ts"
   },
   "scripts": {
     "collect": "node --env-file=${YOUTUBE_ENV_FILE:-../../apps/api/.dev.vars} scripts/collect.mjs",
     "build-catalog": "node scripts/build.ts",
     "typecheck": "tsc -p .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "label": "node scripts/label.ts"
   },
   "dependencies": {
     "@karaoke-tube/shared": "workspace:*",

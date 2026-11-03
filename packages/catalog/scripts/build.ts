@@ -2,12 +2,15 @@
 //
 //   pnpm --filter @karaoke-tube/catalog build-catalog
 //
-// Needs data/catalog/raw/ (see scripts/collect.mjs). Prints a report to eyeball the parsing.
+// Needs data/catalog/raw/ (see scripts/collect.mjs). Labels come from packages/catalog/data/*.json (see label.ts to
+// add them to an existing catalog.json without the raw data). Prints a report to eyeball the parsing.
 
 import { readFileSync, readdirSync, mkdirSync, writeFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brotliCompressSync, gzipSync } from "node:zlib";
+import { createLabeler } from "../src/labels.ts";
+import { loadLabelData } from "../src/load-data.ts";
 import { buildCatalog, parseDuration, type ChannelConfig, type RawVideo } from "../src/build.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -35,7 +38,7 @@ function* rawVideos(): Generator<RawVideo> {
   }
 }
 
-const { catalog, report } = buildCatalog(rawVideos(), channels);
+const { catalog, report } = buildCatalog(rawVideos(), channels, new Date(), createLabeler(loadLabelData()));
 
 mkdirSync(dirname(OUT), { recursive: true });
 const json = JSON.stringify(catalog);
