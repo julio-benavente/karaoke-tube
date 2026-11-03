@@ -301,7 +301,13 @@ async function onPlayerPort(port: Port) {
     const msg = raw as PlayerPortToBackground;
     // `ping` only keeps the service worker awake.
     if (msg.type === "event") {
-      room?.send({ type: "player_event", event: msg.event, itemId: msg.itemId, positionSec: msg.positionSec });
+      room?.send({
+        type: "player_event",
+        event: msg.event,
+        itemId: msg.itemId,
+        positionSec: msg.positionSec,
+        durationSec: msg.durationSec,
+      });
     }
   });
 

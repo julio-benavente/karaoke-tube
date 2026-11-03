@@ -19,6 +19,11 @@ beforeEach(() => {
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     calls.push(url);
+    if (url.pathname === "/oembed") {
+      const id = new URL(url.searchParams.get("url")!).searchParams.get("v");
+      if (id !== "ccccccccccc") return new Response("Bad Request", { status: 400 });
+      return Response.json({ title: "Linked Song (Karaoke)", author_name: "Some Channel" });
+    }
     if (quotaOut) {
       return Response.json({ error: { code: 403, message: "quota", errors: [{ reason: "quotaExceeded" }] } }, { status: 403 });
     }
@@ -110,8 +115,17 @@ describe("GET /api/videos/:id", () => {
     expect((await SELF.fetch(`${BASE}/api/videos/nope`)).status).toBe(400);
   });
 
-  it("returns 503 when the quota runs out", async () => {
+  it("falls back to oEmbed (no duration) when the quota runs out", async () => {
     quotaOut = true;
-    expect((await SELF.fetch(`${BASE}/api/videos/ccccccccccc`)).status).toBe(503);
+    const res = await SELF.fetch(`${BASE}/api/videos/${encodeURIComponent("https://youtu.be/ccccccccccc")}`);
+    expect(res.status).toBe(200);
+    expect((await res.json<{ song: unknown }>()).song).toEqual({
+      videoId: "ccccccccccc",
+      title: "Linked Song (Karaoke)",
+      channel: "Some Channel",
+      durationSec: 0,
+      thumbnailUrl: "https://i.ytimg.com/vi/ccccccccccc/mqdefault.jpg",
+    });
+    expect((await SELF.fetch(`${BASE}/api/videos/ddddddddddd`)).status).toBe(404);
   });
 });

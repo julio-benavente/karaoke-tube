@@ -37,6 +37,17 @@ describe("playback", () => {
     expect(state.playback.state).toBe("idle");
   });
 
+  it("fills in an unknown duration from the player", async () => {
+    const { host } = await partyRoom();
+    let state = await host.act({ type: "add_song", song: { ...song("linked"), durationSec: 0 } });
+    const play = await host.next("play");
+    state = await host.act({ type: "player_event", event: "started", itemId: play.item.id, positionSec: 0, durationSec: 201.4 });
+    expect(state.nowPlaying?.song.durationSec).toBe(201);
+    // A known duration isn't overwritten.
+    state = await host.act({ type: "player_event", event: "progress", itemId: play.item.id, positionSec: 5, durationSec: 999 });
+    expect(state.nowPlaying?.song.durationSec).toBe(201);
+  });
+
   it("shows the get-ready card, then sends play when the countdown alarm fires", async () => {
     const { code, host } = await partyRoom(true);
     const before = Date.now();

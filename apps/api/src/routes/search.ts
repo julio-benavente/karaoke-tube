@@ -5,6 +5,7 @@ import {
   SearchUnavailableError,
   VIDEO_TTL_SEC,
   normaliseQuery,
+  oembedSong,
   parseVideoId,
   searchYouTube,
   videoDetails,
@@ -56,8 +57,16 @@ export const searchRoutes = new Hono<{ Bindings: Env }>()
     const cached = await c.env.SEARCH_CACHE.get<Song>(cacheKey, "json");
     if (cached) return c.json({ song: cached } satisfies VideoResponse);
 
-    const song = await withYouTube(c, () => videoDetails(c.env.YOUTUBE_API_KEY, videoId));
-    if (song instanceof Response) return song;
+    let song: Song | null;
+    try {
+      song = await videoDetails(c.env.YOUTUBE_API_KEY, videoId);
+    } catch (e) {
+      if (!(e instanceof SearchUnavailableError)) throw e;
+      // No key or no quota: pasted links still work through oEmbed (duration comes from the player later).
+      song = await oembedSong(videoId);
+      if (!song) return apiError(c, 404, "not_found", "That video isn't available to play here");
+      return c.json({ song } satisfies VideoResponse);
+    }
     if (!song) return apiError(c, 404, "not_found", "That video isn't available to play here");
     await c.env.SEARCH_CACHE.put(cacheKey, JSON.stringify(song), { expirationTtl: VIDEO_TTL_SEC });
     return c.json({ song } satisfies VideoResponse);

@@ -342,6 +342,11 @@ export class Room extends DurableObject<Env> {
     const pb = this.playback();
     const now = Date.now();
     const positionSec = Math.max(0, msg.positionSec ?? 0);
+    // Songs from a pasted link without an API key arrive with an unknown length; the player knows it.
+    if (item.song.durationSec === 0 && msg.durationSec && Number.isFinite(msg.durationSec) && msg.durationSec > 0) {
+      const song: Song = { ...item.song, durationSec: Math.round(msg.durationSec) };
+      this.sql.exec("UPDATE items SET song = ? WHERE id = ?", JSON.stringify(song), item.id);
+    }
     switch (msg.event) {
       case "started":
         this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
@@ -755,7 +760,8 @@ export function parseClientMessage(text: string): ClientMessage {
       ok(
         ["started", "progress", "ended", "error"].includes(m.event as string) &&
           isStr(m.itemId, 64) &&
-          (m.positionSec === undefined || typeof m.positionSec === "number"),
+          (m.positionSec === undefined || typeof m.positionSec === "number") &&
+          (m.durationSec === undefined || typeof m.durationSec === "number"),
       );
       break;
     default:

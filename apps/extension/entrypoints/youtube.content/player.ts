@@ -19,6 +19,8 @@ function youtubeError(): boolean {
   return !!el && el.offsetParent !== null && getComputedStyle(el).display !== "none";
 }
 
+const durationOf = (video: HTMLVideoElement) => (Number.isFinite(video.duration) && video.duration > 0 ? video.duration : undefined);
+
 /** Plays queue items in this YouTube tab and reports what happens. */
 export class YouTubePlayer {
   private item: QueueItem | null = null;
@@ -102,7 +104,7 @@ export class YouTubePlayer {
       if (video && !video.paused && video.currentTime > 0 && video.readyState >= 2) {
         this.started = true;
         this.lastProgress = Date.now();
-        this.report({ type: "event", event: "started", itemId: item.id, positionSec: video.currentTime });
+        this.report({ type: "event", event: "started", itemId: item.id, positionSec: video.currentTime, durationSec: durationOf(video) });
         return;
       }
       if (video?.paused && video.readyState >= 2) void video.play().catch(() => {});
@@ -113,7 +115,7 @@ export class YouTubePlayer {
 
     if (video && Date.now() - this.lastProgress >= PROGRESS_EVERY_MS) {
       this.lastProgress = Date.now();
-      this.report({ type: "event", event: "progress", itemId: item.id, positionSec: video.currentTime });
+      this.report({ type: "event", event: "progress", itemId: item.id, positionSec: video.currentTime, durationSec: durationOf(video) });
     }
   };
 

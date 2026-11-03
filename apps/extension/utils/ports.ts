@@ -39,4 +39,10 @@ export type PlayerPortToTab =
 
 export type PlayerPortToBackground =
   | { type: "ping" }
-  | { type: "event"; event: "started" | "progress" | "ended" | "error"; itemId: string; positionSec?: number };
+  | {
+      type: "event";
+      event: "started" | "progress" | "ended" | "error";
+      itemId: string;
+      positionSec?: number;
+      durationSec?: number;
+    };

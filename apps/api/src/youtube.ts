@@ -107,6 +107,27 @@ export async function searchYouTube(apiKey: string | undefined, query: string): 
   return ids.map((id) => songs.get(id)).filter((s): s is Song => !!s);
 }
 
+/**
+ * Title, channel and thumbnail from YouTube's oEmbed endpoint: no API key, no quota. No duration (0); the player
+ * reports it once the video loads. Returns null when the video doesn't exist or can't be embedded.
+ */
+export async function oembedSong(videoId: string): Promise<Song | null> {
+  const url = new URL("https://www.youtube.com/oembed");
+  url.searchParams.set("url", `https://www.youtube.com/watch?v=${videoId}`);
+  url.searchParams.set("format", "json");
+  const res = await fetch(url);
+  if (!res.ok) return null; // 400/404: no such video, 401: embedding disabled
+  const data = await res.json<{ title?: string; author_name?: string }>();
+  if (!data.title) return null;
+  return {
+    videoId,
+    title: data.title,
+    channel: data.author_name ?? "",
+    durationSec: 0,
+    thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+  };
+}
+
 export async function videoDetails(apiKey: string | undefined, videoId: string): Promise<Song | null> {
   return (await videosById(apiKey, [videoId])).get(videoId) ?? null;
 }
