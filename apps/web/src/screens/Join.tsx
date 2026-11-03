@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router";
 import type { ErrorCode } from "@karaoke-tube/shared";
 import { AvatarPicker, Button, Logo, TextField, errorText } from "@karaoke-tube/ui";
 import {
+  adoptLiveParty,
   canResume,
   dropRoomClient,
   getRoomClient,
@@ -17,6 +18,7 @@ import {
   USE_MOCK,
 } from "../session";
 import { useAccount } from "../account/AccountContext";
+import { useLiveParties } from "../account/useLiveParties";
 import css from "./Join.module.css";
 
 /** G1: code, avatar with re-roll, nickname, Join. Already a member (closed the tab, came back)? Straight back in. */
@@ -42,6 +44,13 @@ function JoinForm() {
   const [busy, setBusy] = useState(false);
   const cleanup = useRef<() => void>(() => {});
   const nickRef = useRef<HTMLInputElement>(null);
+  // Opened a party link while signed in, and this account is already in that party (lost this device's key)?
+  // Take the account's credentials and go straight back in, with the same role.
+  const live = useLiveParties();
+  useEffect(() => {
+    const mine = live?.find((p) => p.code === normalizeCode(params.code ?? ""));
+    if (mine) navigate(adoptLiveParty(mine), { replace: true });
+  }, [live, params.code, navigate]);
 
   // The saved token is checked asynchronously, so the account can arrive after the first render:
   // fill in its name and avatar then, unless the person already started changing them.

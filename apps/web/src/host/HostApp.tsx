@@ -1,4 +1,6 @@
 import { useLogParty } from "../account/AccountContext";
+import { useLiveParties } from "../account/useLiveParties";
+import { adoptLiveParty, markHosting } from "../session";
 import { CircleSlash, Home, ListMusic, Lock, LockOpen, PartyPopper, Search as SearchIcon, Settings as SettingsIcon, Tv, Power, Flame, QrCode } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
@@ -61,11 +63,31 @@ export function HostApp() {
   const code = normalizeRoomCode(useParams().code ?? "");
   const isMock = new URLSearchParams(location.search).get("mock") === "1";
   // Before creating the client: it rejoins with the saved host credentials.
+  const [restored, setRestored] = useState(0);
   const allowed = useMemo(() => {
     adoptHostLink(code);
-    return isMock || hasCredentials(code);
-  }, [code, isMock]);
+    const ok = isMock || hasCredentials(code);
+    if (ok && !isMock) markHosting(code, true);
+    return ok;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, isMock, restored]);
+  // No credentials on this device (new device, cleared browser)? A signed-in account can bring them back.
+  const live = useLiveParties();
+  const mine = live?.find((p) => p.code === code && p.role === "host");
+  useEffect(() => {
+    if (!allowed && mine) {
+      adoptLiveParty(mine);
+      setRestored((n) => n + 1);
+    }
+  }, [allowed, mine]);
   const clients = useMemo(() => (allowed ? createHostClients(code) : null), [allowed, code]);
+  if (!clients && live === null && !isMock) {
+    return (
+      <div className={css.center}>
+        <Spinner />
+      </div>
+    );
+  }
   if (!clients) {
     return (
       <div className={css.center}>

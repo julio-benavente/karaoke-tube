@@ -12,6 +12,8 @@ import {
 } from "@karaoke-tube/shared";
 import { Avatar, AvatarPicker, Button, Chip, EmptyState, LanguageSwitcher, Logo, Spinner, TextField, Toggle, useT, type TKey } from "@karaoke-tube/ui";
 import { useAccount } from "./AccountContext";
+import { useLiveParties } from "./useLiveParties";
+import { adoptLiveParty } from "../session";
 import css from "./account.module.css";
 
 type Tab = "profile" | "favorites" | "friends" | "parties";
@@ -448,6 +450,8 @@ function Friends() {
 function Parties() {
   const { api } = useAccount();
   const t = useT();
+  const navigate = useNavigate();
+  const live = useLiveParties();
   const [items, setItems] = useState<PartyLogEntry[] | null>(null);
   useEffect(() => {
     api
@@ -476,6 +480,11 @@ function Parties() {
                   .join(" · ")}
               </div>
             </div>
+            {p.endedAt === null && live?.find((l) => l.code === p.code) && (
+              <Button size="sm" onClick={() => navigate(adoptLiveParty(live.find((l) => l.code === p.code)!))}>
+                {t("acct.parties.rejoin")}
+              </Button>
+            )}
             {p.recapId && (
               <Link to={`/recap/${p.recapId}`}>
                 <Button size="sm" variant="secondary">

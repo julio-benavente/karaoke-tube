@@ -65,6 +65,39 @@ export function canResume(code: string): boolean {
   return USE_MOCK || localStorageCredentials().load(code) !== null;
 }
 
+const HOST_ROOM_KEY = "kt:last-host-room";
+
+/** Remembers (or forgets) the party this browser hosts, so the home page can offer the way back after a restart. */
+export function markHosting(code: string, hosting: boolean) {
+  try {
+    if (hosting) storage()?.setItem(HOST_ROOM_KEY, code);
+    else if (storage()?.getItem(HOST_ROOM_KEY) === code) storage()?.removeItem(HOST_ROOM_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** The party this browser last hosted, if its host credentials are still saved. */
+export function resumableHostRoom(): string | null {
+  try {
+    const code = storage()?.getItem(HOST_ROOM_KEY) ?? null;
+    return code && localStorageCredentials().load(code) !== null ? code : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Puts an account's saved credentials for a party back on this device. Returns where to go. */
+export function adoptLiveParty(p: { code: string; role: string; memberId: string; key: string }): string {
+  localStorageCredentials().save(p.code, { memberId: p.memberId, key: p.key });
+  if (p.role === "host") {
+    markHosting(p.code, true);
+    return `/host/${p.code}`;
+  }
+  markJoined(p.code, true);
+  return `/r/${p.code}`;
+}
+
 /** The party this browser joined last, if it can still rejoin it. */
 export function resumableRoom(): string | null {
   try {
