@@ -1,3 +1,4 @@
+import { ROOM_CODE_LENGTH } from "@karaoke-tube/shared";
 import { Dices } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -41,7 +42,7 @@ export function JoinScreen() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const name = nickname.trim();
-    if (code.length !== 4) return setError({ field: "code", text: "Party codes have 4 characters." });
+    if (code.length !== ROOM_CODE_LENGTH) return setError({ field: "code", text: `Party codes have ${ROOM_CODE_LENGTH} characters.` });
     if (!name) return nickRef.current?.focus();
     setError(null);
     setBusy(true);
@@ -108,7 +109,7 @@ export function JoinScreen() {
             setCode(normalizeCode(e.target.value));
             if (error?.field === "code") setError(null);
           }}
-          placeholder="ABCD"
+          placeholder="QX7K2M"
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}
@@ -132,12 +133,12 @@ export function JoinScreen() {
           </p>
         )}
 
-        <Button type="submit" size="lg" block disabled={busy || !nickname.trim() || code.length !== 4}>
+        <Button type="submit" size="lg" block disabled={busy || !nickname.trim() || code.length !== ROOM_CODE_LENGTH}>
           {busy ? "Joining…" : "Join"}
         </Button>
         {USE_MOCK && (
           <p className={css.hint}>
-            Demo mode: any code works. Try <b>NOPE</b>, <b>LOCK</b> or <b>DONE</b> for the error states.
+            Demo mode: any code works. Try <b>NOROOM</b>, <b>LOCKED</b> or <b>THEEND</b> for the error states.
           </p>
         )}
       </form>

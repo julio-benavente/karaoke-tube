@@ -16,7 +16,7 @@ import {
 import { SAMPLE_SONGS, sampleMembers } from "./sample-data";
 
 export type MockRoomOptions = {
-  /** Room code. Default "PRTY". */
+  /** Room code. Default "PARTYS". */
   code?: string;
   /** Join right after connecting with this nickname/avatar. Without it, the UI sends `join` itself. */
   identity?: { nickname: string; avatarSeed: string };
@@ -71,7 +71,7 @@ const pick = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length
  * (permissions, queue limit, rotation order, playback), so the UI behaves for real without the API.
  */
 export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomClient {
-  const code = (options.code ?? "PRTY").toUpperCase();
+  const code = (options.code ?? "PARTYS").toUpperCase();
   const myRole: Role = options.role ?? "guest";
   const now = Date.now();
   const others = sampleMembers(myRole, now);

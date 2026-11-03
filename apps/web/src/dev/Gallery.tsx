@@ -106,7 +106,7 @@ function GalleryBody() {
       <div className={css.narrow}>
         <Toggle checked={on} onChange={setOn} label="Reactions" description="Guests can send emoji to the TV" />
         <TextField label="Nickname" placeholder="What should we call you?" />
-        <TextField label="Code" error="We couldn't find that party." defaultValue="NOPE" />
+        <TextField label="Code" error="We couldn't find that party." defaultValue="NOROOM" />
         <Banner tone="accent">You're up in 2 songs</Banner>
         <Banner tone="warning">Reconnecting…</Banner>
       </div>

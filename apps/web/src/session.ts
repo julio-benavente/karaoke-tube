@@ -1,5 +1,5 @@
 import { createRoomClient, createSearchApi } from "@karaoke-tube/client";
-import type { ErrorCode, Role, RoomClient, SearchApi } from "@karaoke-tube/shared";
+import { ROOM_CODE_LENGTH, type ErrorCode, type Role, type RoomClient, type SearchApi } from "@karaoke-tube/shared";
 import { createMockRoomClient, createMockSearchApi, MOCK_CODES, randomSeed, type MockRoomClient } from "@karaoke-tube/ui";
 
 /**
@@ -125,5 +125,5 @@ export function normalizeCode(raw: string): string {
   return raw
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 4);
+    .slice(0, ROOM_CODE_LENGTH);
 }

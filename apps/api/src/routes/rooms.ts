@@ -1,21 +1,45 @@
 import { Hono } from "hono";
-import type { CreateRoomRequest, CreateRoomResponse, RoomInfoResponse } from "@karaoke-tube/shared";
+import {
+  ROOM_CODE_ALPHABET,
+  ROOM_CODE_LENGTH,
+  type ApiErrorResponse,
+  type CreateRoomRequest,
+  type CreateRoomResponse,
+  type RoomInfoResponse,
+} from "@karaoke-tube/shared";
+import type { Context, Next } from "hono";
 
-/** No 0/O, 1/I: easy to read off a TV and type on a phone. */
-export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-export const CODE_LENGTH = 4;
-const CODE_RE = new RegExp(`^[${CODE_ALPHABET}]{${CODE_LENGTH}}$`);
+const CODE_RE = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}$`);
 
+/** 256 is a multiple of 32, so `b % 32` is unbiased. */
 function randomCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
-  return [...bytes].map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
+  const bytes = crypto.getRandomValues(new Uint8Array(ROOM_CODE_LENGTH));
+  return [...bytes].map((b) => ROOM_CODE_ALPHABET[b % ROOM_CODE_ALPHABET.length]).join("");
 }
+
+/**
+ * Per-IP rate limit (Workers rate limiting binding). Generous, because a whole party often shares one Wi-Fi IP;
+ * with 6-character codes that still makes guessing a live room take days. Skipped when there's no client IP
+ * (local tests); Cloudflare always sets it in production.
+ */
+const limit = (pick: (env: Env) => RateLimit) => async (c: Context<{ Bindings: Env }>, next: Next) => {
+  const ip = c.req.header("CF-Connecting-IP");
+  if (ip) {
+    const { success } = await pick(c.env).limit({ key: ip });
+    if (!success) {
+      return c.json({ error: "bad_request", message: "Too many tries, wait a minute and try again" } satisfies ApiErrorResponse, 429);
+    }
+  }
+  await next();
+};
+const lookupLimit = limit((env) => env.ROOM_LOOKUP_LIMITER);
+const createLimit = limit((env) => env.ROOM_CREATE_LIMITER);
 
 const roomStub = (env: Env, code: string) => env.ROOM.get(env.ROOM.idFromName(code));
 
 export const roomRoutes = new Hono<{ Bindings: Env }>()
   // Create a room: pick a free code and set up its Durable Object with the host.
-  .post("/", async (c) => {
+  .post("/", createLimit, async (c) => {
     const body = await c.req.json<Partial<CreateRoomRequest>>().catch(() => null);
     const nickname = typeof body?.nickname === "string" ? body.nickname.trim() : "";
     const avatarSeed = typeof body?.avatarSeed === "string" ? body.avatarSeed : "";
@@ -29,8 +53,8 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
     return c.json({ error: "Couldn't find a free room code, try again" }, 503);
   })
 
-  .get("/:code", async (c) => {
-    const code = c.req.param("code").toUpperCase();
+  .get("/:code", lookupLimit, async (c) => {
+    const code = (c.req.param("code") ?? "").toUpperCase();
     if (!CODE_RE.test(code)) {
       return c.json({ code, exists: false, locked: false, status: null } satisfies RoomInfoResponse);
     }
@@ -39,11 +63,11 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
   })
 
   // WebSocket entry point: forwards the upgrade request to the room's Durable Object.
-  .get("/:code/ws", async (c) => {
+  .get("/:code/ws", lookupLimit, async (c) => {
     if (c.req.header("Upgrade") !== "websocket") {
       return c.text("Expected a WebSocket upgrade", 426);
     }
-    const code = c.req.param("code").toUpperCase();
+    const code = (c.req.param("code") ?? "").toUpperCase();
     if (!CODE_RE.test(code)) return c.text("Room not found", 404);
     return roomStub(c.env, code).fetch(c.req.raw);
   });

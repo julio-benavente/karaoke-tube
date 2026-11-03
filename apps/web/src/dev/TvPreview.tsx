@@ -15,7 +15,7 @@ export function TvPreview() {
   const [client, setClient] = useState<ReturnType<typeof createMockRoomClient> | null>(null);
   useEffect(() => {
     const c = createMockRoomClient({
-      code: "PRTY",
+      code: "PARTYS",
       role: "host",
       identity: { nickname: "Host", avatarSeed: "host-seed" },
     });
@@ -40,7 +40,7 @@ function Preview() {
   const seq = useRef(0);
 
   useEffect(() => {
-    QRCode.toDataURL(`${location.origin}/join/PRTY`, { margin: 1, width: 300 }).then(setQr);
+    QRCode.toDataURL(`${location.origin}/join/PARTYS`, { margin: 1, width: 300 }).then(setQr);
   }, []);
 
   // The content script will do the same: keep each reaction for TV_REACTION_MS.

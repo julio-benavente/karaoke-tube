@@ -3,9 +3,9 @@ import { SAMPLE_SONGS } from "./sample-data";
 
 /** Codes with special behaviour in the mock. Any other code is an open party. */
 export const MOCK_CODES = {
-  locked: "LOCK",
-  ended: "DONE",
-  missing: "NOPE",
+  locked: "LOCKED",
+  ended: "THEEND",
+  missing: "NOROOM",
 } as const;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));

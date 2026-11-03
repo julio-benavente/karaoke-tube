@@ -3,16 +3,16 @@ import { describe, expect, it } from "vitest";
 import { BASE, TestClient, createRoom, guest, hostRoom, song } from "./helpers";
 
 describe("rooms HTTP", () => {
-  it("creates a room with a 4-character code", async () => {
+  it("creates a room with a 6-character code", async () => {
     const room = await createRoom("Julio");
-    expect(room.code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/);
+    expect(room.code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
     const info = await (await SELF.fetch(`${BASE}/api/rooms/${room.code.toLowerCase()}`)).json();
     expect(info).toEqual({ code: room.code, exists: true, locked: false, status: "open" });
   });
 
   it("reports unknown rooms", async () => {
-    const info = await (await SELF.fetch(`${BASE}/api/rooms/ZZZZ`)).json();
-    expect(info).toEqual({ code: "ZZZZ", exists: false, locked: false, status: null });
+    const info = await (await SELF.fetch(`${BASE}/api/rooms/ZZZZZZ`)).json();
+    expect(info).toEqual({ code: "ZZZZZZ", exists: false, locked: false, status: null });
   });
 
   it("rejects a missing nickname", async () => {
@@ -21,7 +21,7 @@ describe("rooms HTTP", () => {
   });
 
   it("sends room_not_found on a socket to an unknown room", async () => {
-    const c = await TestClient.open("QQQQ");
+    const c = await TestClient.open("QQQQQQ");
     expect((await c.next("error")).code).toBe("room_not_found");
   });
 });
