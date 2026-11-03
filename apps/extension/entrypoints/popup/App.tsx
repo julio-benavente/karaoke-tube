@@ -1,8 +1,7 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Dices, ExternalLink, Power, Users } from "lucide-react";
+import { Dices, ExternalLink, Power, Tv, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
-import { Tv } from "lucide-react";
 import { createPartyApi, reopenTv, type PartyApi, type PartyInfo } from "./party";
 import css from "./popup.module.css";
 

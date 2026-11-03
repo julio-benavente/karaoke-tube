@@ -95,6 +95,9 @@ export class Room extends DurableObject<Env> {
     this.setMeta("settings", DEFAULT_SETTINGS);
     this.setMeta("playback", idlePlayback());
     const { memberId, key } = await this.addMember(nickname, avatarSeed, "host");
+    // Nobody is connected yet: if the host never shows up, the idle clock still ends the party.
+    this.setMeta("idleSince", Date.now());
+    await this.scheduleAlarm();
     return { code, memberId, key };
   }
 

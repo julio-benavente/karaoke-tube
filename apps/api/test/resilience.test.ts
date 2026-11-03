@@ -1,7 +1,7 @@
 import { env, runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { SELF } from "cloudflare:test";
-import { BASE, TestClient, guest, hostRoom } from "./helpers";
+import { BASE, TestClient, createRoom, guest, hostRoom } from "./helpers";
 
 const stubFor = (code: string) => env.ROOM.get(env.ROOM.idFromName(code));
 const until = async (cond: () => boolean, ms = 2000) => {
@@ -72,6 +72,18 @@ describe("abandoned parties", () => {
     expect(await stub.info()).toMatchObject({ status: "ended" });
     const info = await (await SELF.fetch(`${BASE}/api/rooms/${code}`)).json<{ status: string }>();
     expect(info.status).toBe("ended");
+  });
+
+  it("end themselves even if nobody ever connected", async () => {
+    const { code } = await createRoom();
+    const stub = stubFor(code);
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "open" });
+    await runInDurableObject(stub, async (_room, state) => {
+      state.storage.sql.exec("UPDATE meta SET value = ? WHERE key = 'idleSince'", JSON.stringify(Date.now() - 13 * 3600_000));
+    });
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "ended" });
   });
 
   it("stop the idle clock when someone reconnects", async () => {

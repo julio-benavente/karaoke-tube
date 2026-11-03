@@ -209,8 +209,9 @@ async function restore() {
   if (!saved) return;
   console.log("[bg] restoring party", saved.code);
   // Tab ids don't survive a browser restart; forget the ones that are gone.
-  saved.youtubeTabId = await existingTab(saved.youtubeTabId);
-  saved.hostTabId = await existingTab(saved.hostTabId ?? null);
+  // (A reused id would be some other page, so check the page too.)
+  saved.youtubeTabId = await existingTab(saved.youtubeTabId, (url) => /^https:\/\/([a-z]+\.)?youtube\.com\//.test(url));
+  saved.hostTabId = await existingTab(saved.hostTabId ?? null, (url) => url.startsWith(`${WEB_URL}/host/${saved.code}`));
   party = saved;
   await save();
   connectRoom();
@@ -222,11 +223,12 @@ async function restore() {
   }
 }
 
-async function existingTab(id: number | null): Promise<number | null> {
+async function existingTab(id: number | null, isRightPage: (url: string) => boolean): Promise<number | null> {
   if (id === null) return null;
   try {
-    await browser.tabs.get(id);
-    return id;
+    const tab = await browser.tabs.get(id);
+    const url = tab.url ?? tab.pendingUrl;
+    return url === undefined || url === "" || isRightPage(url) ? id : null; // no "tabs" permission: the url may be hidden
   } catch {
     return null;
   }

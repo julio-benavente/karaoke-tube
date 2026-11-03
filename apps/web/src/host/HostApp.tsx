@@ -79,8 +79,19 @@ function Host() {
   if (status === "closed") {
     return (
       <div className={css.center}>
-        <EmptyState icon={<CircleSlash />} title="Not connected" action={<Button onClick={() => location.reload()}>Reconnect</Button>}>
-          The host app lost its connection to the party.
+        <EmptyState
+          icon={<CircleSlash />}
+          title="Can't reach this party"
+          action={
+            <>
+              <Button onClick={() => location.reload()}>Try again</Button>
+              <Button variant="secondary" onClick={() => (location.href = "/")}>
+                Done
+              </Button>
+            </>
+          }
+        >
+          The party may have ended or been removed. If it's still running, check your connection and try again.
         </EmptyState>
       </div>
     );
