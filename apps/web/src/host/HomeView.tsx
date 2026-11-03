@@ -12,6 +12,7 @@ import {
   useRoom,
   useRoomSongs,
   useSearch,
+  useT,
 } from "@karaoke-tube/ui";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
@@ -19,6 +20,7 @@ import css from "./host.module.css";
 /** Host Home: greeting, 6 shortcut tiles, popular in this room, party classics. */
 export function HomeView({ onSearch }: { onSearch: () => void }) {
   const { state, me } = useRoom();
+  const t = useT();
   const roomSongs = useRoomSongs(state);
   const add = useHostAdd();
   const classics = useSearch();
@@ -40,18 +42,18 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
       <div className={css.wash} />
       <header className={css.viewTop}>
         <button type="button" className={css.fakeSearch} onClick={onSearch}>
-          What do you want to sing?
+          {t("search.placeholder")}
         </button>
         <SingWithButton />
       </header>
-      <h1 className={css.greeting}>{greeting()}</h1>
+      <h1 className={css.greeting}>{greeting(undefined, t)}</h1>
       <div className={css.shortcuts}>
         {shortcuts.map((s) => (
           <ShortcutTile key={s.videoId} title={songParts(s).title} label={s.title} image={s.thumbnailUrl} onPlay={() => add(s)} />
         ))}
       </div>
-      {roomSongs.length > 0 && <Shelf title="Popular in this room">{roomSongs.slice(0, 12).map(card)}</Shelf>}
-      {classics.results.length > 0 && <Shelf title="Party classics">{classics.results.map(card)}</Shelf>}
+      {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
+      {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
     </div>
   );
 }
