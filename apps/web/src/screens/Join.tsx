@@ -1,9 +1,8 @@
 import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
-import { Dices } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { ErrorCode } from "@karaoke-tube/shared";
-import { Avatar, Button, Logo, TextField, errorText, randomSeed } from "@karaoke-tube/ui";
+import { AvatarPicker, Button, Logo, TextField, errorText } from "@karaoke-tube/ui";
 import {
   dropRoomClient,
   getRoomClient,
@@ -95,12 +94,7 @@ export function JoinScreen() {
         <h1 className={css.title}>Join the party</h1>
         <p className={css.lead}>Pick a look and a name. Everyone will see them on the TV.</p>
 
-        <div className={css.avatarBox}>
-          <Avatar seed={seed} size={112} name="Your avatar" />
-          <button type="button" className={css.reroll} onClick={() => setSeed(randomSeed())} aria-label="New avatar">
-            <Dices size={18} />
-          </button>
-        </div>
+        <AvatarPicker value={seed} onChange={setSeed} />
 
         <TextField
           label="Party code"

@@ -52,34 +52,6 @@
   text-align: center;
 }
 
-.avatarBox {
-  position: relative;
-  align-self: center;
-}
-
-.reroll {
-  position: absolute;
-  right: -4px;
-  bottom: -4px;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--kt-radius-full);
-  background: var(--kt-text);
-  color: var(--kt-base);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: transform var(--kt-fast) var(--kt-ease);
-}
-
-.reroll:hover {
-  transform: scale(1.08) rotate(-12deg);
-}
-
-.reroll:active {
-  transform: scale(0.95);
-}
-
 .code input {
   font-size: var(--kt-text-lg);
   font-weight: var(--kt-weight-bold);

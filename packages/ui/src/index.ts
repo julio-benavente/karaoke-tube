@@ -14,6 +14,7 @@ export { createMockSearchApi, MOCK_CODES } from "./mock/mock-search-api";
 export { SAMPLE_SONGS } from "./mock/sample-data";
 
 export { Avatar, AvatarStack } from "./components/Avatar";
+export { AvatarPicker, type AvatarPickerProps } from "./components/AvatarPicker";
 export { Artwork, hueOf, tintOf } from "./components/Artwork";
 export { Button, IconButton, PlayButton } from "./components/Button";
 export { Chip, ChipRow, Pill } from "./components/Chip";

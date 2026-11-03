@@ -1,0 +1,142 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--kt-space-4);
+  width: 100%;
+}
+
+.preview {
+  border-radius: var(--kt-radius-full);
+  box-shadow: var(--kt-shadow-card);
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--kt-space-2);
+  width: 100%;
+}
+
+.label {
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+  color: var(--kt-text-2);
+}
+
+.looks {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--kt-space-3);
+  width: 100%;
+}
+
+.option {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: var(--kt-radius-full);
+  background: none;
+  cursor: pointer;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  transition:
+    transform var(--kt-fast) var(--kt-ease),
+    outline-color var(--kt-fast) var(--kt-ease);
+}
+
+.option img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--kt-radius-full);
+}
+
+.option:hover {
+  transform: scale(1.04);
+}
+
+.option:active {
+  transform: scale(0.96);
+}
+
+.option:focus-visible {
+  outline-color: var(--kt-white-30);
+}
+
+.selected,
+.selected:focus-visible {
+  outline-color: var(--kt-accent);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kt-space-3);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.skins {
+  display: flex;
+  gap: var(--kt-space-2);
+}
+
+.skin {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--kt-white-20);
+  border-radius: var(--kt-radius-full);
+  cursor: pointer;
+}
+
+.skinOn {
+  border-color: var(--kt-base);
+  box-shadow: 0 0 0 2px var(--kt-accent);
+}
+
+.shuffle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  min-height: 40px;
+  padding: 0 var(--kt-space-4);
+  border: 0;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-card);
+  color: var(--kt-text);
+  font: inherit;
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+  cursor: pointer;
+}
+
+.shuffle:hover {
+  background: var(--kt-hover);
+}
+
+.compact {
+  gap: var(--kt-space-3);
+}
+
+.compact .grid {
+  gap: var(--kt-space-2);
+}
+
+.compact .skin {
+  width: 22px;
+  height: 22px;
+}
+
+.compact .shuffle {
+  min-height: 32px;
+  padding: 0 var(--kt-space-3);
+}
