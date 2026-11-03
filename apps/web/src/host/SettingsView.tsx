@@ -22,7 +22,9 @@ export function SettingsView() {
             <span className={css.settingDesc}>
               {s.queueMode === "rotation"
                 ? "Rotation: everyone gets one song per round, so nobody waits forever."
-                : "First come, first served: songs play in the order they were added."}
+                : s.queueMode === "fifo"
+                  ? "First come, first served: songs play in the order they were added."
+                  : "Host picks: guests' songs wait for your OK before they join the queue."}
             </span>
           </div>
           <div className={css.segmented} role="radiogroup" aria-label="Queue order">
@@ -30,6 +32,7 @@ export function SettingsView() {
               [
                 ["rotation", "Rotation"],
                 ["fifo", "First come"],
+                ["approval", "Host picks"],
               ] as Array<[QueueMode, string]>
             ).map(([mode, label]) => (
               <button
@@ -74,6 +77,34 @@ export function SettingsView() {
           description="Guests can send emoji that float over the video on the TV."
           checked={s.reactions}
           onChange={(v) => set({ reactions: v })}
+        />
+      </section>
+
+      <section className={css.settingsGroup}>
+        <h2 className={css.h2}>Party fun</h2>
+        <Toggle
+          label="Duets & group songs"
+          description="Guests can sing with partners, or start a song for everyone."
+          checked={s.duets}
+          onChange={(v) => set({ duets: v })}
+        />
+        <Toggle
+          label="Turn alerts"
+          description="Phones say “You're up in 2 songs” and “You're up next!”."
+          checked={s.turnAlerts}
+          onChange={(v) => set({ turnAlerts: v })}
+        />
+        <Toggle
+          label="Awards"
+          description="After each song, the audience can give Nailed it, Great vibes, Crowd pleaser or Brave pick."
+          checked={s.awards}
+          onChange={(v) => set({ awards: v })}
+        />
+        <Toggle
+          label="End-of-night titles"
+          description="When you end the party, everyone gets fun titles like Showstopper and Biggest Fan."
+          checked={s.titles}
+          onChange={(v) => set({ titles: v })}
         />
       </section>
 

@@ -9,10 +9,10 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ListMusic, X } from "lucide-react";
+import { Check, ListMusic, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Member, QueueItem } from "@karaoke-tube/shared";
-import { EmptyState, IconButton, QueueRow, useRoom } from "@karaoke-tube/ui";
+import { EmptyState, IconButton, QueueRow, songParts, useRoom } from "@karaoke-tube/ui";
 import css from "./host.module.css";
 
 /** Right panel: now singing + next up, drag to reorder. */
@@ -56,6 +56,46 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
         </IconButton>
       </header>
       <div className={css.queueScroll}>
+        {(state.pending?.length ?? 0) > 0 && (
+          <section className={css.pendingBox} aria-label="Songs waiting for your OK" data-testid="host-pending">
+            <h3 className={css.queueSub}>
+              Waiting for your OK <span className={css.muted}>{state.pending!.length}</span>
+            </h3>
+            <ul className={css.queueList}>
+              {state.pending!.map((q) => (
+                <li key={q.id}>
+                  <QueueRow
+                    item={q}
+                    members={state.members}
+                    compact
+                    actions={
+                      <span className={css.pendingBtns}>
+                        <button
+                          type="button"
+                          className={css.pendingBtn}
+                          aria-label={`Decline ${songParts(q.song).title}`}
+                          title="Decline"
+                          onClick={() => send({ type: "decline_song", itemId: q.id })}
+                        >
+                          <X size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${css.pendingBtn} ${css.pendingApprove}`}
+                          aria-label={`Approve ${songParts(q.song).title}`}
+                          title="Approve"
+                          onClick={() => send({ type: "approve_song", itemId: q.id })}
+                        >
+                          <Check size={16} />
+                        </button>
+                      </span>
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <h3 className={css.queueSub}>Now singing</h3>
         {state.nowPlaying ? (
           <QueueRow item={state.nowPlaying} members={state.members} playing compact />
