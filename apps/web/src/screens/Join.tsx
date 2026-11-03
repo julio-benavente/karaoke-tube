@@ -34,7 +34,7 @@ function JoinForm() {
   const navigate = useNavigate();
   const { account } = useAccount();
   // Signed in: the account's name and avatar. Guests: whatever they used last time.
-  const initial = account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity();
+  const [initial] = useState(() => (account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity()));
   const [code, setCode] = useState(normalizeCode(params.code ?? ""));
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
@@ -42,6 +42,17 @@ function JoinForm() {
   const [busy, setBusy] = useState(false);
   const cleanup = useRef<() => void>(() => {});
   const nickRef = useRef<HTMLInputElement>(null);
+
+  // The saved token is checked asynchronously, so the account can arrive after the first render:
+  // fill in its name and avatar then, unless the person already started changing them.
+  useEffect(() => {
+    if (!account) return;
+    if (nickname === initial.nickname && seed === initial.avatarSeed) {
+      setNickname(account.displayName);
+      setSeed(account.avatarSeed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
 
   useEffect(() => {
     if (params.code) nickRef.current?.focus();

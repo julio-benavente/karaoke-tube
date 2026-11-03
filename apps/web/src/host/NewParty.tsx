@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { localStorageCredentials } from "@karaoke-tube/client";
 import { normalizeRoomCode, type CreateRoomResponse } from "@karaoke-tube/shared";
@@ -26,6 +26,17 @@ export function NewParty() {
   const [initial] = useState(() => (account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity()));
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
+
+  // The saved token is checked asynchronously, so the account can arrive after the first render:
+  // fill in its name and avatar then, unless the person already started changing them.
+  useEffect(() => {
+    if (!account) return;
+    if (nickname === initial.nickname && seed === initial.avatarSeed) {
+      setNickname(account.displayName);
+      setSeed(account.avatarSeed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
