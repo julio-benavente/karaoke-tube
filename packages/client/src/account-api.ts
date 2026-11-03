@@ -99,7 +99,7 @@ export function createAccountApi(opts: { baseUrl?: string; tokens?: TokenStore }
     updateProfile: (patch: UpdateProfileRequest) => call<MeResponse>("PATCH", "/me", patch),
     changePassword: (current: string, next: string) => call<{ ok: true }>("POST", "/password", { current, next }),
     async deleteAccount(password: string) {
-      await call("DELETE", "/", { password });
+      await call("DELETE", "", { password });
       tokens.set(null);
     },
     favorites: () => call<FavoritesResponse>("GET", "/favorites"),
