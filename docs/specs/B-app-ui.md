@@ -90,4 +90,5 @@ Titles and awards screens (G7, T3), duets UI, turn alerts, rating, avatar builde
 and nothing in the UI uses Spotify's name, logo, green or font.
 
 ## Requests for the other track
-- (none yet)
+- **Set `RoomClient.closeReason`** (new optional field, see README "Contract changes") in `createRoomClient` and
+  `createExtensionRoomClient`: `"kicked"` on the `kicked` message, `"ended"` on `ended`, `"left"` after `close()`.

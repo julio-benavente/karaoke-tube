@@ -57,4 +57,6 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 
 ## Contract changes
 
-- (none yet)
+- `RoomClient.closeReason?: "kicked" | "ended" | "left" | null` (B, `contract: RoomClient.closeReason`). The UI needs to
+  tell "you were removed" apart from "party ended" and a dropped connection. A's clients should set it when the server
+  sends `kicked` / `ended`, or when `close()` is called.
