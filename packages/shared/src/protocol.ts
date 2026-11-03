@@ -54,7 +54,11 @@ export type RoomSettings = {
   turnAlerts: boolean;
   awards: boolean;
   titles: boolean;
+  /** When the TV shows the join QR + code: "between" = lobby/idle + get-ready card, "always" = also during songs, "start" = lobby/idle only. */
+  joinInfo: JoinInfoMode;
 };
+
+export type JoinInfoMode = "between" | "always" | "start";
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   queueMode: "rotation",
@@ -68,6 +72,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   turnAlerts: true,
   awards: true,
   titles: true,
+  joinInfo: "between",
 };
 
 export type PlaybackState = "idle" | "get_ready" | "playing" | "paused";
@@ -219,6 +224,8 @@ export type ClientMessage =
   | { type: "kick"; memberId: string } // hosts
   | { type: "update_settings"; settings: Partial<RoomSettings> } // hosts
   | { type: "end_party" } // host only
+  /** Hosts: flash the join QR + code on the TV for a few seconds (the room replies to everyone with `join_flash`). */
+  | { type: "show_join" }
   | { type: "react"; reaction: Reaction }
   /** Sent only by the extension's player: whether its YouTube window (the TV) is open. */
   | { type: "player_status"; tabOpen: boolean }
@@ -244,7 +251,9 @@ export type ServerMessage =
   | { type: "player_command"; command: "pause" | "resume" | "restart" }
   | { type: "error"; code: ErrorCode; message: string }
   | { type: "kicked" }
-  | { type: "ended" };
+  | { type: "ended" }
+  /** A host asked the TV to show the join QR + code for a few seconds. */
+  | { type: "join_flash" };
 
 export type ErrorCode =
   | "room_not_found"
