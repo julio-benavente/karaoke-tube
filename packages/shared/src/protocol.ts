@@ -13,6 +13,11 @@ export type Member = {
   role: Role;
   connected: boolean;
   joinedAt: number; // epoch ms
+  /**
+   * A guest a host added by hand because they have no phone ("add_guest"). Always `connected`, can't react, give
+   * awards or become co-host; a host adds songs for them ("Sing as…"). Undefined/false for everyone else.
+   */
+  phoneless?: boolean;
 };
 
 export type Song = {
@@ -226,6 +231,8 @@ export type ClientMessage =
   | { type: "end_party" } // host only
   /** Hosts: flash the join QR + code on the TV for a few seconds (the room replies to everyone with `join_flash`). */
   | { type: "show_join" }
+  /** Hosts: add a guest who has no phone, so they get turns in the rotation. Hosts then add songs for them with `add_song` + `singerIds`. */
+  | { type: "add_guest"; nickname: string; avatarSeed: string }
   | { type: "react"; reaction: Reaction }
   /** Sent only by the extension's player: whether its YouTube window (the TV) is open. */
   | { type: "player_status"; tabOpen: boolean }
