@@ -33,7 +33,7 @@ toggle** in Settings (`duets`, `turnAlerts`, `awards`, `titles`, plus the new qu
 
 **Done when:** tests cover one-award-per-member, singers can't award themselves, window closes, toggle off.
 
-### C4. End-of-night titles
+### C4. End-of-night titles ✅
 - `apps/api/src/titles.ts`: a pure function that turns what happened (performances, reactions, awards, joins) into
   2–3 positive titles per member, from the plan's list. Titles needing data we don't have (song year, language,
   views) are skipped. Everyone gets at least two (fallbacks: Brave Soul, Great Audience, Party Spirit).
@@ -41,7 +41,7 @@ toggle** in Settings (`duets`, `turnAlerts`, `awards`, `titles`, plus the new qu
 
 **Done when:** unit tests for the titles function (winners, ties, everyone ≥ 2, toggle off).
 
-### C5. Awards show + recap
+### C5. Awards show + recap (built; browser e2e not run)
 - TV: an awards show cycling through members and their titles after the party ends (presentational component in
   `packages/ui/src/tv`, rendered by the content script when `recap` is present).
 - Phones: a story of your titles (tap through), then everyone's titles and the recap link.
