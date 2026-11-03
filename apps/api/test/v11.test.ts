@@ -153,6 +153,18 @@ describe("C4 recap & titles", () => {
     expect((await SELF.fetch(`${BASE}/api/recaps/0000000000000000`)).status).toBe(404);
   });
 
+  it("a party where nobody sang still ends with a recap, 2+ titles each and an unguessable id", async () => {
+    const { host, code } = await party();
+    await guest(code, "Ana");
+    host.send({ type: "end_party" });
+    const recap = (await host.waitForState((s) => s.status === "ended")).recap!;
+    expect(recap.id).toMatch(/^[0-9a-f]{16}$/);
+    expect(recap.id).not.toContain(code);
+    expect(recap.performances).toEqual([]);
+    expect(recap.topMoment).toBeNull();
+    for (const m of recap.members) expect(recap.titles[m.id]!.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("with titles off the recap has no titles", async () => {
     const { host } = await party();
     await host.act({ type: "update_settings", settings: { titles: false } });

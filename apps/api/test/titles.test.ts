@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TITLES } from "@karaoke-tube/shared";
 import { MAX_TITLES, MIN_TITLES, computeTitles, type TitlesInput } from "../src/titles";
 
 type Perf = TitlesInput["performances"][number];
@@ -102,5 +103,29 @@ describe("computeTitles", () => {
     const performances = [perf(["ana"], { cheers: 3, durationSec: 500 }), perf(["ana"], { cheers: 1 }), perf(["ben"])];
     const r = computeTitles(input({ performances, reactionsSent: { ana: 9 }, awardsGiven: { ana: 4 } }));
     expect(r.ana!.length).toBe(MAX_TITLES);
+  });
+  it("a room with only one person still gives them two or three known titles", () => {
+    const members = [{ id: "ana", joinedAt: 0 }];
+    const quiet = computeTitles(input({ members }));
+    expect(quiet.ana!.length).toBeGreaterThanOrEqual(MIN_TITLES);
+    const solo = computeTitles(input({ members, performances: [perf(["ana"], { cheers: 2 })] }));
+    expect(solo.ana!.length).toBeGreaterThanOrEqual(MIN_TITLES);
+    expect(solo.ana!.length).toBeLessThanOrEqual(MAX_TITLES);
+    expect(solo.ana).toContain("showstopper");
+  });
+
+  it("nobody sang: only audience titles, nobody left out, ids all known", () => {
+    const r = computeTitles(input({ reactionsSent: { ben: 3, cleo: 3 }, cheered: { ben: ["x"] } }));
+    expect(Object.keys(r).sort()).toEqual(["ana", "ben", "cleo", "dan"]);
+    expect(r.ben).toContain("biggest_fan");
+    expect(r.cleo).toContain("biggest_fan"); // a tie: both win
+    expect(r.ana).not.toContain("biggest_fan");
+    for (const titles of Object.values(r)) for (const t of titles) expect(TITLES).toContain(t);
+  });
+
+  it("ignores people who are not members and never repeats a title", () => {
+    const r = computeTitles(input({ performances: [perf(["ghost"], { cheers: 5 }), perf(["ana"])] }));
+    expect(r.ghost).toBeUndefined();
+    for (const titles of Object.values(r)) expect(new Set(titles).size).toBe(titles.length);
   });
 });
