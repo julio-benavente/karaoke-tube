@@ -1,7 +1,7 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
 import { Check, Copy, Crown, Home, MoreHorizontal, Search, Settings, ShieldCheck, UserMinus } from "lucide-react";
 import QRCode from "qrcode";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Member } from "@karaoke-tube/shared";
 import { Avatar, Logo, Pill, useRoom } from "@karaoke-tube/ui";
 import { WEB_URL } from "./client";
@@ -9,7 +9,7 @@ import type { View } from "./HostApp";
 import css from "./host.module.css";
 
 /** Left column: brand + nav panel, then "Your party" with code, QR and guests. */
-export function Sidebar({ view, onView }: { view: View; onView: (v: View) => void }) {
+export function Sidebar({ view, onView, only, actions }: { view: View; onView: (v: View) => void; only?: "party"; actions?: ReactNode }) {
   const { state, me } = useRoom();
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -46,7 +46,8 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
   ];
 
   return (
-    <aside className={css.sidebar}>
+    <aside className={`${css.sidebar} ${only ? css.partyOnly : ""}`}>
+      {!only && (
       <nav className={css.panel}>
         <div className={css.brand}>
           <Logo size={28} />
@@ -64,6 +65,7 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
           </button>
         ))}
       </nav>
+      )}
 
       <section className={`${css.panel} ${css.party}`}>
         <header className={css.partyHead}>
@@ -81,6 +83,7 @@ export function Sidebar({ view, onView }: { view: View; onView: (v: View) => voi
             </button>
           </div>
         </div>
+        {actions}
         <h3 className={css.guestsTitle}>
           Guests <span className={css.muted}>{state.members.filter((m) => m.connected).length} here</span>
         </h3>

@@ -16,7 +16,7 @@ import { EmptyState, IconButton, QueueRow, songParts, useRoom } from "@karaoke-t
 import css from "./host.module.css";
 
 /** Right panel: now singing + next up, drag to reorder. */
-export function QueuePanel({ onClose }: { onClose: () => void }) {
+export function QueuePanel({ onClose }: { onClose?: () => void }) {
   const { state, send } = useRoom();
   const upNext = state?.upNext ?? [];
   // Optimistic order while the room confirms the move.
@@ -51,9 +51,11 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
     <aside className={`${css.panel} ${css.queue}`} aria-label="Queue">
       <header className={css.queueHead}>
         <h2 className={css.queueTitle}>Queue</h2>
-        <IconButton label="Close queue" size="sm" onClick={onClose}>
-          <X size={18} />
-        </IconButton>
+        {onClose && (
+          <IconButton label="Close queue" size="sm" onClick={onClose}>
+            <X size={18} />
+          </IconButton>
+        )}
       </header>
       <div className={css.queueScroll}>
         {(state.pending?.length ?? 0) > 0 && (
