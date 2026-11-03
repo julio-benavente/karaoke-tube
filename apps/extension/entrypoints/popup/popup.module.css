@@ -56,38 +56,7 @@
   font-size: var(--kt-text-md);
 }
 
-.who {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--kt-space-3);
-  margin: var(--kt-space-1) 0;
-}
-
-.avatarBox {
-  position: relative;
-  flex: none;
-}
-
-.reroll {
-  position: absolute;
-  right: -4px;
-  bottom: -2px;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--kt-radius-full);
-  background: var(--kt-text);
-  color: var(--kt-base);
-  transition: transform var(--kt-fast) var(--kt-ease);
-}
-
-.reroll:hover {
-  transform: scale(1.1) rotate(-12deg);
-}
-
 .name {
-  flex: 1;
   min-width: 0;
 }
 

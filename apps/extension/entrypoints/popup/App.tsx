@@ -1,7 +1,7 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Dices, ExternalLink, Power, Users } from "lucide-react";
+import { ExternalLink, Power, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { Avatar, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
+import { AvatarPicker, Button, Logo, Spinner, TextField, randomSeed } from "@karaoke-tube/ui";
 import { createPartyApi, type PartyApi, type PartyInfo } from "./party";
 import css from "./popup.module.css";
 
@@ -82,22 +82,15 @@ function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) =>
     <form className={css.body} onSubmit={submit}>
       <h1 className={css.title}>Start a karaoke party</h1>
       <p className={css.lead}>We'll open the host app and a YouTube window for your TV.</p>
-      <div className={css.who}>
-        <div className={css.avatarBox}>
-          <Avatar seed={seed} size={64} name="Your avatar" />
-          <button type="button" className={css.reroll} onClick={() => setSeed(randomSeed())} aria-label="New avatar">
-            <Dices size={14} />
-          </button>
-        </div>
-        <TextField
-          label="Your name"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value.slice(0, 20))}
-          placeholder="Host name"
-          autoFocus
-          className={css.name}
-        />
-      </div>
+      <AvatarPicker value={seed} onChange={setSeed} previewSize={72} compact />
+      <TextField
+        label="Your name"
+        value={nickname}
+        onChange={(e) => setNickname(e.target.value.slice(0, 20))}
+        placeholder="Host name"
+        autoFocus
+        className={css.name}
+      />
       {error && (
         <p className={css.error} role="alert">
           {error}
