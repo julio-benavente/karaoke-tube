@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import {
   Card,
+  BROWSE_PRESETS,
   SAMPLE_SONGS,
   Shelf,
   ShortcutTile,
@@ -24,11 +25,15 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
   const roomSongs = useRoomSongs(state);
   const add = useHostAdd();
   const classics = useSearch();
+  const popular = useSearch();
+  // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
-    classics.run("party classics");
+    const party = BROWSE_PRESETS.find((p) => p.id === "classics")!;
+    classics.browse(party.filter, { limit: 24, shuffle: true, fallbackQuery: party.query });
+    popular.browse({}, { limit: 150, shuffle: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const shortcuts = useMemo(() => SAMPLE_SONGS.slice(0, 6), []);
+  const shortcuts = useMemo(() => (popular.results.length ? popular.results : SAMPLE_SONGS).slice(0, 6), [popular.results]);
 
   if (!state || !me) return null;
   const tint = state.nowPlaying ? `hsl(${hueOf(state.nowPlaying.song.videoId)} 45% 30%)` : "var(--kt-hover)";

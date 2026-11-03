@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type {
+  BrowseFilter,
   ClientMessage,
   ConnectionStatus,
   ErrorCode,
@@ -108,6 +109,11 @@ export type UseSearch = {
   setQuery: (q: string, opts?: { run?: boolean }) => void;
   /** Run a query immediately (no debounce). */
   run: (q: string) => void;
+  /**
+   * Browse the catalog by labels instead of text (most popular first). With `fallbackQuery`, a text search runs when
+   * the catalog has nothing (no catalog yet, or demo mode). `shuffle` mixes the order, for "fresh" shelves.
+   */
+  browse: (filter: BrowseFilter, opts?: { limit?: number; fallbackQuery?: string; shuffle?: boolean; label?: string }) => void;
   results: Song[];
   loading: boolean;
   error: string | null;
@@ -160,6 +166,34 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
     [searchApi],
   );
 
+  const browse = useCallback<UseSearch["browse"]>(
+    (filter, opts = {}) => {
+      if (timer.current) clearTimeout(timer.current);
+      const id = ++reqId.current;
+      setLoading(true);
+      setError(null);
+      const finish = (songs: Song[]) => {
+        if (id !== reqId.current) return;
+        const out = opts.shuffle ? [...songs].sort(() => Math.random() - 0.5) : songs;
+        setResults(out);
+        setResultsFor(opts.label ?? "");
+      };
+      (searchApi.browse ? searchApi.browse(filter, opts.limit) : Promise.resolve([] as Song[]))
+        .then(async (songs) => {
+          if (songs.length || !opts.fallbackQuery) return finish(songs);
+          finish((await searchApi.search(opts.fallbackQuery)).results);
+        })
+        .catch((e: unknown) => {
+          if (id !== reqId.current) return;
+          setError(e instanceof Error ? e.message : String(e));
+        })
+        .finally(() => {
+          if (id === reqId.current) setLoading(false);
+        });
+    },
+    [searchApi],
+  );
+
   const setQuery = useCallback(
     (q: string, opts?: { run?: boolean }) => {
       setQueryState(q);
@@ -172,7 +206,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  return { query, setQuery, run, results, loading, error, resultsFor };
+  return { query, setQuery, run, browse, results, loading, error, resultsFor };
 }
 
 /** Current playback position in seconds, extrapolated while playing. Re-renders ~4×/s. */

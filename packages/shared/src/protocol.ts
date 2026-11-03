@@ -368,8 +368,20 @@ export interface RoomClient {
   close(): void;
 }
 
+/** Labels to browse the song catalog by. Several values of one kind mean "any"; tags mean "all". */
+export type BrowseFilter = {
+  genre?: string | string[];
+  /** "80s", "90s"… */
+  decade?: string | string[];
+  /** ISO 639-1, "es". */
+  language?: string | string[];
+  tag?: string | string[];
+};
+
 export interface SearchApi {
   search(query: string): Promise<SearchResponse>;
+  /** Songs from our own catalog with these labels, most popular first. Not every implementation has a catalog. */
+  browse?(filter: BrowseFilter, limit?: number): Promise<Song[]>;
   video(videoId: string): Promise<VideoResponse>;
   roomInfo(code: string): Promise<RoomInfoResponse>;
 }

@@ -31,7 +31,7 @@ import {
   awardLabel,
   type TFn,
 } from "@karaoke-tube/ui";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { TurnAlertBanner } from "../screens/TurnAlert";
 import { RemoteVideo } from "../watch/RemoteVideo";
 import { useWatchPref } from "../watch/pref";
@@ -44,6 +44,7 @@ import { SettingsView } from "./SettingsView";
 import css from "./host.module.css";
 
 export type View = "home" | "search" | "settings" | "queue" | "party";
+const VIEWS = ["search", "settings", "queue", "party"] as const;
 
 /** Phones and narrow windows get the phone layout: one column, tabs at the bottom. */
 const MOBILE_QUERY = "(max-width: 820px)";
@@ -120,7 +121,11 @@ function Host() {
   useLogParty(state?.code ?? "", !!me && !!state, state?.status === "ended");
   const toast = useToast();
   const t = useT();
-  const [view, setView] = useState<View>("home");
+  // The tab is part of the address (/host/<code>/search…), so refresh, Back and shared links keep it.
+  const navigate = useNavigate();
+  const segment = useParams()["*"] ?? "";
+  const view: View = (VIEWS as readonly string[]).includes(segment) ? (segment as View) : "home";
+  const setView = (v: View) => navigate(`/host/${routeCode}${v === "home" ? "" : `/${v}`}`);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [queueOpen, setQueueOpen] = useState(true);
   const mobile = useIsMobile();

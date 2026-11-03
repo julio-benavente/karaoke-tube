@@ -190,6 +190,11 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
       }
     },
 
+    async browse(filter, limit = RESULTS) {
+      const idx = await indexOrWait();
+      return idx ? idx.browse(filter, limit) : [];
+    },
+
     async video(videoId): Promise<VideoResponse> {
       // A catalog song needs no network (and no YouTube quota).
       const known = index?.byVideoId(videoId);

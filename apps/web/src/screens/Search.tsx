@@ -21,6 +21,7 @@ import {
   useT,
 } from "@karaoke-tube/ui";
 import { getSearchApi } from "../session";
+import { useSearchUrl } from "../useSearchUrl";
 import { useAddWithToast } from "./useAdd";
 import css from "./Search.module.css";
 
@@ -55,6 +56,14 @@ export function SearchScreen() {
     };
   }, [linkId]);
 
+  const runPreset = (p: (typeof BROWSE_PRESETS)[number]) => {
+    setPresetTitle(p.title);
+    search.setQuery(p.title, { run: false });
+    search.browse(p.filter, { limit: 40, fallbackQuery: p.query, label: p.title });
+    window.scrollTo({ top: 0 });
+  };
+  useSearchUrl({ query: search.query, presetTitle, setQuery: (q) => search.setQuery(q), runPreset });
+
   if (!state || !me) return null;
 
   const waitingOk = (state.pending ?? []).filter((q) => q.singerIds.includes(me.id));
@@ -71,13 +80,6 @@ export function SearchScreen() {
       search.setQuery(q, { run: false });
       search.run("");
     } else search.setQuery(q);
-  };
-
-  const runPreset = (title: string, query: string) => {
-    setPresetTitle(title);
-    search.setQuery(title, { run: false });
-    search.run(query);
-    window.scrollTo({ top: 0 });
   };
 
   const clear = () => {
@@ -140,7 +142,7 @@ export function SearchScreen() {
             {t("search.paste")}
           </Chip>
           {BROWSE_PRESETS.slice(0, 5).map((p) => (
-            <Chip key={p.id} selected={presetTitle === p.title} onClick={() => runPreset(p.title, p.query)}>
+            <Chip key={p.id} selected={presetTitle === p.title} onClick={() => runPreset(p)}>
               {presetName(t, p.id)}
             </Chip>
           ))}
@@ -166,7 +168,7 @@ export function SearchScreen() {
                 title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
-                onClick={() => runPreset(p.title, p.query)}
+                onClick={() => runPreset(p)}
               />
             ))}
           </div>

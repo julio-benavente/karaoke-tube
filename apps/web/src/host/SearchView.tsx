@@ -15,6 +15,7 @@ import {
   useSearchApi,
   useT,
 } from "@karaoke-tube/ui";
+import { useSearchUrl } from "../useSearchUrl";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
 
@@ -29,6 +30,13 @@ export function SearchView() {
   const [linkSong, setLinkSong] = useState<Song | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const linkId = parseYouTubeId(search.query);
+
+  const runPreset = (p: (typeof BROWSE_PRESETS)[number]) => {
+    setTitle(p.title);
+    search.setQuery(p.title, { run: false });
+    search.browse(p.filter, { limit: 40, fallbackQuery: p.query, label: p.title });
+  };
+  useSearchUrl({ query: search.query, presetTitle: title, setQuery: (q) => search.setQuery(q), runPreset });
 
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -47,12 +55,6 @@ export function SearchView() {
 
   if (!state) return null;
   const queued = new Set(state.upNext.map((q) => q.song.videoId));
-
-  const runPreset = (name: string, q: string) => {
-    setTitle(name);
-    search.setQuery(name, { run: false });
-    search.run(q);
-  };
 
   return (
     <div className={css.view}>
@@ -98,7 +100,7 @@ export function SearchView() {
                 title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
-                onClick={() => runPreset(p.title, p.query)}
+                onClick={() => runPreset(p)}
               />
             ))}
           </div>

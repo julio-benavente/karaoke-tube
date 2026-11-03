@@ -37,26 +37,29 @@ export function HomeScreen() {
   const [genre, setGenre] = useState<string | null>(null);
   const genreSearch = useSearch();
   const classics = useSearch();
+  const popular = useSearch();
 
   const preset = GENRES.find((g) => g.id === genre);
   useEffect(() => {
-    if (preset) genreSearch.run(preset.query);
+    if (preset) genreSearch.browse(preset.filter, { limit: 30, fallbackQuery: preset.query });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset?.id]);
+  // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
-    classics.run("party classics");
+    const party = BROWSE_PRESETS.find((p) => p.id === "classics")!;
+    classics.browse(party.filter, { limit: 24, shuffle: true, fallbackQuery: party.query });
+    popular.browse({}, { limit: 150, shuffle: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Shortcut tiles: quick picks that aren't already in this room (those go in "Popular in this room").
+  // Picked when the catalog answers, so the tiles don't reshuffle while the queue changes.
   const shortcuts = useMemo(() => {
     const inRoom = new Set(roomSongs.map((s) => s.videoId));
-    const start = Math.floor(Math.random() * SAMPLE_SONGS.length);
-    const rotated = [...SAMPLE_SONGS.slice(start), ...SAMPLE_SONGS.slice(0, start)];
-    return rotated.filter((s) => !inRoom.has(s.videoId)).slice(0, 6);
-    // Picked once per visit so the tiles don't reshuffle while the queue changes.
+    const pool = popular.results.length ? popular.results : SAMPLE_SONGS; // demo mode has no catalog
+    return pool.filter((s) => !inRoom.has(s.videoId)).slice(0, 6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [popular.results]);
 
   if (!state || !me) return null;
   const tint = state.nowPlaying ? `hsl(${hueOf(state.nowPlaying.song.videoId)} 45% 30%)` : "var(--kt-hover)";

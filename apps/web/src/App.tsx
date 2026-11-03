@@ -39,7 +39,7 @@ export function App() {
           <Route path="/host/new" element={<NewParty />} />
           <Route path="/tv" element={<TvPair />} />
           <Route path="/tv/:code" element={<TvScreen />} />
-          <Route path="/host/:code" element={<HostApp />} />
+          <Route path="/host/:code/*" element={<HostApp />} />
           <Route path="/dev/ui" element={<Gallery />} />
           <Route path="/dev/recap" element={<RecapDev />} />
           <Route path="/dev/tv" element={<TvPreview />} />
