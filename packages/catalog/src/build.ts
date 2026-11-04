@@ -34,7 +34,22 @@ export type RawVideo = {
   isPublic: boolean;
   /** `status.embeddable`: when false the YouTube player refuses to play it on our site (error 101/150). Missing counts as embeddable. */
   embeddable?: boolean;
+  /** Blocked where our singers are (see `isBlockedInMarkets`) or age-restricted: the player can't show it there. */
+  unplayable?: boolean;
 };
+
+/** Countries the app is used in. A video blocked in any of them is left out: a song that skips on someone's TV is worse than a missing one. */
+export const MARKETS = ["US", "CA", "GB", "MX", "ES", "AR", "CO"];
+
+/** YouTube's `contentDetails.regionRestriction` (blocked list, or an allowed-only list) and `contentRating`. */
+export function isBlockedInMarkets(
+  regionRestriction: { blocked?: string[]; allowed?: string[] } | undefined,
+  contentRating: { ytRating?: string } | undefined,
+): boolean {
+  if (contentRating?.ytRating === "ytAgeRestricted") return true;
+  if (!regionRestriction) return false;
+  return MARKETS.some((m) => regionRestriction.blocked?.includes(m) || (regionRestriction.allowed !== undefined && !regionRestriction.allowed.includes(m)));
+}
 
 type Entry = {
   video: RawVideo;
@@ -81,6 +96,7 @@ export function parseDuration(iso: string | undefined): number {
 function excludeReason(v: RawVideo, ch: ChannelConfig): string | null {
   if (ch.exclude) return `channel: ${ch.key}`;
   if (!v.isPublic) return "not public";
+  if (v.unplayable) return "blocked in a country we serve, or age-restricted";
   if (v.embeddable === false) return "embedding disabled (the player can't play it)";
   if (v.live) return "live or upcoming";
   if (SHORT.test(v.title) || v.durationSec < MIN_SECONDS) return "short or under a minute";

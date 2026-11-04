@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 import { createLabeler } from "../src/labels.ts";
 import { loadLabelData } from "../src/load-data.ts";
-import { buildCatalog, parseDuration, type ChannelConfig, type RawVideo } from "../src/build.ts";
+import { buildCatalog, isBlockedInMarkets, parseDuration, type ChannelConfig, type RawVideo } from "../src/build.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const RAW = join(ROOT, "data/catalog/raw");
@@ -34,6 +34,7 @@ function* rawVideos(): Generator<RawVideo> {
         live: (v.snippet.liveBroadcastContent ?? "none") !== "none",
         isPublic: (v.status?.privacyStatus ?? "public") === "public",
         embeddable: v.status?.embeddable !== false,
+        unplayable: isBlockedInMarkets(v.contentDetails?.regionRestriction, v.contentDetails?.contentRating),
       };
     }
   }

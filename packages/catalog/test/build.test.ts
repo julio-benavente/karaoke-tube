@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCatalog, parseDuration, type ChannelConfig, type RawVideo } from "../src/build.ts";
+import { buildCatalog, isBlockedInMarkets, parseDuration, type ChannelConfig, type RawVideo } from "../src/build.ts";
 
 const channels: ChannelConfig[] = [
   { key: "kf", id: "1", title: "KaraFun", order: "song-artist", priority: 95 },
@@ -26,6 +26,17 @@ function build(videos: RawVideo[]) {
   return { catalog, report, songs };
 }
 
+describe("isBlockedInMarkets", () => {
+  it("blocks on a blocked list or an allowed-only list that misses a market, and on age limits", () => {
+    expect(isBlockedInMarkets({ blocked: ["CA", "GB", "US"] }, {})).toBe(true);
+    expect(isBlockedInMarkets({ blocked: ["RU"] }, {})).toBe(false);
+    expect(isBlockedInMarkets({ allowed: ["US", "CA", "GB", "MX", "ES", "AR", "CO"] }, {})).toBe(false);
+    expect(isBlockedInMarkets({ allowed: ["DE"] }, {})).toBe(true);
+    expect(isBlockedInMarkets(undefined, { ytRating: "ytAgeRestricted" })).toBe(true);
+    expect(isBlockedInMarkets(undefined, {})).toBe(false);
+  });
+});
+
 describe("parseDuration", () => {
   it("reads ISO 8601", () => {
     expect(parseDuration("PT4M10S")).toBe(250);
@@ -47,12 +58,14 @@ describe("buildCatalog", () => {
       video("pt", "Live Thing - Artist (Karaoke Version)", { live: true }),
       video("pt", "Private Thing - Artist (Karaoke Version)", { isPublic: false }),
       video("pt", "No Embed - Artist (Karaoke Version)", { embeddable: false }),
+      video("pt", "Blocked - Artist (Karaoke Version)", { unplayable: true }),
       video("kid", "Old Macdonald | Baby Cartoons - Kids Sing Alongs"),
     ]);
     expect(songs.map((s) => s.title)).toEqual(["Hello"]);
     expect(report.excluded["no karaoke wording (not a track)"]).toBe(1);
     expect(report.excluded["channel: kid"]).toBe(1);
     expect(report.excluded["embedding disabled (the player can't play it)"]).toBe(1);
+    expect(report.excluded["blocked in a country we serve, or age-restricted"]).toBe(1);
   });
 
   it("merges the same song across channels and keeps the best version first", () => {
