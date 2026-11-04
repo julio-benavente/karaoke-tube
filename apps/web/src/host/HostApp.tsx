@@ -130,7 +130,9 @@ function Host() {
   const [queueOpen, setQueueOpen] = useState(true);
   const mobile = useIsMobile();
 
-  useRoomErrors((e) => toast.show(errorText(e.code), { tone: "error" }));
+  useRoomErrors((e) =>
+    toast.show(e.code === "song_unplayable" ? t("error.song_unplayable", { title: e.message }) : errorText(e.code), { tone: "error" }),
+  );
   useRoleToast();
 
   if (closeReason === "forgotten") {

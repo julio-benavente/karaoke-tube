@@ -75,6 +75,23 @@ describe("playback", () => {
     expect((await host.next("play")).item.song.title).toBe("fine");
   });
 
+  it("tells the singer and the host when a song can't be played", async () => {
+    const { code, host } = await partyRoom();
+    const ana = await guest(code, "Ana");
+    await ana.client.act({ type: "add_song", song: song("broken") });
+    const play = await host.next("play");
+    await host.act({ type: "player_event", event: "error", itemId: play.item.id });
+    // Earlier requests leave marker errors in the log; skip them.
+    const notice = async (c: typeof host) => {
+      for (;;) {
+        const e = await c.next("error");
+        if (e.code === "song_unplayable") return e;
+      }
+    };
+    expect(await notice(ana.client)).toMatchObject({ message: "broken" });
+    expect(await notice(host)).toMatchObject({ message: "broken" });
+  });
+
   it("skip, pause, resume and restart from hosts reach the player", async () => {
     const { code, host } = await partyRoom();
     const ana = await guest(code, "Ana");

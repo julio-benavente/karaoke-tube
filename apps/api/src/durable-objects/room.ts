@@ -741,6 +741,7 @@ export class Room extends DurableObject<Env> {
         break;
       case "error":
         this.setItem(item.id, { status: "skipped" });
+        this.notifyUnplayable(item);
         this.openAwardWindow(item);
         await this.advance();
         break;
@@ -1108,6 +1109,15 @@ export class Room extends DurableObject<Env> {
   }
 
   // ── Sending ────────────────────────────────────────────────────────────
+
+  /** The player couldn't play this song (embedding off, removed, blocked): tell its singers and the hosts why it was skipped. */
+  private notifyUnplayable(item: StoredItem) {
+    const told = new Set<string>([item.addedBy, ...item.singerIds]);
+    for (const m of this.memberRows()) if (m.role === "host" || m.role === "cohost") told.add(m.id);
+    for (const id of told) {
+      for (const ws of this.socketsOf(id)) this.send(ws, { type: "error", code: "song_unplayable", message: item.song.title });
+    }
+  }
 
   private socketsOf(memberId: string): WebSocket[] {
     return this.ctx.getWebSockets().filter((ws) => attachment(ws).memberId === memberId);

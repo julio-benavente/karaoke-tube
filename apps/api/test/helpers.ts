@@ -118,7 +118,8 @@ export class TestClient {
   /** Sends and returns the latest state once the room has handled it. Fails if the room replied with an error. */
   async act(msg: ClientMessage) {
     const got = await this.roundTrip(msg);
-    const error = got.find((m) => m.type === "error");
+    // `song_unplayable` is a notice about a song, not a failure of this request.
+    const error = got.find((m) => m.type === "error" && m.code !== "song_unplayable");
     if (error) throw new Error(`${msg.type} failed: ${JSON.stringify(error)}`);
     const states = got.filter((m) => m.type === "state");
     const last = states.at(-1);
