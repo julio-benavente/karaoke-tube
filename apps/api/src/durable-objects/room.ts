@@ -251,6 +251,14 @@ export class Room extends DurableObject<Env> {
     }
   }
 
+  /** `E2E_FAST=1` (local `.dev.vars` only) shortens the minute-long timers so end-to-end runs take seconds. */
+  private hostOfflineMs() {
+    return this.env.E2E_FAST ? 3_000 : HOST_OFFLINE_MS;
+  }
+  private awardWindowMs() {
+    return this.env.E2E_FAST ? 6_000 : AWARD_WINDOW_MS;
+  }
+
   // ── Alarm ──────────────────────────────────────────────────────────────
   // One alarm per Durable Object, so it serves three deadlines: the get-ready countdown, the idle expiry
   // of an abandoned party, and deleting storage after the party ended. `scheduleAlarm` sets the earliest.
@@ -276,7 +284,7 @@ export class Room extends DurableObject<Env> {
     }
     // The host has been offline for a while and someone else is here: hand the party over.
     const hostOfflineSince = this.getMeta<number>("hostOfflineSince");
-    if (hostOfflineSince && now >= hostOfflineSince + HOST_OFFLINE_MS) {
+    if (hostOfflineSince && now >= hostOfflineSince + this.hostOfflineMs()) {
       this.setMeta("hostOfflineSince", null);
       if (this.succeedHost()) this.broadcastState();
     }
@@ -430,7 +438,7 @@ export class Room extends DurableObject<Env> {
       const idleSince = this.getMeta<number>("idleSince");
       if (idleSince) times.push(idleSince + IDLE_TTL_MS);
       const hostOfflineSince = this.getMeta<number>("hostOfflineSince");
-      if (hostOfflineSince) times.push(hostOfflineSince + HOST_OFFLINE_MS);
+      if (hostOfflineSince) times.push(hostOfflineSince + this.hostOfflineMs());
     }
     if (times.length) await this.ctx.storage.setAlarm(Math.min(...times));
     else await this.ctx.storage.deleteAlarm();
@@ -888,7 +896,7 @@ export class Room extends DurableObject<Env> {
   /** A performance just finished: members who didn't sing it can give it an award for a minute. */
   private openAwardWindow(item: StoredItem) {
     if (item.performedAt == null) return; // it never really started
-    this.setMeta("awardWindow", { itemId: item.id, closesAt: Date.now() + AWARD_WINDOW_MS });
+    this.setMeta("awardWindow", { itemId: item.id, closesAt: Date.now() + this.awardWindowMs() });
   }
 
   private giveAward(me: Member, itemId: string, award: Award) {

@@ -313,5 +313,9 @@ class WebSocketRoomClient extends BaseRoomClient {
  * rejoins automatically; reconnects with backoff (1 s, 2 s, 4 s, … max 10 s), status `reconnecting` meanwhile.
  */
 export function createRoomClient(opts: CreateRoomClientOptions): RoomClient {
-  return new WebSocketRoomClient(opts);
+  const client = new WebSocketRoomClient(opts);
+  // End-to-end runs only: the test sets `window.__KT_E2E` before the page loads, then reads the live room state from here.
+  const w = typeof window !== "undefined" ? (window as unknown as { __KT_E2E?: boolean; __ktClients?: RoomClient[] }) : null;
+  if (w?.__KT_E2E) (w.__ktClients ??= []).push(client);
+  return client;
 }

@@ -9,7 +9,8 @@
     "dev:web": "pnpm --filter @karaoke-tube/web dev",
     "dev:extension": "pnpm --filter @karaoke-tube/extension dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "e2e": "pnpm --filter @karaoke-tube/e2e test"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
