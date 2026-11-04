@@ -20,7 +20,7 @@ const EMOJI_ALL = /[\p{Extended_Pictographic}️‍]/gu;
 
 /** Bracketed text that is only karaoke boilerplate. Anything else in brackets, e.g. (Dance Mix), (Live), stays. */
 const BRACKET_NOISE =
-  /karaoke|instrumental|lyrics|letra|vocal guide|studio version|no lead vocal|backing track|sing[- ]?along|minus one|sing with me|\blower\b|\bhigher\b|\b(?:male|female)(?:\s+key)?\b|original key|(?:lower|higher) key|\bpiano\b|\bhd\b|\b4k\b|\bofficial\b|\b[a-g][b#♭♯]?\s*(?:major|minor)\b|^\s*[+-]?\d+\s*$|\blow(?:er)?\s*[+-]?\d+|\b(?:with|without)\s+(?:backing|lead)\s+vocals?/i;
+  /karaoke|\bcoros\b|instrumental|lyrics|letra|vocal guide|studio version|no lead vocal|backing track|sing[- ]?along|minus one|sing with me|\blower\b|\bhigher\b|\b(?:male|female)(?:\s+key)?\b|original key|(?:lower|higher) key|\bpiano\b|\bhd\b|\b4k\b|\bofficial\b|\b[a-g][b#♭♯]?\s*(?:major|minor)\b|^\s*[+-]?\d+\s*$|\blow(?:er)?\s*[+-]?\d+|\b(?:with|without)\s+(?:backing|lead)\s+vocals?/i;
 
 /** A segment made only of these words is boilerplate ("Karaoke Version", "With Lyrics HD Vocal-Star Karaoke 4K"). */
 const NOISE_WORD = String.raw`(?:karaoke|instrumental(?:es)?|version|track|video|shorts?|lyrics?|letra|vocal|guide|studio|lead|backing|piano|hd|4k|official|lower|higher|male|female|original|key|with|on|screen|sing|along|singalong|me|y|no|karafun|vocal-?star|[+-]\d+)`;
@@ -29,9 +29,9 @@ const FULL_NOISE = new RegExp(String.raw`^(?:${NOISE_WORD}[\s&+,/]*)+$`, "i");
 const STRONG_NOISE =
   /karaoke|instrumental|lyrics?|letra|vocal[ -]?guide|backing|piano|karafun|vocal-?star|original key|sing[ -]?along|sing with me|studio|\bhd\b|\b4k\b/i;
 /** Key labels that trail some titles from the third piece on ("... - Karaoke Instrumental - Bajo"). */
-const KEY_LABELS = /^(?:(?:bajo|alto|medio|mujer|hombre|tono|femenino|masculino|original|male|female)[\s&+,/]*)+$/i;
+const KEY_LABELS = /^(?:(?:bajo|alto|medio|mujer|hombre|tono|femenino|masculino|original|arreglo|male|female)[\s&+,/]*)+$/i;
 const BRAND =
-  /^(?:sing king(?: karaoke)?|party tyme(?: karaoke)?|stingray(?: karaoke)?|sing2piano|curtainup(?: karaoke)?|vocal[- ]star(?: karaoke)?)$/i;
+  /^(?:sing king(?: karaoke)?|party tyme(?: karaoke)?|stingray(?: karaoke)?|sing2piano|curtainup(?: karaoke)?|vocal[- ]star(?: karaoke)?|puro mariachi(?: karaoke)?|karsing(?: karaoke)?|canto karaoke|karaoke latino|pantalla vertical)$/i;
 
 /**
  * Boilerplate words hanging off the end of a piece: "Make You Mine Karaoke Instrumental Lower Higher Male & Original Key".
@@ -78,6 +78,8 @@ export type ParseOptions = {
   colonSplit?: boolean;
   /** `Song Karaoke Artist Instrumental ...` with no dashes: the word Karaoke is the separator. Karaoke All Keys. */
   karaokeSplit?: boolean;
+  /** Titles start with the word Karaoke ("Karaoke - Song - Artist", "Karaoke Song - Artist *"). KaraFun España. */
+  karaokePrefix?: boolean;
 };
 
 export function parseTitle(raw: string, opts: ParseOptions = {}): ParsedTitle {
@@ -102,6 +104,9 @@ export function parseTitle(raw: string, opts: ParseOptions = {}): ParsedTitle {
     t = t.replace(/\s*[(\[{]([^()\[\]{}]*)[)\]}]/g, (m, inner: string) => (BRACKET_NOISE.test(inner) ? " " : m));
   }
   t = t.replace(/\s+/g, " ").trim();
+  // KaraFun marks its premium tracks with a trailing asterisk.
+  t = t.replace(/\s*\*+$/, "");
+  if (opts.karaokePrefix) t = t.replace(/^karaoke\s*[-–:,]?\s+(?=\S)/i, "");
 
   // "Song : Artist" (Stingray) has the song first.
   let ordered: Ordered = null;
@@ -134,6 +139,7 @@ export function parseTitle(raw: string, opts: ParseOptions = {}): ParsedTitle {
     if (!s) return;
     if (BRAND.test(s)) return;
     if (STRONG_NOISE.test(s) && FULL_NOISE.test(s)) return;
+    if (i >= 1 && /^tono\s+\p{L}+$/iu.test(s)) return;
     if (i >= 2 && (FULL_NOISE.test(s) || KEY_LABELS.test(s) || /karaoke|instrumental|lyrics/i.test(s))) return;
     segs.push(s);
   });

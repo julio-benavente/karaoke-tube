@@ -3,10 +3,18 @@
 // `scripts/label.ts` loads the JSON files in `data/` and calls it. Anything the data doesn't know stays unlabeled.
 
 import type { AnyCatalog, Catalog } from "./types.ts";
-import { DECADE_IDS, DECADE_START, GENRE_IDS, LANGUAGE_IDS, TAG_IDS, decadeOfYear } from "./taxonomy.ts";
+import { DECADE_IDS, DECADE_START, GENRE_ALIAS, GENRE_IDS, LANGUAGE_IDS, TAG_IDS, decadeOfYear } from "./taxonomy.ts";
 
 /** Artists sharing the same genres/language/decade. `Name@80s` overrides the decade for that artist. */
-export type ArtistGroup = { g: string[]; l?: string; d?: string; m?: string[]; a: string[] };
+export type ArtistGroup = {
+  g: string[];
+  l?: string;
+  d?: string;
+  m?: string[];
+  a: string[];
+  /** Corrections: these artists get exactly this group, replacing whatever the other groups said about them. */
+  replace?: boolean;
+};
 
 /** A regex rule: any song whose text matches gets these labels. */
 export type Rule = { re: string; g?: string[]; m?: string[]; l?: string; d?: string };
@@ -19,7 +27,7 @@ export type LabelData = {
     /** Tested against the artist name. */
     artist: Rule[];
     /** Keyed by channel name. */
-    channel: Record<string, { g?: string[]; m?: string[] }>;
+    channel: Record<string, { g?: string[]; m?: string[]; l?: string }>;
     /** Tags every song of these artists gets. */
     artistTags: Array<{ m: string[]; a: string[] }>;
   };
@@ -88,7 +96,10 @@ export type Labeler = (song: SongInput) => SongLabels;
 export function createLabeler(data: LabelData): Labeler {
   // Artist table. First group an artist appears in decides language and decade; genres accumulate.
   const artists = new Map<string, ArtistInfo>();
-  data.artists.forEach((group, gi) => {
+  const ordered = data.artists.map((group, gi) => ({ group, gi }));
+  // Corrections go last-wins: apply the normal groups first, then the `replace` ones over them.
+  const groups = [...ordered.filter((x) => !x.group.replace), ...ordered.filter((x) => x.group.replace)];
+  groups.forEach(({ group, gi }) => {
     const where = `artists group ${gi} (${group.g[0]})`;
     keepKnown(group.g, GENRE_IDS, "genre", where);
     keepKnown(group.m, TAG_IDS, "tag", where);
@@ -100,7 +111,7 @@ export function createLabeler(data: LabelData): Labeler {
       const name = hasDecade ? raw.slice(0, at) : raw;
       const key = norm(name);
       const own = hasDecade ? raw.slice(at + 1) : group.d ?? "";
-      const info = artists.get(key);
+      const info = group.replace ? undefined : artists.get(key);
       if (!info) {
         artists.set(key, { g: [...group.g], l: group.l ?? "", d: own, m: [...(group.m ?? [])] });
       } else {
@@ -207,7 +218,11 @@ export function createLabeler(data: LabelData): Labeler {
       for (const g of ch.g ?? []) if (!ruleGenres.includes(g)) ruleGenres.push(g);
       addM(ch.m);
     }
-    const merged = [...ruleGenres, ...genres.filter((g) => !ruleGenres.includes(g))];
+    const merged: string[] = [];
+    for (const g of [...ruleGenres, ...genres]) {
+      const id = g in GENRE_ALIAS ? GENRE_ALIAS[g]! : g;
+      if (id && !merged.includes(id)) merged.push(id);
+    }
 
     // Year of the song, then curated tags.
     const titleKey = titleNorm(song.title);
@@ -222,6 +237,7 @@ export function createLabeler(data: LabelData): Labeler {
     if (!song.artist) addM(tagsBySong.get(`|${titleKey}`));
 
     if (!language && !knownArtist) language = guessLanguage(song.title);
+    if (!language && ch?.l) language = ch.l;
     else if (language === "en" && ES_STRONG.test(song.title) && (norm(song.title).match(ES_WORDS)?.length ?? 0) >= 2) language = "es";
 
     // Derived tags.

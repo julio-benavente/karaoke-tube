@@ -55,7 +55,7 @@ export function ArtistSuggestions({ cs }: { cs: CS }) {
 }
 
 /** The genres most songs carry; the rest sit behind "+N more" so the sheet is short. Languages: only those the catalog has songs in. */
-const MAIN_GENRES = ["pop", "rock", "latin", "country", "hip-hop", "rnb", "jazz", "alternative", "electronic", "musical-theatre", "disney", "oldies", "christmas", "gospel"];
+const MAIN_GENRES = ["pop", "rock", "country", "rnb", "hip-hop", "jazz", "electronic", "oldies", "musical-theatre", "disney", "christmas", "gospel", "balada", "tropical", "regional-mexican", "reggaeton"];
 const MAIN_LANGUAGES = ["en", "es"];
 
 /** A row of chips that shows the main ones, anything you picked, and a "+N more" chip that opens the rest. */

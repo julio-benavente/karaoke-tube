@@ -210,7 +210,7 @@
    ]
   },
   {
-   "re": "\\b(hymn|gospel|worship|church|choir|praise|christian|jesus|lord|god)\\b",
+   "re": "\\b(hymn|gospel|worship|church|choir|praise)\\b",
    "g": [
     "gospel"
    ]
@@ -259,6 +259,41 @@
   {
    "re": "^(los|las|el|la|grupo|banda|conjunto|orquesta|sonora)\\s",
    "l": "es"
+  },
+  {
+   "re": "^banda\\b|\\bbanda\\b",
+   "g": [
+    "banda"
+   ],
+   "l": "es"
+  },
+  {
+   "re": "\\b(norte[nñ]o|norte[nñ]os|del norte|plebes|sinaloa|duranguense|tucanes|tigres del norte)\\b",
+   "g": [
+    "regional-mexican"
+   ],
+   "l": "es"
+  },
+  {
+   "re": "\\b(sonora|combo|salsa|orquesta guayacan)\\b",
+   "g": [
+    "tropical"
+   ],
+   "l": "es"
+  },
+  {
+   "re": "\\b(vallenat[oa]s?|vallenata)\\b",
+   "g": [
+    "vallenato"
+   ],
+   "l": "es"
+  },
+  {
+   "re": "\\b(trio|trío)\\b",
+   "g": [
+    "bolero"
+   ],
+   "l": "es"
   }
  ],
  "channel": {
@@ -271,6 +306,33 @@
     "easy",
     "singalong"
    ]
+  },
+  "Party Tyme Karaoke en Español": {
+   "l": "es"
+  },
+  "My All Time Karaoke Español": {
+   "l": "es"
+  },
+  "KaraFun España": {
+   "l": "es"
+  },
+  "Puro Mariachi Karaoke": {
+   "g": [
+    "mariachi"
+   ],
+   "l": "es"
+  },
+  "Karaoke Latino": {
+   "l": "es"
+  },
+  "Karsing Karaoke": {
+   "l": "es"
+  },
+  "Canto Karaoke": {
+   "l": "es"
+  },
+  "Karaokes & Pistas": {
+   "l": "es"
   }
  },
  "artistTags": [

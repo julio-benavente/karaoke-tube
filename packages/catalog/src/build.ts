@@ -20,6 +20,7 @@ export type ChannelConfig = {
   /** See `ParseOptions`. */
   colonSplit?: boolean;
   karaokeSplit?: boolean;
+  karaokePrefix?: boolean;
 };
 
 /** The few fields of a YouTube `videos.list` record the build needs (`scripts/build.ts` trims the rest). */
@@ -127,7 +128,7 @@ export function buildCatalog(
       skip(why);
       continue;
     }
-    const parsed = parseTitle(video.title, { colonSplit: ch.c.colonSplit, karaokeSplit: ch.c.karaokeSplit });
+    const parsed = parseTitle(video.title, { colonSplit: ch.c.colonSplit, karaokeSplit: ch.c.karaokeSplit, karaokePrefix: ch.c.karaokePrefix });
     entries.push({ video, channel: ch.c, channelIdx: ch.i, parsed });
   }
 

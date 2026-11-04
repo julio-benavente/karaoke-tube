@@ -35,7 +35,6 @@ export const GENRES: Genre[] = [
   g("prog-rock", "Progressive rock", "Rock progresivo", "rock"),
   g("southern-rock", "Southern rock", "Rock sureño", "rock"),
   g("rock-n-roll", "Rock & roll", "Rock and roll", "rock"),
-  g("rock-en-espanol", "Rock en español", "Rock en español", "rock"),
   g("punk", "Punk", "Punk"),
   g("pop-punk", "Pop punk", "Pop punk", "punk"),
   g("metal", "Metal", "Metal"),
@@ -77,27 +76,25 @@ export const GENRES: Genre[] = [
   g("reggae", "Reggae", "Reggae"),
   g("ska", "Ska", "Ska", "reggae"),
   g("dancehall", "Dancehall", "Dancehall", "reggae"),
-  g("latin", "Latin", "Latino"),
-  g("latin-pop", "Latin pop", "Pop latino", "latin"),
-  g("balada", "Romantic ballad (balada)", "Balada romántica", "latin"),
-  g("salsa", "Salsa", "Salsa", "latin"),
-  g("bachata", "Bachata", "Bachata", "latin"),
-  g("merengue", "Merengue", "Merengue", "latin"),
-  g("cumbia", "Cumbia", "Cumbia", "latin"),
-  g("reggaeton", "Reggaeton", "Reguetón", "latin"),
-  g("latin-urban", "Latin urban", "Urbano latino", "latin"),
-  g("ranchera", "Ranchera", "Ranchera", "latin"),
-  g("mariachi", "Mariachi", "Mariachi", "latin"),
-  g("regional-mexican", "Regional Mexican", "Regional mexicano", "latin"),
-  g("banda", "Banda", "Banda", "latin"),
-  g("bolero", "Bolero", "Bolero", "latin"),
-  g("tango", "Tango", "Tango", "latin"),
-  g("vallenato", "Vallenato", "Vallenato", "latin"),
-  g("tropical", "Tropical", "Tropical", "latin"),
-  g("trova", "Trova & nueva canción", "Trova y nueva canción", "latin"),
-  g("flamenco", "Flamenco & rumba", "Flamenco y rumba", "latin"),
-  g("bossa-nova", "Bossa nova & MPB", "Bossa nova y MPB", "latin"),
-  g("sertanejo", "Sertanejo", "Sertanejo", "latin"),
+  g("balada", "Romantic ballad (balada)", "Balada romántica"),
+  g("salsa", "Salsa", "Salsa", "tropical"),
+  g("bachata", "Bachata", "Bachata", "tropical"),
+  g("merengue", "Merengue", "Merengue", "tropical"),
+  g("cumbia", "Cumbia", "Cumbia", "tropical"),
+  g("reggaeton", "Reggaeton & urban", "Reguetón y urbano"),
+  g("latin-urban", "Latin urban", "Urbano latino", "reggaeton"),
+  g("ranchera", "Ranchera", "Ranchera", "regional-mexican"),
+  g("mariachi", "Mariachi", "Mariachi", "regional-mexican"),
+  g("regional-mexican", "Regional Mexican", "Regional mexicano"),
+  g("banda", "Banda", "Banda", "regional-mexican"),
+  g("bolero", "Bolero", "Bolero", "balada"),
+  g("tango", "Tango", "Tango"),
+  g("vallenato", "Vallenato", "Vallenato", "tropical"),
+  g("tropical", "Salsa & tropical", "Salsa y tropical"),
+  g("trova", "Trova & nueva canción", "Trova y nueva canción", "balada"),
+  g("flamenco", "Flamenco & rumba", "Flamenco y rumba"),
+  g("bossa-nova", "Bossa nova & MPB", "Bossa nova y MPB"),
+  g("sertanejo", "Sertanejo", "Sertanejo"),
   g("electronic", "Electronic", "Electrónica"),
   g("dance", "Dance", "Dance", "electronic"),
   g("edm", "EDM", "EDM", "electronic"),
@@ -211,7 +208,13 @@ export const TAGS: Tag[] = [
 ];
 
 const ids = (list: Named[]) => new Set(list.map((x) => x.id));
-export const GENRE_IDS = ids(GENRES);
+
+/**
+ * Genres are shared by every language: a Spanish pop song is just Pop. These older ids still appear in the
+ * hand-written label data and are folded into the general genre when labeling ("" = no genre of its own).
+ */
+export const GENRE_ALIAS: Record<string, string> = { "latin-pop": "pop", "rock-en-espanol": "rock", latin: "" };
+export const GENRE_IDS = new Set([...ids(GENRES), ...Object.keys(GENRE_ALIAS)]);
 export const TAG_IDS = ids(TAGS);
 export const DECADE_IDS = ids(DECADES);
 export const LANGUAGE_IDS = ids(LANGUAGES);

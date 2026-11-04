@@ -24,6 +24,31 @@ const data: LabelData = {
 };
 const label = createLabeler(data);
 
+describe("Spanish and English songs share the general genres", () => {
+  const shared = createLabeler({
+    artists: [
+      { g: ["latin-pop", "latin"], l: "es", a: ["Shakira"] },
+      { g: ["bossa-nova"], l: "es", a: ["Roberto Carlos"] },
+      { g: ["balada"], l: "es", replace: true, a: ["Roberto Carlos"] },
+    ],
+    rules: { title: [], artist: [], channel: { "Canal Español": { l: "es" } }, artistTags: [] },
+    years: {},
+    tags: {},
+  });
+
+  it("folds Latin pop into Pop and drops the Latin umbrella", () => {
+    expect(shared({ title: "Ojos Así", artist: "Shakira", channel: "x" }).g).toEqual(["pop"]);
+  });
+
+  it("a replace group corrects an artist instead of adding to it", () => {
+    expect(shared({ title: "Amigo", artist: "Roberto Carlos", channel: "x" })).toMatchObject({ g: ["balada"], l: "es" });
+  });
+
+  it("a Spanish channel gives its unlabeled songs Spanish", () => {
+    expect(shared({ title: "Algo", artist: "Nadie Conocido", channel: "Canal Español" }).l).toBe("es");
+  });
+});
+
 describe("taxonomy", () => {
   it("has unique, slug-shaped ids and every parent exists", () => {
     for (const list of [GENRES, DECADES, TAGS]) {
@@ -145,7 +170,7 @@ describe("filterSongs / browse", () => {
     expect(titles(filterSongs(catalog, { genre: "hard-rock" }))).toEqual(["Paradise City"]);
     expect(titles(filterSongs(catalog, { decade: "60s" }))).toEqual(["Suspicious Minds"]);
     expect(titles(filterSongs(catalog, { language: "es" }))).toEqual(["Gasolina"]);
-    expect(titles(filterSongs(catalog, { genre: ["latin", "oldies"] }))).toEqual(["Suspicious Minds", "Gasolina"]);
+    expect(titles(filterSongs(catalog, { genre: ["reggaeton", "oldies"] }))).toEqual(["Suspicious Minds", "Gasolina"]);
     expect(titles(filterSongs(catalog, { genre: "rock", decade: "80s" }))).toEqual(["Paradise City"]);
     expect(titles(filterSongs(catalog, { tag: "party" }))).toEqual(["Gasolina"]);
     expect(filterSongs(catalog, { tag: "no-such-tag" })).toEqual([]);

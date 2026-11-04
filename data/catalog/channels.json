@@ -11,5 +11,13 @@
   {"key": "karaoke-all-keys", "id": "UCi-2SWwS0zvyO8tzp3JAC8w", "title": "Karaoke All Keys", "order": "mixed", "priority": 50, "karaokeSplit": true},
   {"key": "sing2piano", "id": "UCIk6z4gxI5ADYK7HmNiJvNg", "title": "Sing2Piano", "order": "mixed", "priority": 20},
   {"key": "piano-karaoke", "id": "UCxFoINrmEZxOgWMofuWsQcg", "title": "Piano Karaoke", "order": "song-artist", "priority": 20},
-  {"key": "kids-karaoke-songs", "id": "UC065OFwExGz84peyI5DGtSg", "title": "Kids Karaoke Songs", "order": "mixed", "priority": 10, "exclude": "cartoon episodes, not karaoke tracks"}
+  {"key": "kids-karaoke-songs", "id": "UC065OFwExGz84peyI5DGtSg", "title": "Kids Karaoke Songs", "order": "mixed", "priority": 10, "exclude": "cartoon episodes, not karaoke tracks"},
+  {"key": "party-tyme-es", "id": "UCgJdYYa_ikkx_2eU5pNU3nw", "title": "Party Tyme Karaoke en Español", "order": "artist-song", "priority": 88},
+  {"key": "my-all-time-es", "id": "UCYOGSAmPFvwblJCUe_6QFFQ", "title": "My All Time Karaoke Español", "order": "song-artist", "priority": 58},
+  {"key": "karafun-es", "id": "UC5Zv8wTsCk3gVJcBcHmOPgg", "title": "KaraFun España", "order": "song-artist", "priority": 94, "karaokePrefix": true},
+  {"key": "puro-mariachi", "id": "UCH1KJr2gTVJOYqU3nTa4Bow", "title": "Puro Mariachi Karaoke", "order": "song-artist", "priority": 60},
+  {"key": "canto-karaoke", "id": "UCvqNy3lqyC7dN5g-Wil19pg", "title": "Canto Karaoke", "order": "song-artist", "priority": 55},
+  {"key": "karsing", "id": "UC4UikUyoKG8XTp6AL6v1kVw", "title": "Karsing Karaoke", "order": "song-artist", "priority": 50, "tidyCase": true},
+  {"key": "karaoke-latino-co", "id": "UCa15S_h2sqNcle5QaUKqTsg", "title": "Karaoke Latino", "order": "song-artist", "priority": 45},
+  {"key": "karaokes-pistas", "id": "UC0I6nSW1J-MWgc-I_4su-BA", "title": "Karaokes & Pistas", "order": "song-artist", "priority": 30, "karaokePrefix": true}
 ]
