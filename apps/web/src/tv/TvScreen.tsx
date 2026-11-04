@@ -119,7 +119,8 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
       clientRef.current?.send({ type: "player_event", event, itemId, positionSec, durationSec });
     const p = new TvPlayer(targetRef.current, wrapRef.current, report, () => setPlayerReady(true));
     playerRef.current = p;
-    if (wantPlay.current) p.play(wantPlay.current, startAtFor(wantPlay.current));
+    // A TV reopened while the song is paused must come up paused (the room's `pause` command reached us before the player existed).
+    if (wantPlay.current) p.play(wantPlay.current, startAtFor(wantPlay.current), clientRef.current?.state?.playback.state === "paused");
     return () => {
       p.dispose();
       playerRef.current = null;

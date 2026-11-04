@@ -64,7 +64,7 @@ export class TvPlayer {
   private yt: YTPlayer | null = null;
   private ready = false;
   private item: QueueItem | null = null;
-  private pending: { item: QueueItem; startAt: number } | null = null;
+  private pending: { item: QueueItem; startAt: number; paused: boolean } | null = null;
   private started = false;
   private finished = false;
   private wantPaused = false;
@@ -92,7 +92,7 @@ export class TvPlayer {
               this.ready = true;
               this.timer = setInterval(this.tick, TICK_MS);
               this.onReady();
-              if (this.pending) this.play(this.pending.item, this.pending.startAt);
+              if (this.pending) this.play(this.pending.item, this.pending.startAt, this.pending.paused);
             },
             onStateChange: (e: { data: number }) => this.onState(e.data),
             onError: () => this.finish("error"),
@@ -117,10 +117,10 @@ export class TvPlayer {
     this.wrap.style.visibility = on ? "visible" : "hidden";
   }
 
-  /** Plays `item`; `startAt` resumes a song that was already going (rejoin). */
-  play(item: QueueItem, startAt = 0) {
+  /** Plays `item`; `startAt` resumes a song that was already going (rejoin); `paused` starts it paused (TV reopened mid-pause). */
+  play(item: QueueItem, startAt = 0, paused = false) {
     if (!this.ready || !this.yt) {
-      this.pending = { item, startAt };
+      this.pending = { item, startAt, paused };
       return;
     }
     this.pending = null;
@@ -130,7 +130,7 @@ export class TvPlayer {
     this.item = item;
     this.started = false;
     this.finished = false;
-    this.wantPaused = false;
+    this.wantPaused = paused;
     this.waitedMs = 0;
     this.lastProgress = 0;
     this.show(true);
@@ -147,7 +147,14 @@ export class TvPlayer {
   }
 
   command(command: "pause" | "resume" | "restart") {
-    if (!this.ready || !this.yt || !this.item || this.finished) return;
+    if (!this.ready || !this.yt || !this.item) {
+      // A TV that reconnects while a song is paused is sent `play` and then `pause`, maybe before its player is up:
+      // the pause belongs to the song waiting to start (a stray pause with nothing waiting is ignored, as before).
+      if (this.pending && command === "pause") this.pending.paused = true;
+      else if (this.pending && command === "resume") this.pending.paused = false;
+      return;
+    }
+    if (this.finished) return;
     if (command === "pause") {
       this.wantPaused = true;
       if (this.started) this.yt.pauseVideo();

@@ -728,7 +728,9 @@ export class Room extends DurableObject<Env> {
     }
     switch (msg.event) {
       case "started":
-        this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
+        // A TV reopened while the song is paused starts the video and pauses it again: the room stays paused.
+        if (pb.state === "paused") this.setPlayback({ ...pb, positionSec, updatedAt: now });
+        else this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
         break;
       case "progress":
         if (pb.state === "get_ready") this.setPlayback({ state: "playing", positionSec, updatedAt: now, countdownEndsAt: null });
