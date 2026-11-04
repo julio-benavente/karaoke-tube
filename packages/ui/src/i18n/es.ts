@@ -12,6 +12,7 @@ export const es: Dict = {
   "error.not_allowed": "Solo el anfitrión puede hacer eso.",
   "error.queue_limit": "Llegaste al límite de canciones. Espera a que suene una de las tuyas.",
   "error.invalid_message": "Algo salió mal. Inténtalo de nuevo.",
+  "error.song_unplayable": "“{title}” no se puede reproducir aquí, así que se saltó. Prueba otra versión.",
   "landing.title": "Noche de karaoke, desde cualquier pantalla",
   "landing.lead": "Pon los videos en la tele. Todos cantan desde su celular.",
   "landing.create": "Crear una sala",

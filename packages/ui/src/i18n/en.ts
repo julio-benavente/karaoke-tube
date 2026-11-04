@@ -9,6 +9,7 @@ export const en = {
   "error.not_allowed": "Only the host can do that.",
   "error.queue_limit": "You've hit the song limit. Wait for one of yours to play.",
   "error.invalid_message": "Something went wrong. Try again.",
+  "error.song_unplayable": "“{title}” can't be played here, so it was skipped. Try another version.",
   "landing.title": "Karaoke night, from any screen",
   "landing.lead": "Put the videos on the TV. Everyone sings from their phone.",
   "landing.create": "Create a room",

@@ -76,7 +76,9 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   useRoleToast();
 
   useRoomErrors((e) => {
-    if (e.code === "queue_limit") {
+    if (e.code === "song_unplayable") {
+      toast.show(t("error.song_unplayable", { title: e.message }), { tone: "error" });
+    } else if (e.code === "queue_limit") {
       const n = state?.settings.maxWaitingPerMember ?? 2;
       toast.show(t("search.limitToast", { count: n }), { tone: "error" });
     } else {
