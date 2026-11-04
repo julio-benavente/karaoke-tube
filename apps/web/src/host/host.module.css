@@ -42,7 +42,7 @@
 }
 
 .reconnecting {
-  position: absolute;
+  position: fixed;
   top: var(--kt-space-3);
   left: 50%;
   z-index: var(--kt-z-toast);
@@ -758,17 +758,16 @@
 }
 
 /* ── Phone layout (≤ 820px): one column, tabs + mini player docked at the bottom ── */
+/* The page itself scrolls here (not an inner box): that is what makes a tap on the iPhone status bar jump back to the top. */
 .mobileFrame {
   position: relative;
-  height: 100dvh;
-  background: var(--kt-base);
-  overflow: hidden;
+  min-height: 100dvh;
+  background: var(--kt-panel);
 }
 
 .mobileMain {
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  min-height: 100dvh;
+  box-sizing: border-box;
   /* Room for the mini player + tabs dock. */
   padding: env(safe-area-inset-top) 0 calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-12) + env(safe-area-inset-bottom));
   background: var(--kt-panel);
@@ -842,6 +841,7 @@
 
 /* Phone: the "no TV" notice is a slim strip across the top, and the page starts below it (it used to float over the titles). */
 .mobileFrame .tvClosed {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Mic2, SlidersHorizontal, X } from "lucide-react";
-import { DECADES, GENRES, LANGUAGES, TAGS } from "@karaoke-tube/catalog";
+import { DECADES, GENRES, LANGUAGES } from "@karaoke-tube/catalog";
 import { Button, Chip, Sheet, useLang, useT } from "@karaoke-tube/ui";
 import { countFilters, filterLabel, hasFilters, NO_FILTERS, type FilterKind, type Filters } from "./catalogFilters";
 import type { useCatalogSearch } from "./useCatalogSearch";
@@ -54,6 +54,29 @@ export function ArtistSuggestions({ cs }: { cs: CS }) {
   );
 }
 
+/** The genres most songs carry; the rest sit behind "+N more" so the sheet is short. Languages: only those the catalog has songs in. */
+const MAIN_GENRES = ["pop", "rock", "latin", "country", "hip-hop", "rnb", "jazz", "alternative", "electronic", "musical-theatre", "disney", "oldies", "christmas", "gospel"];
+const MAIN_LANGUAGES = ["en", "es"];
+
+/** A row of chips that shows the main ones, anything you picked, and a "+N more" chip that opens the rest. */
+function ChipGroup<T extends { id: string }>({ items, main, selected, render }: { items: T[]; main: string[]; selected: string[]; render: (x: T) => React.ReactNode }) {
+  const t = useT();
+  const [all, setAll] = useState(false);
+  const shown = items.filter((x) => main.includes(x.id) || selected.includes(x.id));
+  const hidden = items.length - shown.length;
+  const list = all || hidden <= 0 ? items : shown;
+  return (
+    <div className={css.chips}>
+      {list.map(render)}
+      {hidden > 0 && (
+        <Chip onClick={() => setAll(!all)} data-testid="chips-more">
+          {all ? t("filters.fewer") : t("filters.more", { count: hidden })}
+        </Chip>
+      )}
+    </div>
+  );
+}
+
 function FilterSheet({ open, onClose, cs }: { open: boolean; onClose: () => void; cs: CS }) {
   const t = useT();
   const [lang] = useLang();
@@ -73,7 +96,7 @@ function FilterSheet({ open, onClose, cs }: { open: boolean; onClose: () => void
         <div className={css.sections}>
           <section>
             <h3 className={css.h3}>{t("filters.genre")}</h3>
-            <div className={css.chips}>{tops.map((g) => chip("genre", g.id, g[lang]))}</div>
+            <ChipGroup items={tops} main={MAIN_GENRES} selected={[...f.genre, ...openParents]} render={(g) => chip("genre", g.id, g[lang])} />
             {[...openParents].map((parent) => {
               const kids = GENRES.filter((g) => g.parent === parent);
               if (!kids.length) return null;
@@ -91,14 +114,8 @@ function FilterSheet({ open, onClose, cs }: { open: boolean; onClose: () => void
           </section>
           <section>
             <h3 className={css.h3}>{t("filters.language")}</h3>
-            <div className={css.chips}>{LANGUAGES.map((l) => chip("language", l.id, l[lang]))}</div>
+            <div className={css.chips}>{LANGUAGES.filter((l) => MAIN_LANGUAGES.includes(l.id) || f.language.includes(l.id)).map((l) => chip("language", l.id, l[lang]))}</div>
           </section>
-          {(["mood", "occasion", "feature"] as const).map((kind) => (
-            <section key={kind}>
-              <h3 className={css.h3}>{t(`filters.${kind}`)}</h3>
-              <div className={css.chips}>{TAGS.filter((x) => x.kind === kind).map((x) => chip("tag", x.id, x[lang]))}</div>
-            </section>
-          ))}
           <p className={css.hint}>{t("filters.hint")}</p>
         </div>
         <div className={css.footer}>
