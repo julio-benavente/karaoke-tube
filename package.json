@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter \"./apps/*\" --filter \"!@karaoke-tube/extension\" dev",
     "dev:api": "pnpm --filter @karaoke-tube/api dev",
+    "deploy:api": "pnpm --filter @karaoke-tube/api run deploy",
     "dev:web": "pnpm --filter @karaoke-tube/web dev",
     "dev:extension": "pnpm --filter @karaoke-tube/extension dev",
     "build": "pnpm -r build",
