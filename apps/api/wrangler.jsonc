@@ -5,6 +5,12 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
+  // Keep the workers.dev address on. (Cloudflare turns it off by default as soon as a Worker has custom routes.)
+  "workers_dev": true,
+  // Our own domain (karaokeetube.com + www) is NOT attached yet: Cloudflare refuses while the zone has other DNS
+  // records on those names. Once they are deleted, add:
+  //   "routes": [{ "pattern": "karaokeetube.com", "custom_domain": true }, { "pattern": "www.karaokeetube.com", "custom_domain": true }],
+
   // The guest web app (apps/web) is built into ../web/dist and served by this same Worker.
   // Requests to /api/* always hit the Worker first; everything else is a static file or the SPA.
   "assets": {
