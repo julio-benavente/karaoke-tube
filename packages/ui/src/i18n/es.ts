@@ -192,6 +192,8 @@ export const es: Dict = {
   "queue.banner.getReady": "¡Prepárate, te toca!",
   "queue.banner.singing": "Estás cantando. ¡Con todo!",
   "queue.banner.next": "¡Sigues tú!",
+  "turn.phonelessNow": "{who}, ¡es su turno! Llévales el micro.",
+  "turn.phonelessNext": "Sigue {who}. Avísales.",
   "queue.banner.soon_one": "Cantas en {count} canción",
   "queue.banner.soon_other": "Cantas en {count} canciones",
   "queue.decline": "Rechazar {title}",

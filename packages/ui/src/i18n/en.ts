@@ -189,6 +189,8 @@ export const en = {
   "queue.banner.getReady": "Get ready, you're up!",
   "queue.banner.singing": "You're singing now. Go get 'em!",
   "queue.banner.next": "You're up next!",
+  "turn.phonelessNow": "{who}, you're up! Bring them the mic.",
+  "turn.phonelessNext": "{who} is up next. Call them over.",
   "queue.banner.soon_one": "You're up in {count} song",
   "queue.banner.soon_other": "You're up in {count} songs",
   "queue.decline": "Decline {title}",
