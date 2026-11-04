@@ -355,10 +355,7 @@ export class Room extends DurableObject<Env> {
   private async onScreenRejoin(ws: WebSocket, key: string) {
     const hash = this.getMeta<string>("screenKeyHash");
     if (!hash || hash !== (await sha256(key))) throw new RoomError("bad_key", "This screen isn't paired any more.");
-    for (const other of this.ctx.getWebSockets()) {
-      const o = attachment(other);
-      if (other !== ws && o.player) other.serializeAttachment({ ...o, player: false } satisfies Attachment);
-    }
+    this.replacePlayers(ws);
     ws.serializeAttachment({ memberId: SCREEN_MEMBER_ID, wantsPlayer: true, player: true } satisfies Attachment);
     this.send(ws, { type: "welcome", memberId: SCREEN_MEMBER_ID, key, state: this.state() });
     await this.afterRejoin(ws);
@@ -846,15 +843,21 @@ export class Room extends DurableObject<Env> {
     await this.afterRejoin(ws);
   }
 
+  /** The newest TV window is the player; any older one is told, so it can say so instead of sitting there doing nothing. */
+  private replacePlayers(newest: WebSocket) {
+    for (const other of this.ctx.getWebSockets()) {
+      const o = attachment(other);
+      if (other === newest || !o.player) continue;
+      other.serializeAttachment({ ...o, player: false } satisfies Attachment);
+      this.send(other, { type: "player_replaced" });
+    }
+  }
+
   private attach(ws: WebSocket, memberId: string) {
     const att = attachment(ws);
     const player = att.wantsPlayer && this.memberRow(memberId)?.role === "host";
     if (player) {
-      // Only one player: the newest one wins.
-      for (const other of this.ctx.getWebSockets()) {
-        const o = attachment(other);
-        if (other !== ws && o.player) other.serializeAttachment({ ...o, player: false } satisfies Attachment);
-      }
+      this.replacePlayers(ws); // only one player: the newest one wins
     }
     ws.serializeAttachment({ memberId, wantsPlayer: att.wantsPlayer, player } satisfies Attachment);
   }
@@ -1041,10 +1044,10 @@ export class Room extends DurableObject<Env> {
       playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
       tempHostId: this.getMeta<Succession>("succession")?.actingId ?? null,
       screenPaired: this.getMeta<string>("screenKeyHash") !== null,
+      serverNow: Date.now(),
     };
   }
 
-      serverNow: Date.now(),
   private nowPlayingItem(): StoredItem | undefined {
     return this.itemRows().find((i) => i.status === "playing");
   }

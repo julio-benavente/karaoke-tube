@@ -15,6 +15,11 @@ const AWARDS_SHOW_MS = 60_000;
 const JOIN_FLASH_MS = 15_000;
 
 const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
+/** A touch screen of phone size: TV mode isn't made for it (autoplay, full screen and background tabs are all stricter there). */
+function looksLikePhone(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 700;
+}
+
 const center = { ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", padding: 24 } as const;
 const bigBtn = { font: "inherit", fontWeight: 800, fontSize: 24, padding: "16px 32px", borderRadius: 999, border: 0, background: "#ff4f8b", color: "#1f0711", cursor: "pointer" } as const;
 
@@ -66,6 +71,7 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
   const [client, setClient] = useState<RoomClient | null>(null);
   // "Show code on TV" from the host app: the join QR + code show over the song for a while.
   const [flash, setFlash] = useState(false);
+  const [replaced, setReplaced] = useState(false);
   const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const startAtFor = (item: QueueItem): number => {
@@ -89,6 +95,11 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
         flashTimer.current = setTimeout(() => setFlash(false), JOIN_FLASH_MS);
       } else if (msg.type === "player_command") {
         playerRef.current?.command(msg.command);
+      } else if (msg.type === "player_replaced") {
+        // Another TV window took over. Stop here and don't reconnect, or the two would keep taking it back from each other.
+        playerRef.current?.stop();
+        setReplaced(true);
+        clientRef.current?.close();
       } else if (msg.type === "screen_removed") {
         // The host removed this screen (or paired another): back to showing a code.
         clearScreen();
@@ -177,6 +188,17 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
     [client],
   );
 
+  if (replaced) {
+    return (
+      <div style={center} data-testid="tv-replaced">
+        <h1>{t("tv.replaced")}</h1>
+        <p>{t("tv.replacedHint")}</p>
+        <button style={bigBtn} onClick={() => location.reload()}>
+          {t("tv.useThis")}
+        </button>
+      </div>
+    );
+  }
   if (closeReason === "kicked" || (status === "closed" && !ended)) {
     return (
       <div style={center}>
@@ -234,7 +256,12 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
             )
           }
           hint={
-            !started && <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
+            !started && (
+              <>
+                <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
+                {looksLikePhone() && <p style={{ margin: "2vh 0 0", maxWidth: 560, color: "#ffd166" }}>{t("tv.phoneHint")}</p>}
+              </>
+            )
           }
         />
       )}

@@ -44,3 +44,18 @@ test("S31 · The TV window closes mid-song @tv @countdown", async ({ night }) =>
   night.watcher.forbidAgain("C1", "stuck", "noCountdown");
   await expect.poll(() => host.countdowns()).toEqual([]);
 });
+
+test("S31c · A second TV window takes over and the first one says so @tv", async ({ night }) => {
+  const { host, tv } = await night.setup({ countdown: 1, songSec: 120 });
+  const first = tv!;
+  // Opening another TV window for the same party: the newest one plays, the older one tells you instead of sitting idle.
+  const second = await night.openTv();
+  await expect(first.page.getByTestId("tv-replaced")).toBeVisible();
+  await expect(second.page.getByTestId("tv-replaced")).toHaveCount(0);
+  await host.waitForState("one player", (s) => s.playerConnected === true);
+
+  // "Use this window" takes it back, and now the other one is told.
+  await first.page.getByRole("button", { name: "Use this window" }).click();
+  await first.pressStart();
+  await expect(second.page.getByTestId("tv-replaced")).toBeVisible();
+});

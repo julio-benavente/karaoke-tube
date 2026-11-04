@@ -285,6 +285,8 @@ export type ServerMessage =
   | { type: "kicked" }
   /** To a paired TV screen: it was removed (or replaced by another one) and must stop. */
   | { type: "screen_removed" }
+  /** To a TV window that was the player: another TV window connected and took over. */
+  | { type: "player_replaced" }
   | { type: "ended" }
   /** A host asked the TV to show the join QR + code for a few seconds. */
   | { type: "join_flash" };
