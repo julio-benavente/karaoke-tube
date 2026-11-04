@@ -12,10 +12,12 @@ const video = (id: string, title: string, duration = "PT3M25S") => ({
 
 let calls: URL[] = [];
 let quotaOut = false;
+let noEmbed = false;
 
 beforeEach(() => {
   calls = [];
   quotaOut = false;
+  noEmbed = false;
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     calls.push(url);
@@ -33,6 +35,7 @@ beforeEach(() => {
     if (url.pathname.endsWith("/videos")) {
       const ids = url.searchParams.get("id")!.split(",");
       const all = { aaaaaaaaaaa: video("aaaaaaaaaaa", "Bohemian Rhapsody (Karaoke)"), bbbbbbbbbbb: video("bbbbbbbbbbb", "Don't Stop Me Now", "PT1H2M3S") };
+      if (noEmbed) all.bbbbbbbbbbb.status.embeddable = false;
       return Response.json({ items: ids.flatMap((id) => (id in all ? [all[id as keyof typeof all]] : [])) });
     }
     return new Response("not found", { status: 404 });
@@ -83,6 +86,13 @@ describe("GET /api/search", () => {
     expect((await again.json<{ results: unknown[] }>()).results.length).toBe(2);
     expect(calls).toEqual([]);
     expect(await env.SEARCH_CACHE.get("search:v1:queen bohemian")).not.toBeNull();
+  });
+
+  it("leaves out videos whose owner turned embedding off (the TV can't play them)", async () => {
+    noEmbed = true;
+    const res = await SELF.fetch(`${BASE}/api/search?q=${encodeURIComponent("no embed")}`);
+    const body = await res.json<{ results: Array<{ videoId: string }> }>();
+    expect(body.results.map((r) => r.videoId)).toEqual(["aaaaaaaaaaa"]);
   });
 
   it("returns 503 search_unavailable when the quota runs out", async () => {

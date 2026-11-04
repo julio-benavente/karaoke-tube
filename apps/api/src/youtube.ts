@@ -86,8 +86,9 @@ async function videosById(apiKey: string | undefined, ids: string[]): Promise<Ma
   const data = await call<{ items?: VideoResource[] }>(apiKey, "videos", { part: "snippet,contentDetails,status", id: ids.join(",") });
   const songs = new Map<string, Song>();
   for (const v of data.items ?? []) {
-    // Not filtered on `embeddable`: the extension plays on youtube.com/watch, which works for videos that refuse embeds
-    // (most of KaraFun and Sing King).
+    // The TV plays in YouTube's embedded player, which refuses videos whose owner turned embedding off (most of
+    // KaraFun and Sing King's newer uploads): leave them out instead of offering songs that skip.
+    if (v.status?.embeddable === false) continue;
     if (v.snippet?.liveBroadcastContent === "live") continue;
     const song = toSong(v);
     if (song) songs.set(v.id, song);
