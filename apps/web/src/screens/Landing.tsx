@@ -75,6 +75,10 @@ export function Landing() {
         <Link to="/tv" className={css.tvLink}>
           {t("landing.tv")}
         </Link>
+        <nav className={css.legal}>
+          <Link to="/privacy">{t("legal.privacy")}</Link>
+          <Link to="/terms">{t("legal.terms")}</Link>
+        </nav>
       </main>
       <LanguageSwitcher />
     </div>

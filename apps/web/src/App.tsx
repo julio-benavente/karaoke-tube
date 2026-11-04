@@ -1,3 +1,4 @@
+import { LegalPage } from "./screens/Legal";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Spinner } from "@karaoke-tube/ui";
@@ -34,6 +35,8 @@ export function App() {
             <Route path="queue" element={<QueueScreen />} />
             <Route path="party" element={<PartyScreen />} />
           </Route>
+          <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+          <Route path="/terms" element={<LegalPage doc="terms" />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recap/:id" element={<RecapPage />} />
           <Route path="/host/new" element={<NewParty />} />
