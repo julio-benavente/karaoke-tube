@@ -294,7 +294,9 @@ export type ErrorCode =
   | "bad_key"
   | "not_allowed"
   | "queue_limit"
-  | "invalid_message";
+  | "invalid_message"
+  /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
+  | "song_unplayable";
 
 // ── Room codes ───────────────────────────────────────────────────────────
 
