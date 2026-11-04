@@ -32,6 +32,43 @@ const { catalog } = buildCatalog(videos, channels, new Date("2026-01-01"));
 
 const titles = (songs: Song[]) => songs.map((s) => s.title);
 
+describe("artists and combined filters", () => {
+  const index = createCatalogIndex(catalog);
+
+  it("filters by artist (any case or accents) and still pages", () => {
+    expect(titles(index.browse({ artist: "queen" }, 10))).toEqual(expect.arrayContaining(["Queen - Bohemian Rhapsody", "Queen - Killer Queen"]));
+    expect(titles(index.browse({ artist: "queen" }, 10))).toHaveLength(2);
+    expect(titles(index.browse({ artist: "CELINE DION" }))).toEqual(["Céline Dion - My Heart Will Go On"]);
+    expect(index.browse({ artist: "Nobody Here" })).toEqual([]);
+    expect(titles(index.browse({ artist: "queen" }, 1, 1))).toHaveLength(1);
+  });
+
+  it("narrows a text search by artist", () => {
+    // 'queen' is also in 'Dancing Queen' (ABBA): the artist filter keeps only Queen's own songs.
+    expect(titles(index.search("queen", 10))).toHaveLength(3);
+    expect(titles(index.search("queen", 10, 0, { artist: "Queen" }))).toEqual(expect.arrayContaining(["Queen - Bohemian Rhapsody", "Queen - Killer Queen"]));
+    expect(titles(index.search("queen", 10, 0, { artist: "Queen" }))).toHaveLength(2);
+    expect(index.search("hello", 10, 0, { artist: "Queen" })).toEqual([]);
+  });
+
+  it("suggests artists as you type, best known first", () => {
+    expect(index.artists("que")).toEqual(["Queen"]);
+    expect(index.artists("adel")).toEqual(["Adele"]);
+    expect(index.artists("celine d")).toEqual(["Céline Dion"]);
+    expect(index.artists("zzz")).toEqual([]);
+    expect(index.artists("")).toEqual([]);
+  });
+
+  it("a filtered search never falls back to YouTube", async () => {
+    const remote = { search: vi.fn(), video: vi.fn(), roomInfo: vi.fn() } as unknown as SearchApi;
+    const api = createCatalogSearchApi(remote, { autoLoad: false, fetchCatalog: async () => catalog });
+    expect((await api.search("hello", { filter: { artist: "Queen" } })).results).toEqual([]);
+    expect(remote.search).not.toHaveBeenCalled();
+    await api.preload();
+    expect(await api.artists?.("adel")).toEqual(["Adele"]);
+  });
+});
+
 describe("paging", () => {
   const index = createCatalogIndex(catalog);
 

@@ -386,14 +386,20 @@ export type BrowseFilter = {
   /** ISO 639-1, "es". */
   language?: string | string[];
   tag?: string | string[];
+  /** Artist names (as shown). Any of them. */
+  artist?: string | string[];
 };
 
 /** Paging for search and browse: `offset` songs already seen, `limit` more wanted. */
 export type PageOpts = { offset?: number; limit?: number };
+/** A text search can also be narrowed by labels (genre, decade, language, tags, artist). */
+export type SearchOpts = PageOpts & { filter?: BrowseFilter };
 
 export interface SearchApi {
   /** `opts` pages through our own catalog; an implementation without one may ignore it (and then has no more pages). */
-  search(query: string, opts?: PageOpts): Promise<SearchResponse>;
+  search(query: string, opts?: SearchOpts): Promise<SearchResponse>;
+  /** Artists of our catalog matching what was typed, most songs first (to offer "all songs by …"). */
+  artists?(query: string, limit?: number): Promise<string[]>;
   /** Songs from our own catalog with these labels, most popular first. Not every implementation has a catalog. */
   browse?(filter: BrowseFilter, limit?: number, offset?: number): Promise<Song[]>;
   video(videoId: string): Promise<VideoResponse>;

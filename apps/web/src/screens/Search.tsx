@@ -21,7 +21,9 @@ import {
   useT,
 } from "@karaoke-tube/ui";
 import { getSearchApi } from "../session";
-import { useSearchUrl } from "../useSearchUrl";
+import { useCatalogSearch } from "../useCatalogSearch";
+import { ArtistSuggestions, FilterChips } from "../FilterChips";
+import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
 import { useAddWithToast } from "./useAdd";
 import css from "./Search.module.css";
@@ -32,7 +34,6 @@ export function SearchScreen() {
   const t = useT();
   const search = useSearch();
   const { add, pending } = useAddWithToast();
-  const [presetTitle, setPresetTitle] = useState<string | null>(null);
   const [linkSong, setLinkSong] = useState<Song | null>(null);
   const [linkState, setLinkState] = useState<"idle" | "loading" | "error">("idle");
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -57,13 +58,8 @@ export function SearchScreen() {
     };
   }, [linkId]);
 
-  const runPreset = (p: (typeof BROWSE_PRESETS)[number]) => {
-    setPresetTitle(p.title);
-    search.setQuery(p.title, { run: false });
-    search.browse(p.filter, { limit: 40, fallbackQuery: p.query, label: p.title });
-    window.scrollTo({ top: 0 });
-  };
-  useSearchUrl({ query: search.query, presetTitle, setQuery: (q) => search.setQuery(q), runPreset });
+  // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
+  const cs = useCatalogSearch(search);
 
   if (!state || !me) return null;
 
@@ -75,18 +71,10 @@ export function SearchScreen() {
   const queuedIds = new Set(mine.map((q) => q.song.videoId));
   if (state.nowPlaying?.singerIds.includes(me.id)) queuedIds.add(state.nowPlaying.song.videoId);
 
-  const onType = (q: string) => {
-    setPresetTitle(null);
-    if (parseYouTubeId(q)) {
-      search.setQuery(q, { run: false });
-      search.run("");
-    } else search.setQuery(q);
-  };
+  const onType = cs.onType;
 
   const clear = () => {
-    setPresetTitle(null);
-    search.setQuery("", { run: false });
-    search.run("");
+    cs.onType("");
     inputRef.current?.focus();
   };
 
@@ -110,7 +98,7 @@ export function SearchScreen() {
     />
   );
 
-  const showBrowse = !search.query.trim();
+  const showBrowse = cs.inBrowse;
   const searchUnavailable = !!search.error;
 
   return (
@@ -142,11 +130,13 @@ export function SearchScreen() {
           <Chip icon={<Link2 size={16} />} onClick={pasteFromClipboard}>
             {t("search.paste")}
           </Chip>
-          {BROWSE_PRESETS.slice(0, 5).map((p) => (
-            <Chip key={p.id} selected={presetTitle === p.title} onClick={() => runPreset(p)}>
-              {presetName(t, p.id)}
-            </Chip>
-          ))}
+          <FilterChips cs={cs} />
+          {cs.inBrowse &&
+            BROWSE_PRESETS.slice(0, 5).map((p) => (
+              <Chip key={p.id} onClick={() => cs.applyPreset(p)}>
+                {presetName(t, p.id)}
+              </Chip>
+            ))}
         </ChipRow>
       </div>
 
@@ -169,7 +159,7 @@ export function SearchScreen() {
                 title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
-                onClick={() => runPreset(p)}
+                onClick={() => cs.applyPreset(p)}
               />
             ))}
           </div>
@@ -195,7 +185,7 @@ export function SearchScreen() {
         </EmptyState>
       ) : (
         <section>
-          {presetTitle && <h2 className={css.h2}>{presetTitle}</h2>}
+          <ArtistSuggestions cs={cs} />
           {search.loading && !search.results.length ? (
             <SkeletonRows n={8} />
           ) : search.results.length ? (
@@ -203,6 +193,8 @@ export function SearchScreen() {
               <div className={css.results}>{search.results.map(row)}</div>
               <LoadMore search={search} />
             </>
+          ) : !cs.q.trim() && hasFilters(cs.filters) && !search.loading ? (
+            <EmptyState icon={<SearchIcon />} title={t("filters.noResults")} />
           ) : search.resultsFor ? (
             <EmptyState icon={<SearchIcon />} title={t("search.noResults", { query: search.resultsFor })}>
               {t("search.noResultsHint")}

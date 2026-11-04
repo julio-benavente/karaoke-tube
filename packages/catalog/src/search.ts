@@ -4,13 +4,14 @@
 
 import MiniSearch from "minisearch";
 import type { RoomInfoResponse, SearchApi, SearchResponse, Song, VideoResponse } from "@karaoke-tube/shared";
-import { filterSongs, type SongFilter } from "./filter";
+import { filterSongs, normalizeName, songMatcher, type SongFilter } from "./filter";
 import { isCatalog, type AnyCatalog } from "./types";
 
 /** Messages between the page and the catalog worker. */
 export type WorkerRequestBody =
   | { op: "load"; url: string }
-  | { op: "search"; q: string; limit: number; offset: number }
+  | { op: "search"; q: string; limit: number; offset: number; filter?: SongFilter }
+  | { op: "artists"; q: string; limit: number }
   | { op: "browse"; filter: SongFilter; limit: number; offset: number }
   | { op: "video"; videoId: string };
 export type WorkerRequest = WorkerRequestBody & { id: number };
@@ -39,7 +40,10 @@ type Doc = { id: number; t: string; a: string };
 export type CatalogIndex = {
   /** Number of songs. */
   size: number;
-  search(query: string, limit?: number, offset?: number): Song[];
+  /** Best matches for the text; `filter` narrows them by labels/artist. */
+  search(query: string, limit?: number, offset?: number, filter?: SongFilter): Song[];
+  /** Artists whose name matches what was typed (every word a prefix of a word of the name), best known first. */
+  artists(query: string, limit?: number): string[];
   /** A catalog song by YouTube video id (primary or alternate version). */
   byVideoId(videoId: string): Song | null;
   /** Songs with the given labels (genre, decade, language, tags), most popular first. Empty for a catalog without labels. */
@@ -89,7 +93,16 @@ export async function createCatalogIndexAsync(catalog: AnyCatalog, chunkSize = 2
   return indexOf(catalog, mini);
 }
 
+type ArtistRow = { name: string; norm: string; tokens: string[]; songs: number };
+
+function buildArtistTable(catalog: AnyCatalog): ArtistRow[] {
+  const songs = new Array<number>(catalog.artists.length).fill(0);
+  for (const a of catalog.songs.a) if (a >= 0) songs[a]!++;
+  return catalog.artists.map((name, i) => ({ name, norm: tokenize(name).join(" "), tokens: tokenize(name), songs: songs[i]! }));
+}
+
 function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
+  let artistTable: ArtistRow[] | null = null;
   const { songs, artists, channels, alts } = catalog;
   const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
 
@@ -113,19 +126,36 @@ function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
       filterSongs(catalog, filter, offset + limit)
         .slice(offset)
         .map((i) => toSong(i)),
-    search(query, limit = RESULTS, offset = 0) {
+    artists(query, limit = 5) {
+      const q = tokenize(query);
+      if (!q.length) return [];
+      artistTable ??= buildArtistTable(catalog);
+      const joined = q.join(" ");
+      const hits: Array<{ name: string; rank: number; songs: number }> = [];
+      for (const a of artistTable) {
+        if (!q.every((w) => a.tokens.some((t) => t.startsWith(w)))) continue;
+        hits.push({ name: a.name, rank: a.norm === joined ? 0 : a.norm.startsWith(joined) ? 1 : 2, songs: a.songs });
+      }
+      return hits
+        .sort((x, y) => x.rank - y.rank || y.songs - x.songs)
+        .slice(0, limit)
+        .map((h) => h.name);
+    },
+    search(query, limit = RESULTS, offset = 0, filter) {
       const words = tokenize(query).join(" ");
       if (!words) return [];
+      const match = filter ? songMatcher(catalog, filter) : null;
       // Re-rank the best 60: a query that IS a song's title ("love story") or an artist's name ("queen") should beat
       // songs that only contain those words.
       return mini
         .search(query)
-        .slice(0, Math.max(60, offset + limit))
+        .slice(0, match ? 800 : Math.max(60, offset + limit))
         .map((r) => {
           const i = r.id as number;
           const exact = tokenize(songs.t[i]!).join(" ") === words ? 3 : tokenize(artistOf(i)).join(" ") === words ? 2 : 1;
           return { i, score: r.score * exact };
         })
+        .filter(({ i }) => !match || match(i))
         .sort((a, b) => b.score - a.score)
         .slice(offset, offset + limit)
         .map(({ i }) => toSong(i));
@@ -179,8 +209,9 @@ function whenIdle(work: () => void) {
 type Engine = {
   /** Download, parse and index the catalog. Resolves true when it can answer, false when it can't be loaded. */
   load(): Promise<boolean>;
-  search(query: string, limit: number, offset: number): Promise<Song[]>;
+  search(query: string, limit: number, offset: number, filter?: SongFilter): Promise<Song[]>;
   browse(filter: SongFilter, limit: number, offset: number): Promise<Song[]>;
+  artists(query: string, limit: number): Promise<string[]>;
   byVideoId(videoId: string): Promise<Song | null>;
 };
 
@@ -192,7 +223,8 @@ function inThreadEngine(url: string, load: (url: string) => Promise<AnyCatalog>)
         .then((catalog) => createCatalogIndexAsync(catalog))
         .then((built) => ((index = built), true))
         .catch(() => false),
-    search: async (q, limit, offset) => index?.search(q, limit, offset) ?? [],
+    search: async (q, limit, offset, filter) => index?.search(q, limit, offset, filter) ?? [],
+    artists: async (q, limit) => index?.artists(q, limit) ?? [],
     browse: async (filter, limit, offset) => index?.browse(filter, limit, offset) ?? [],
     byVideoId: async (id) => index?.byVideoId(id) ?? null,
   };
@@ -233,7 +265,8 @@ function workerEngine(url: string): Engine | null {
 
   return {
     load: () => call<boolean>({ op: "load", url }).catch(() => false),
-    search: (q, limit, offset) => call<Song[]>({ op: "search", q, limit, offset }).catch(() => []),
+    search: (q, limit, offset, filter) => call<Song[]>({ op: "search", q, limit, offset, filter }).catch(() => []),
+    artists: (q, limit) => call<string[]>({ op: "artists", q, limit }).catch(() => []),
     browse: (filter, limit, offset) => call<Song[]>({ op: "browse", filter, limit, offset }).catch(() => []),
     byVideoId: (id) => call<Song | null>({ op: "video", videoId: id }).catch(() => null),
   };
@@ -283,9 +316,11 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
       const limit = opts.limit ?? RESULTS;
       const offset = opts.offset ?? 0;
       if (!q) return { query, results: [] };
-      const local = (await readyOrWait()) ? await engine.search(q, limit, offset) : [];
+      const local = (await readyOrWait()) ? await engine.search(q, limit, offset, opts.filter) : [];
       // Later pages are the catalog only; YouTube is the backup for the first page when the catalog has almost nothing.
-      if (offset > 0 || local.length >= MIN_LOCAL || q.length < 3) return { query, results: local };
+      // A label filter can't be applied to YouTube's results, so a filtered search stays in the catalog.
+      const filtered = !!opts.filter && Object.values(opts.filter).some((v) => (Array.isArray(v) ? v.length > 0 : !!v));
+      if (offset > 0 || filtered || local.length >= MIN_LOCAL || q.length < 3) return { query, results: local };
 
       // The catalog has (almost) nothing: ask YouTube, keep what the catalog found first.
       try {
@@ -296,6 +331,11 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
         if (local.length) return { query, results: local };
         throw e;
       }
+    },
+
+    // Suggestions never wait for the catalog: no catalog yet, no suggestions.
+    async artists(query, limit = 5) {
+      return ready ? engine.artists(query, limit) : [];
     },
 
     async browse(filter, limit = RESULTS, offset = 0) {

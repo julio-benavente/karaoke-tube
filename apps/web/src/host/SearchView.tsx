@@ -15,7 +15,9 @@ import {
   useSearchApi,
   useT,
 } from "@karaoke-tube/ui";
-import { useSearchUrl } from "../useSearchUrl";
+import { useCatalogSearch } from "../useCatalogSearch";
+import { ArtistSuggestions, FilterChips } from "../FilterChips";
+import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
@@ -27,17 +29,12 @@ export function SearchView() {
   const search = useSearch();
   const add = useHostAdd();
   const api = useSearchApi();
-  const [title, setTitle] = useState<string | null>(null);
   const [linkSong, setLinkSong] = useState<Song | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const linkId = parseYouTubeId(search.query);
 
-  const runPreset = (p: (typeof BROWSE_PRESETS)[number]) => {
-    setTitle(p.title);
-    search.setQuery(p.title, { run: false });
-    search.browse(p.filter, { limit: 40, fallbackQuery: p.query, label: p.title });
-  };
-  useSearchUrl({ query: search.query, presetTitle: title, setQuery: (q) => search.setQuery(q), runPreset });
+  // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
+  const cs = useCatalogSearch(search);
 
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -66,10 +63,7 @@ export function SearchView() {
           <input
             ref={inputRef}
             value={search.query}
-            onChange={(e) => {
-              setTitle(null);
-              search.setQuery(e.target.value, { run: !parseYouTubeId(e.target.value) });
-            }}
+            onChange={(e) => cs.onType(e.target.value)}
             placeholder={window.matchMedia("(max-width: 820px)").matches ? t("search.placeholder") : t("search.placeholderHost")}
             type="search"
           />
@@ -78,11 +72,7 @@ export function SearchView() {
               type="button"
               className={css.searchClear}
               aria-label={t("search.clear")}
-              onClick={() => {
-                setTitle(null);
-                search.setQuery("", { run: false });
-                search.run("");
-              }}
+              onClick={() => cs.onType("")}
             >
               <X size={18} />
             </button>
@@ -90,8 +80,11 @@ export function SearchView() {
         </label>
         <SingWithButton />
       </header>
+      <div className={css.filterRow}>
+        <FilterChips cs={cs} />
+      </div>
 
-      {!search.query.trim() ? (
+      {cs.inBrowse ? (
         <section>
           <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
@@ -101,14 +94,15 @@ export function SearchView() {
                 title={presetName(t, p.id)}
                 color={p.color}
                 image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
-                onClick={() => runPreset(p)}
+                onClick={() => cs.applyPreset(p)}
               />
             ))}
           </div>
         </section>
       ) : (
         <section>
-          <h2 className={css.h2}>{linkId ? t("search.fromLink") : (title ?? t("search.songs.heading"))}</h2>
+          <h2 className={css.h2}>{linkId ? t("search.fromLink") : t("search.songs.heading")}</h2>
+          <ArtistSuggestions cs={cs} />
           {search.error ? (
             <EmptyState title={t("search.resting")}>{t("search.restingHostHint")}</EmptyState>
           ) : search.loading && !search.results.length ? (
@@ -124,7 +118,8 @@ export function SearchView() {
                   added={queued.has(s.videoId)}
                 />
               ))}
-              {!search.loading && search.resultsFor && !search.results.length && (
+              {!search.loading && !search.results.length && !cs.q.trim() && hasFilters(cs.filters) && <p className={css.muted}>{t("filters.noResults")}</p>}
+              {!search.loading && search.resultsFor && !search.results.length && cs.q.trim() && (
                 <p className={css.muted}>{t("search.noResultsHost", { query: search.resultsFor })}</p>
               )}
               {!linkId && <LoadMore search={search} />}

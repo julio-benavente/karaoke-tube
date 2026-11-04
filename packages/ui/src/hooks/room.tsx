@@ -114,6 +114,13 @@ export type UseSearch = {
    * the catalog has nothing (no catalog yet, or demo mode). `shuffle` mixes the order, for "fresh" shelves.
    */
   browse: (filter: BrowseFilter, opts?: { limit?: number; fallbackQuery?: string; shuffle?: boolean; label?: string }) => void;
+  /**
+   * Narrow every search by labels (genre, decade, language, tags, artist). With no text typed, the filter alone
+   * browses the catalog. Pass `undefined` (or an empty filter) to clear it.
+   */
+  setFilter: (filter: BrowseFilter | undefined) => void;
+  /** Text and filter in one go, one search. */
+  apply: (q: string, filter: BrowseFilter | undefined) => void;
   results: Song[];
   loading: boolean;
   error: string | null;
@@ -129,7 +136,9 @@ export type UseSearch = {
 /** Results arrive this many at a time. */
 export const SEARCH_PAGE = 40;
 
-type Source = { kind: "search"; q: string } | { kind: "browse"; filter: BrowseFilter; label: string };
+type Source = { kind: "search"; q: string; filter?: BrowseFilter } | { kind: "browse"; filter: BrowseFilter; label: string };
+
+const hasFilter = (f: BrowseFilter | undefined): f is BrowseFilter => !!f && Object.values(f).some((v) => (Array.isArray(v) ? v.length > 0 : !!v));
 
 /** Debounced search. Takes a SearchApi, or uses the one given to RoomProvider. */
 export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
@@ -149,6 +158,11 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   const source = useRef<Source | null>(null);
   const count = useRef(0);
   count.current = results.length;
+  const filterRef = useRef<BrowseFilter | undefined>(undefined);
+  const queryRef = useRef("");
+  queryRef.current = query;
+  /** Browse with the current filter (no text typed). */
+  const browseFilter = useRef<(f: BrowseFilter) => void>(() => {});
 
   const run = useCallback(
     (q: string) => {
@@ -156,6 +170,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
       const id = ++reqId.current;
       const trimmed = q.trim();
       setLoadingMore(false);
+      if (!trimmed && hasFilter(filterRef.current)) return browseFilter.current(filterRef.current);
       if (!trimmed) {
         source.current = null;
         setResults([]);
@@ -165,11 +180,12 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
         setError(null);
         return;
       }
-      source.current = { kind: "search", q: trimmed };
+      const filter = hasFilter(filterRef.current) ? filterRef.current : undefined;
+      source.current = { kind: "search", q: trimmed, filter };
       setLoading(true);
       setError(null);
       searchApi
-        .search(trimmed, { limit: SEARCH_PAGE })
+        .search(trimmed, { limit: SEARCH_PAGE, filter })
         .then((res) => {
           if (id !== reqId.current) return;
           setResults(res.results);
@@ -219,6 +235,27 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
     [searchApi],
   );
 
+  browseFilter.current = (filter) => browse(filter, { limit: SEARCH_PAGE });
+
+  const setFilter = useCallback(
+    (f: BrowseFilter | undefined) => {
+      filterRef.current = hasFilter(f) ? f : undefined;
+      run(queryRef.current); // text + new filter, or the filter alone, or nothing
+    },
+    [run],
+  );
+
+  /** Set the text and the filter together and search once (used when the address changes, e.g. Back). */
+  const apply = useCallback(
+    (q: string, f: BrowseFilter | undefined) => {
+      setQueryState(q);
+      queryRef.current = q;
+      filterRef.current = hasFilter(f) ? f : undefined;
+      run(q);
+    },
+    [run],
+  );
+
   const loadMore = useCallback(() => {
     const src = source.current;
     if (!src || loadingMore || loading) return;
@@ -227,7 +264,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
     setLoadingMore(true);
     const page: Promise<Song[]> =
       src.kind === "search"
-        ? searchApi.search(src.q, { offset, limit: SEARCH_PAGE }).then((r) => r.results)
+        ? searchApi.search(src.q, { offset, limit: SEARCH_PAGE, filter: src.filter }).then((r) => r.results)
         : searchApi.browse
           ? searchApi.browse(src.filter, SEARCH_PAGE, offset)
           : Promise.resolve([]);
@@ -256,7 +293,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  return { query, setQuery, run, browse, results, loading, error, resultsFor, hasMore, loadingMore, loadMore };
+  return { query, setQuery, run, browse, setFilter, apply, results, loading, error, resultsFor, hasMore, loadingMore, loadMore };
 }
 
 /** Current playback position in seconds, extrapolated while playing. Re-renders ~4×/s. */

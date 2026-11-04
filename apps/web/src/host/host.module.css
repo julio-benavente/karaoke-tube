@@ -907,3 +907,10 @@
 .addGuest {
   padding: 0 var(--kt-space-2) var(--kt-space-2);
 }
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kt-space-2);
+}
