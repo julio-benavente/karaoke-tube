@@ -13,3 +13,6 @@ dist/
 # Raw YouTube data pulled by packages/catalog/scripts/collect.mjs (hundreds of MB; re-creatable).
 data/catalog/raw
 .DS_Store
+
+# Temporary files (DNS exports and the like): never committed.
+tmp/
