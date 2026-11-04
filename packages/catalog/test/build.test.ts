@@ -46,11 +46,13 @@ describe("buildCatalog", () => {
       video("pt", "Soundcheck Episode 7"),
       video("pt", "Live Thing - Artist (Karaoke Version)", { live: true }),
       video("pt", "Private Thing - Artist (Karaoke Version)", { isPublic: false }),
+      video("pt", "No Embed - Artist (Karaoke Version)", { embeddable: false }),
       video("kid", "Old Macdonald | Baby Cartoons - Kids Sing Alongs"),
     ]);
     expect(songs.map((s) => s.title)).toEqual(["Hello"]);
     expect(report.excluded["no karaoke wording (not a track)"]).toBe(1);
     expect(report.excluded["channel: kid"]).toBe(1);
+    expect(report.excluded["embedding disabled (the player can't play it)"]).toBe(1);
   });
 
   it("merges the same song across channels and keeps the best version first", () => {

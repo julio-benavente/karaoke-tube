@@ -33,6 +33,7 @@ function* rawVideos(): Generator<RawVideo> {
         views: Number(v.statistics?.viewCount ?? 0),
         live: (v.snippet.liveBroadcastContent ?? "none") !== "none",
         isPublic: (v.status?.privacyStatus ?? "public") === "public",
+        embeddable: v.status?.embeddable !== false,
       };
     }
   }

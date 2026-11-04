@@ -32,6 +32,8 @@ export type RawVideo = {
   views: number;
   live: boolean;
   isPublic: boolean;
+  /** `status.embeddable`: when false the YouTube player refuses to play it on our site (error 101/150). Missing counts as embeddable. */
+  embeddable?: boolean;
 };
 
 type Entry = {
@@ -79,6 +81,7 @@ export function parseDuration(iso: string | undefined): number {
 function excludeReason(v: RawVideo, ch: ChannelConfig): string | null {
   if (ch.exclude) return `channel: ${ch.key}`;
   if (!v.isPublic) return "not public";
+  if (v.embeddable === false) return "embedding disabled (the player can't play it)";
   if (v.live) return "live or upcoming";
   if (SHORT.test(v.title) || v.durationSec < MIN_SECONDS) return "short or under a minute";
   if (v.durationSec > MAX_SECONDS) return "over 15 minutes";
