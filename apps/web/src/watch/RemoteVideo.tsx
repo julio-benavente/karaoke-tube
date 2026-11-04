@@ -1,6 +1,6 @@
 import { Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { Playback, QueueItem } from "@karaoke-tube/shared";
+import { serverNow, type Playback, type QueueItem } from "@karaoke-tube/shared";
 import { loadApi, type YTPlayer } from "../tv/player";
 import css from "./RemoteVideo.module.css";
 
@@ -15,7 +15,7 @@ const CUED = 5;
 
 /** Where the room's song is right now, in seconds (the server clock stands in for ours). */
 function expectedPosition(pb: Playback): number {
-  return pb.state === "playing" ? pb.positionSec + Math.max(0, Date.now() - pb.updatedAt) / 1000 : pb.positionSec;
+  return pb.state === "playing" ? pb.positionSec + Math.max(0, serverNow() - pb.updatedAt) / 1000 : pb.positionSec;
 }
 
 /**
@@ -108,7 +108,7 @@ export function RemoteVideo({ item, playback, className }: { item: QueueItem; pl
       const { playback: pb } = latest.current;
       if (!yt) return;
       const s = yt.getPlayerState();
-      setNeedsTap(pb.state === "playing" && (s === PAUSED || s === CUED || s === -1) && Date.now() - pb.updatedAt > 3000);
+      setNeedsTap(pb.state === "playing" && (s === PAUSED || s === CUED || s === -1) && serverNow() - pb.updatedAt > 3000);
     }, CHECK_MS);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

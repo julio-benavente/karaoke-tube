@@ -128,6 +128,8 @@ export type RoomState = {
   awardWindow?: AwardWindow | null;
   /** End-of-night recap with everyone's titles, once the party has ended. v1.1. */
   recap?: Recap | null;
+  /** The server's clock (epoch ms) when this state was sent. Lets a phone with a wrong clock still show the right countdown. */
+  serverNow?: number;
 };
 
 // ── v1.1: awards, titles, recap ──────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatRoomCode, type Member, type QueueItem } from "@karaoke-tube/shared";
+import { formatRoomCode, serverNow, type Member, type QueueItem } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
 import { singerLabel, songParts } from "../format";
 import { detectLang, makeT, type TFn } from "../i18n/core";
@@ -22,9 +22,9 @@ export type GetReadyCardProps = {
  * Pure apart from a local clock for the countdown. Render inside the player (and a shadow root) with `tvCss`.
  */
 export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5, join, t = makeT(detectLang()) }: GetReadyCardProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 100);
+    const t = setInterval(() => setNow(serverNow()), 100);
     return () => clearInterval(t);
   }, []);
 

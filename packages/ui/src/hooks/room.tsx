@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { serverNow } from "@karaoke-tube/shared";
 import type {
   BrowseFilter,
   ClientMessage,
@@ -306,7 +307,7 @@ export function usePlaybackPosition(playback: Playback | null | undefined, durat
     return () => clearInterval(t);
   }, [playing]);
   if (!playback) return 0;
-  const pos = playing ? playback.positionSec + (Date.now() - playback.updatedAt) / 1000 : playback.positionSec;
+  const pos = playing ? playback.positionSec + (serverNow() - playback.updatedAt) / 1000 : playback.positionSec;
   return Math.max(0, Math.min(pos, durationSec));
 }
 
@@ -315,7 +316,7 @@ export function usePlaybackPosition(playback: Playback | null | undefined, durat
  * its Start click). Screens say so instead of sitting on a dead "0". Re-renders come from `useCountdown`'s tick.
  */
 export function isWaitingForTv(playback: { state: string; countdownEndsAt: number | null }): boolean {
-  return playback.state === "get_ready" && !!playback.countdownEndsAt && Date.now() > playback.countdownEndsAt + 2000;
+  return playback.state === "get_ready" && !!playback.countdownEndsAt && serverNow() > playback.countdownEndsAt + 2000;
 }
 
 /** Seconds left until `endsAt` (epoch ms), ticking. */
@@ -329,7 +330,7 @@ export function useCountdown(endsAt: number | null | undefined): number {
     return () => clearInterval(t);
   }, [endsAt]);
   if (!endsAt) return 0;
-  return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+  return Math.max(0, Math.ceil((endsAt - serverNow()) / 1000));
 }
 
 /**

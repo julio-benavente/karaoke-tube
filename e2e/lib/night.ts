@@ -5,7 +5,7 @@ import { en } from "../../packages/ui/src/i18n/en";
 import { es } from "../../packages/ui/src/i18n/es";
 import { DESKTOP, Host, newContext, PHONE, Person, Phone, Tv } from "./people";
 
-type Opts = { lang?: "en" | "es"; viewport?: { width: number; height: number }; /** A signed-in account's token (see S34). */ token?: string };
+type Opts = { lang?: "en" | "es"; viewport?: { width: number; height: number }; /** A signed-in account's token (see S34). */ token?: string; /** Makes this phone's clock wrong by this many ms (real phones are often seconds off). */ clockOffsetMs?: number };
 
 /** One party and everyone in it. Made by the `night` fixture; closed (and checked) when the scenario ends. */
 export class Night {
@@ -64,6 +64,7 @@ export class Night {
   async join(name: string, opts: Opts = {}) {
     const ctx = await newContext(this.browser, { ...PHONE, ...(opts.viewport ? { viewport: opts.viewport } : {}), ...(opts.lang === "es" ? { locale: "es-ES" } : {}) });
     if (opts.token) await ctx.addInitScript((t) => localStorage.setItem("kt:account-token", t), opts.token);
+    if (opts.clockOffsetMs) await ctx.addInitScript((ms) => { const real = Date.now.bind(Date); (window as unknown as { __realNow: () => number }).__realNow = real; Date.now = () => real() + ms; }, opts.clockOffsetMs);
     const page = await ctx.newPage();
     const phone = new Phone(name, ctx, page);
     phone.lang = opts.lang ?? "en";
@@ -81,6 +82,7 @@ export class Night {
   async tryJoin(name: string, opts: Opts = {}): Promise<{ phone: Phone; ok: boolean; text: string }> {
     const ctx = await newContext(this.browser, { ...PHONE, ...(opts.viewport ? { viewport: opts.viewport } : {}), ...(opts.lang === "es" ? { locale: "es-ES" } : {}) });
     if (opts.token) await ctx.addInitScript((t) => localStorage.setItem("kt:account-token", t), opts.token);
+    if (opts.clockOffsetMs) await ctx.addInitScript((ms) => { const real = Date.now.bind(Date); (window as unknown as { __realNow: () => number }).__realNow = real; Date.now = () => real() + ms; }, opts.clockOffsetMs);
     const page = await ctx.newPage();
     const phone = new Phone(name, ctx, page);
     phone.lang = opts.lang ?? "en";

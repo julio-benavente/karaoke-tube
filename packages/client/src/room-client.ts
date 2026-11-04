@@ -1,4 +1,4 @@
-import { SCREEN_MEMBER_ID, normalizeRoomCode, type ClientMessage, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
+import { SCREEN_MEMBER_ID, normalizeRoomCode, noteServerTime, type ClientMessage, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
 import { BaseRoomClient } from "./base";
 
 export type Credentials = { memberId: string; key: string };
@@ -239,11 +239,13 @@ class WebSocketRoomClient extends BaseRoomClient {
         this.joined = true;
         this.attempt = 0;
         this.status = "open";
+        noteServerTime(msg.state.serverNow, { reset: true });
         this.setState(msg.state, msg.memberId);
         this.flush(false);
         if (msg.state.status === "ended") this.closeAs("ended");
         break;
       case "state":
+        noteServerTime(msg.state.serverNow);
         this.setState(msg.state);
         break;
       case "reaction":

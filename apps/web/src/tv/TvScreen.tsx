@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Maximize } from "lucide-react";
 import { createRoomClient, screenCredentials } from "@karaoke-tube/client";
-import { TV_BAR_PERCENT, type QueueItem, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
+import { TV_BAR_PERCENT, serverNow, type QueueItem, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import { useParams } from "react-router";
 import { useT } from "@karaoke-tube/ui";
@@ -72,7 +72,7 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
     const state = clientRef.current?.state;
     if (!state || state.nowPlaying?.id !== item.id) return 0;
     const pb = state.playback;
-    if (pb.state === "playing") return pb.positionSec + Math.max(0, Date.now() - pb.updatedAt) / 1000;
+    if (pb.state === "playing") return pb.positionSec + Math.max(0, serverNow() - pb.updatedAt) / 1000;
     if (pb.state === "paused") return pb.positionSec;
     return 0;
   };

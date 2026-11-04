@@ -78,7 +78,8 @@ export class Person {
             .filter((el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden")
             .map((el) => Number(el.getAttribute("data-countdown"))),
           text: document.body.innerText,
-          at: Date.now(),
+          // The page's real time, even when a scenario made the phone's clock wrong on purpose (S41).
+          at: ((window as unknown as { __realNow?: () => number }).__realNow ?? Date.now)(),
         };
       })
       .catch(() => null);

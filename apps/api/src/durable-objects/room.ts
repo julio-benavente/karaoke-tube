@@ -1044,6 +1044,7 @@ export class Room extends DurableObject<Env> {
     };
   }
 
+      serverNow: Date.now(),
   private nowPlayingItem(): StoredItem | undefined {
     return this.itemRows().find((i) => i.status === "playing");
   }
