@@ -310,6 +310,14 @@ export function usePlaybackPosition(playback: Playback | null | undefined, durat
   return Math.max(0, Math.min(pos, durationSec));
 }
 
+/**
+ * The get-ready countdown ran out more than 2 s ago but the TV hasn't started the song (no TV open, or it still needs
+ * its Start click). Screens say so instead of sitting on a dead "0". Re-renders come from `useCountdown`'s tick.
+ */
+export function isWaitingForTv(playback: { state: string; countdownEndsAt: number | null }): boolean {
+  return playback.state === "get_ready" && !!playback.countdownEndsAt && Date.now() > playback.countdownEndsAt + 2000;
+}
+
 /** Seconds left until `endsAt` (epoch ms), ticking. */
 export function useCountdown(endsAt: number | null | undefined): number {
   // The clock is read while rendering (the state only forces a re-render): a stored "now" would be stale on the first

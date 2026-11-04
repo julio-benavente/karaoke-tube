@@ -12,6 +12,7 @@ import {
   hueOf,
   singerLabel,
   songParts,
+  isWaitingForTv,
   useCountdown,
   usePlaybackPosition,
   useReactions,
@@ -96,7 +97,7 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         {playback.state === "get_ready" && (
           <div className={css.getReady}>
             <span>{t("now.getReady")}</span>
-            <b>{countdown}</b>
+            {isWaitingForTv(playback) ? <b>{t("now.waitingTv")}</b> : <b data-countdown={countdown}>{countdown}</b>}
           </div>
         )}
         <div className={css.floating} aria-hidden>

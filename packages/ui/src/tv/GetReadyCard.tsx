@@ -55,7 +55,7 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5,
               <circle className="kt-tv-track" cx="50" cy="50" r={R} />
               <circle className="kt-tv-ring" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - progress)} />
             </svg>
-            <b key={secs} className="kt-tv-tick">
+            <b key={secs} className="kt-tv-tick" data-countdown={secs}>
               {secs}
             </b>
           </div>

@@ -213,6 +213,7 @@ export const en = {
   "now.party": "Party {code}",
   "now.paused": "Paused",
   "now.getReady": "Get ready",
+  "now.waitingTv": "Waiting for the TV…",
   "now.reactions": "Send a reaction",
   "now.react": "React: {name}",
   "now.reactionsOff": "The host turned reactions off.",

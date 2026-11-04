@@ -216,6 +216,7 @@ export const es: Dict = {
   "now.party": "Fiesta {code}",
   "now.paused": "En pausa",
   "now.getReady": "Prepárate",
+  "now.waitingTv": "Esperando a la tele…",
   "now.reactions": "Enviar una reacción",
   "now.react": "Reaccionar: {name}",
   "now.reactionsOff": "El anfitrión desactivó las reacciones.",

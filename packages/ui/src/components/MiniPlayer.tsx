@@ -2,7 +2,7 @@ import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
 import { Pause, Play } from "lucide-react";
 import { songParts } from "../format";
 import { useT } from "../i18n/context";
-import { useCountdown, usePlaybackPosition } from "../hooks/room";
+import { isWaitingForTv, useCountdown, usePlaybackPosition } from "../hooks/room";
 import { Artwork, tintOf } from "./Artwork";
 import { ProgressBar } from "./ProgressBar";
 import { singerNames } from "./QueueRow";
@@ -30,10 +30,10 @@ export function MiniPlayer({ item, playback, members, onOpen, onToggle }: MiniPl
       <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={40} className={css.art} />
       <div className={css.text}>
         <div className={css.title}>{title}</div>
-        <div className={css.sub}>
+        <div className={css.sub} data-countdown={playback.state === "get_ready" && !isWaitingForTv(playback) ? countdown : undefined}>
           {playback.state === "get_ready" ? (
             <>
-              {t("mini.upNow")} <b>{singerNames(item, members, t)}</b> · {t("mini.startsIn", { n: countdown })}
+              {t("mini.upNow")} <b>{singerNames(item, members, t)}</b> · {isWaitingForTv(playback) ? t("now.waitingTv") : t("mini.startsIn", { n: countdown })}
             </>
           ) : (
             <>

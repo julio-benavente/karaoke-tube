@@ -3,7 +3,7 @@ import { RotateCcw, SkipForward } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
 import { songParts } from "../format";
-import { usePlaybackPosition, useCountdown } from "../hooks/room";
+import { usePlaybackPosition, useCountdown, isWaitingForTv } from "../hooks/room";
 import { Artwork } from "./Artwork";
 import { Avatar } from "./Avatar";
 import { IconButton, PlayButton } from "./Button";
@@ -79,7 +79,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
         )}
         {playback.state === "get_ready" ? (
           <div className={css.getReady}>
-            {item ? t("player.getReadyFor", { names: singerNames(item, members, t) }) : t("player.getReady")} <b>{countdown}</b>
+            {item ? t("player.getReadyFor", { names: singerNames(item, members, t) }) : t("player.getReady")} {isWaitingForTv(playback) ? <b>{t("now.waitingTv")}</b> : <b data-countdown={countdown}>{countdown}</b>}
           </div>
         ) : (
           <ProgressBar value={position} max={item?.song.durationSec ?? 0} showTimes className={css.progress} />
