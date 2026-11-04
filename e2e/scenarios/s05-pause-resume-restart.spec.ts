@@ -28,13 +28,15 @@ test("S05 · Pause, resume, restart @core", async ({ night }) => {
   expect(posAtPause).toBeGreaterThan(2);
 
   // 2. Resume: continues from the same place, not from 0 and not 2.5 s further on.
+  const resumedAt = Date.now();
   await host.send({ type: "resume" });
   await host.waitForState("playing again", (s) => s.playback.state === "playing");
   await sleep(800);
   const resumed = await tv.player();
+  const elapsed = (Date.now() - resumedAt) / 1000; // a busy machine can make this much longer than 0.8 s
   expect(resumed.state).toBe(1);
   expect(resumed.pos).toBeGreaterThan(atPause);
-  expect(resumed.pos).toBeLessThan(atPause + 2.5);
+  expect(resumed.pos).toBeLessThan(atPause + elapsed + 1);
 
   // 3. Restart: back to the start, still the same song, still playing.
   const itemId = (await host.state())!.nowPlaying!.id;
@@ -54,6 +56,7 @@ test("S05 · Pause, resume, restart @core", async ({ night }) => {
   await host.waitForState("paused", (s) => s.playback.state === "paused");
   const pausedAt = (await host.state())!.playback.positionSec;
   await tv.reload();
+  await tv.fake({ defaultDuration: 120 }); // a reloaded page forgets the fake's settings
   await tv.pressStart();
   await expect.poll(async () => (await tv.player()).video, { timeout: 10_000 }).toBe("e2e-bohemian");
   await expect.poll(async () => (await tv.player()).state, { timeout: 10_000, message: "TV is paused after the refresh" }).toBe(2);
