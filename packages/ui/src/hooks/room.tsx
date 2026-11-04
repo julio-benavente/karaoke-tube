@@ -312,14 +312,16 @@ export function usePlaybackPosition(playback: Playback | null | undefined, durat
 
 /** Seconds left until `endsAt` (epoch ms), ticking. */
 export function useCountdown(endsAt: number | null | undefined): number {
-  const [now, setNow] = useState(() => Date.now());
+  // The clock is read while rendering (the state only forces a re-render): a stored "now" would be stale on the first
+  // render of a new countdown and flash a wrong, bigger number.
+  const [, tick] = useState(0);
   useEffect(() => {
     if (!endsAt) return;
-    const t = setInterval(() => setNow(Date.now()), 200);
+    const t = setInterval(() => tick((n) => n + 1), 200);
     return () => clearInterval(t);
   }, [endsAt]);
   if (!endsAt) return 0;
-  return Math.max(0, Math.ceil((endsAt - now) / 1000));
+  return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
 }
 
 /**
