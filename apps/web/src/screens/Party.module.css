@@ -66,19 +66,48 @@
   font-weight: var(--kt-weight-regular);
 }
 
+/* Guests as a clean list: a quiet header row, then rows with the person, their state and songs in queue. */
+.tableHead {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  padding: var(--kt-space-2) var(--kt-space-2);
+  border-bottom: 1px solid var(--kt-white-10);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-xs);
+  font-weight: var(--kt-weight-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.colGuest {
+  flex: 1;
+  padding-left: calc(44px + var(--kt-space-3));
+}
+
+.colSongs {
+  min-width: 56px;
+  text-align: center;
+}
+
+.colEnd {
+  width: var(--kt-control-md);
+}
+
 .list {
   display: flex;
   flex-direction: column;
-  margin: 0 calc(-1 * var(--kt-space-2));
+  margin: 0;
+  padding-top: var(--kt-space-2);
 }
 
 .member {
   display: flex;
   align-items: center;
   gap: var(--kt-space-3);
-  min-height: 60px;
-  padding: var(--kt-space-1) var(--kt-space-2);
-  border-radius: var(--kt-radius-xs);
+  min-height: 64px;
+  padding: var(--kt-space-2);
+  border-radius: var(--kt-radius-sm);
   transition: background-color var(--kt-fast) var(--kt-ease);
 }
 
@@ -86,15 +115,25 @@
   background: var(--kt-white-10);
 }
 
+.mine {
+  background: var(--kt-accent-soft);
+}
+
+.mine:hover {
+  background: var(--kt-accent-soft);
+}
+
 .memberText {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
 
 .name {
   font-size: var(--kt-text-base);
+  font-weight: var(--kt-weight-medium);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,11 +141,34 @@
 
 .you {
   color: var(--kt-text-2);
+  font-weight: var(--kt-weight-regular);
 }
 
 .status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--kt-text-2);
   font-size: var(--kt-text-md);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-text-3);
+}
+
+.dotOn {
+  background: #1ed760;
+}
+
+.songs {
+  min-width: 56px;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .more {

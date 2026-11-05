@@ -121,6 +121,8 @@ export const es: Dict = {
   "party.invite": "Invitar amigos",
   "party.copied": "Enlace copiado",
   "party.you": "(tú)",
+  "party.col.guest": "Invitado",
+  "party.col.songs": "En cola",
   "party.here": "Aquí",
   "party.away": "Ausente",
   "party.cohost": "Coanfitrión",

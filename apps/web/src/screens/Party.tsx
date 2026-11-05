@@ -44,6 +44,11 @@ export function PartyScreen() {
     (a, b) => order[a.role] - order[b.role] || Number(b.connected) - Number(a.connected) || a.joinedAt - b.joinedAt,
   );
   const online = state.members.filter((m) => m.connected).length;
+  // Songs each person still has in the queue (the one playing now included).
+  const queued = new Map<string, number>();
+  for (const q of [...(state.nowPlaying ? [state.nowPlaying] : []), ...state.upNext]) {
+    for (const id of q.singerIds) queued.set(id, (queued.get(id) ?? 0) + 1);
+  }
 
   return (
     <div className={css.page}>
@@ -69,17 +74,28 @@ export function PartyScreen() {
             {t("host.addGuest")}
           </Button>
         )}
+        <div className={css.tableHead} aria-hidden>
+          <span className={css.colGuest}>{t("party.col.guest")}</span>
+          <span className={css.colSongs}>{t("party.col.songs")}</span>
+          <span className={css.colEnd} />
+        </div>
         <ul className={css.list}>
           {members.map((m) => (
-            <li key={m.id} className={css.member}>
+            <li key={m.id} className={m.id === me.id ? `${css.member} ${css.mine}` : css.member}>
               <Avatar seed={m.avatarSeed} size={44} online={m.connected} />
               <div className={css.memberText}>
                 <span className={css.name}>
                   {m.nickname}
                   {m.id === me.id && <span className={css.you}> {t("party.you")}</span>}
                 </span>
-                <span className={css.status}>{m.phoneless ? t("party.noPhone") : m.connected ? t("party.here") : t("party.away")}</span>
+                <span className={css.status}>
+                  <i className={m.connected ? `${css.dot} ${css.dotOn}` : css.dot} aria-hidden />
+                  {m.phoneless ? t("party.noPhone") : m.connected ? t("party.here") : t("party.away")}
+                </span>
               </div>
+              <span className={css.songs} aria-label={t("party.col.songs")}>
+                {queued.get(m.id) ?? 0}
+              </span>
               {m.role === "host" && (
                 <Pill tone="accent">
                   <Crown size={11} /> {m.id === state.tempHostId ? t("party.tempHost") : t("role.host")}

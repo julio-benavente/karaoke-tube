@@ -118,6 +118,8 @@ export const en = {
   "party.invite": "Invite friends",
   "party.copied": "Link copied",
   "party.you": "(you)",
+  "party.col.guest": "Guest",
+  "party.col.songs": "In queue",
   "party.here": "Here",
   "party.away": "Away",
   "party.cohost": "Co-host",
