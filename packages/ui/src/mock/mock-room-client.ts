@@ -428,6 +428,9 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
           ],
         });
       }
+      case "update_avatar":
+        if (!sender) return;
+        return commit({ ...roomState, members: roomState.members.map((m) => (m.id === sender.id ? { ...m, avatarSeed: msg.avatarSeed } : m)) });
       case "show_join":
         if (!host) return deny();
         return;

@@ -270,6 +270,8 @@ export type ClientMessage =
   /** Hosts: add a guest who has no phone, so they get turns in the rotation. Hosts then add songs for them with `add_song` + `singerIds`. */
   | { type: "add_guest"; nickname: string; avatarSeed: string }
   | { type: "react"; reaction: Reaction }
+  /** Change your own avatar while in the room (guests included). Everyone sees it right away, TV too. */
+  | { type: "update_avatar"; avatarSeed: string }
   /** Sent only by the extension's player: whether its YouTube window (the TV) is open. */
   | { type: "player_status"; tabOpen: boolean }
   /** Sent only by the extension's YouTube player (authenticated as the host). */
@@ -311,7 +313,9 @@ export type ErrorCode =
   | "queue_limit"
   | "invalid_message"
   /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
-  | "song_unplayable";
+  | "song_unplayable"
+  /** To a member who sent a second reaction ("cheer") during the same performance. One per person per song. */
+  | "already_cheered";
 
 // ── Room codes ───────────────────────────────────────────────────────────
 

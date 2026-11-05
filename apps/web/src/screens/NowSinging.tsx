@@ -17,6 +17,7 @@ import {
   usePlaybackPosition,
   useReactions,
   useRoom,
+  useRoomErrors,
   useT,
   reactionName,
 } from "@karaoke-tube/ui";
@@ -30,6 +31,11 @@ export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () 
   const { state } = useRoom();
   const item = state?.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
+  // A person cheers once per song. Kept here, not in the body, so closing the sheet doesn't forget it.
+  const [cheeredId, setCheeredId] = useState<string | null>(null);
+  useRoomErrors((e) => {
+    if (e.code === "already_cheered" && item) setCheeredId(item.id);
+  });
   return (
     <Sheet
       open={open}
@@ -38,12 +44,12 @@ export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () 
       size="full"
       style={{ background: `linear-gradient(180deg, hsl(${hue} 45% 32%) 0%, hsl(${hue} 40% 14%) 55%, var(--kt-base) 100%)` }}
     >
-      <NowSingingBody onClose={onClose} />
+      <NowSingingBody onClose={onClose} cheeredId={cheeredId} onCheered={setCheeredId} />
     </Sheet>
   );
 }
 
-function NowSingingBody({ onClose }: { onClose: () => void }) {
+function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void; cheeredId: string | null; onCheered: (id: string) => void }) {
   const { state, me, isHost, send } = useRoom();
   const t = useT();
   const { recent } = useReactions(2600);
@@ -66,10 +72,13 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
   const singer = state.members.find((m) => m.id === item.singerIds[0]);
   const playing = playback.state === "playing";
   const reactionsOn = state.settings.reactions;
+  const cheered = cheeredId === item.id;
 
   const react = (r: Reaction) => {
-    if (cooldown) return;
+    if (cooldown || cheered) return;
     send({ type: "react", reaction: r });
+    // The room only counts (and limits) cheers once the performance has started.
+    if (playback.state !== "get_ready") onCheered(item.id);
     setPopped(r);
     setCooldown(true);
     setTimeout(() => setCooldown(false), 500); // the room limits 1 per 500 ms
@@ -156,7 +165,7 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
             type="button"
             className={`${css.reaction} ${popped === r ? css.popped : ""}`}
             onClick={() => react(r)}
-            disabled={!reactionsOn}
+            disabled={!reactionsOn || cheered}
             aria-label={t("now.react", { name: reactionName(t, r) })}
           >
             {REACTION_EMOJI[r]}
@@ -164,6 +173,11 @@ function NowSingingBody({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       {!reactionsOn && <p className={css.off}>{t("now.reactionsOff")}</p>}
+      {reactionsOn && cheered && (
+        <p className={css.off} role="status" data-testid="already-cheered">
+          {t("now.alreadyCheered")}
+        </p>
+      )}
     </div>
   );
 }
