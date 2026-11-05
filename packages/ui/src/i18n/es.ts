@@ -293,7 +293,6 @@ export const es: Dict = {
   "story.intro": "{name}, fuiste parte de algo genial",
   "story.sang": "Cantaste {songs} y recibiste {cheers}.",
   "story.kept": "Mantuviste el ánimo toda la noche.",
-  "story.yourTitle": "Tu título",
   "story.best": "Tu mejor momento",
   "story.cheersFrom": "{cheers} de la sala",
   "story.skip": "Ir al resumen",

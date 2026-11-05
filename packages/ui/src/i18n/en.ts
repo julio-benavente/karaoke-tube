@@ -290,7 +290,6 @@ export const en = {
   "story.intro": "{name}, you were part of something good",
   "story.sang": "You sang {songs} and got {cheers}.",
   "story.kept": "You kept the room going all night.",
-  "story.yourTitle": "Your title",
   "story.best": "Your best moment",
   "story.cheersFrom": "{cheers} from the room",
   "story.skip": "Skip to the recap",
