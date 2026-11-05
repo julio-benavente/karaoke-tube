@@ -1,0 +1,16 @@
+# Public pages: the landing page, /join, /privacy and /terms. Everything else is a live party, an account or a tool.
+User-agent: *
+Allow: /$
+Allow: /join$
+Allow: /privacy
+Allow: /terms
+Disallow: /dev/
+Disallow: /host/
+Disallow: /tv
+Disallow: /r/
+Disallow: /join/
+Disallow: /recap/
+Disallow: /account
+Disallow: /api/
+
+Sitemap: https://karaokeetube.com/sitemap.xml

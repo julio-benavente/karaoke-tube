@@ -13,14 +13,18 @@ import { RecapPage } from "./screens/RecapPage";
 import { AccountProvider } from "./account/AccountContext";
 import { AccountPage } from "./account/AccountPage";
 
-const Gallery = lazy(() => import("./dev/Gallery").then((m) => ({ default: m.Gallery })));
+// Design previews live under /dev/*. They exist only in development: in a production build DEV is false, so these routes
+// are not registered and the preview code is dropped from the bundle (a /dev/... address falls through to /join).
+const DEV = import.meta.env.DEV;
+const Gallery = DEV ? lazy(() => import("./dev/Gallery").then((m) => ({ default: m.Gallery }))) : () => null;
 const HostApp = lazy(() => import("./host/HostApp").then((m) => ({ default: m.HostApp })));
 const NewParty = lazy(() => import("./host/NewParty").then((m) => ({ default: m.NewParty })));
 const TvPair = lazy(() => import("./tv/TvPair").then((m) => ({ default: m.TvPair })));
 const TvScreen = lazy(() => import("./tv/TvScreen").then((m) => ({ default: m.TvScreen })));
-const RecapDev = lazy(() => import("./dev/RecapDev").then((m) => ({ default: m.RecapDev })));
-const SongCards = lazy(() => import("./dev/SongCards").then((m) => ({ default: m.SongCards })));
-const TvPreview = lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview })));
+const RecapDev = DEV ? lazy(() => import("./dev/RecapDev").then((m) => ({ default: m.RecapDev }))) : () => null;
+const SongCards = DEV ? lazy(() => import("./dev/SongCards").then((m) => ({ default: m.SongCards }))) : () => null;
+const Posters = DEV ? lazy(() => import("./dev/Posters").then((m) => ({ default: m.Posters }))) : () => null;
+const TvPreview = DEV ? lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview }))) : () => null;
 
 export function App() {
   return (
@@ -44,10 +48,11 @@ export function App() {
           <Route path="/tv" element={<TvPair />} />
           <Route path="/tv/:code" element={<TvScreen />} />
           <Route path="/host/:code/*" element={<HostApp />} />
-          <Route path="/dev/ui" element={<Gallery />} />
-          <Route path="/dev/recap" element={<RecapDev />} />
-          <Route path="/dev/tv" element={<TvPreview />} />
-          <Route path="/dev/song-cards" element={<SongCards />} />
+          {DEV && <Route path="/dev/ui" element={<Gallery />} />}
+          {DEV && <Route path="/dev/recap" element={<RecapDev />} />}
+          {DEV && <Route path="/dev/tv" element={<TvPreview />} />}
+          {DEV && <Route path="/dev/song-cards" element={<SongCards />} />}
+          {DEV && <Route path="/dev/posters" element={<Posters />} />}
           <Route path="*" element={<Navigate to="/join" replace />} />
         </Routes>
       </Suspense>
