@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono";
 import type { ApiErrorCode, ApiErrorResponse, SearchResponse, Song, VideoResponse } from "@karaoke-tube/shared";
+import { logEvent } from "../log";
 import {
   SEARCH_TTL_SEC,
   SearchUnavailableError,
@@ -40,11 +41,16 @@ export const searchRoutes = new Hono<{ Bindings: Env }>()
 
     const cacheKey = `search:v1:${query}`;
     const cached = await c.env.SEARCH_CACHE.get<Song[]>(cacheKey, "json");
-    if (cached) return c.json({ query, results: cached } satisfies SearchResponse);
+    if (cached) {
+      // The app only asks the server when its own catalog came up short: these are the songs people look for and we lack.
+      logEvent(c.env, "search_fallback", { query: query.slice(0, 80), cached: true, results: cached.length });
+      return c.json({ query, results: cached } satisfies SearchResponse);
+    }
 
     const results = await withYouTube(c, () => searchYouTube(c.env.YOUTUBE_API_KEY, query));
     if (results instanceof Response) return results;
     await c.env.SEARCH_CACHE.put(cacheKey, JSON.stringify(results), { expirationTtl: SEARCH_TTL_SEC });
+    logEvent(c.env, "search_fallback", { query: query.slice(0, 80), cached: false, results: results.length });
     return c.json({ query, results } satisfies SearchResponse);
   })
 
@@ -68,6 +74,7 @@ export const searchRoutes = new Hono<{ Bindings: Env }>()
       viaApi = false;
     }
     if ("reason" in found) {
+      logEvent(c.env, "video_lookup_failed", { reason: found.reason });
       return found.reason === "not_embeddable"
         ? apiError(c, 404, "not_embeddable", "That video can't be played outside YouTube")
         : apiError(c, 404, "not_found", "We couldn't find that video");

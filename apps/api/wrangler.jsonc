@@ -50,5 +50,8 @@
     { "name": "CLIENT_ERROR_LIMITER", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
   ],
 
+  // Long-lived event data (3 months, SQL-queryable). See src/log.ts for the columns.
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "karaoke_tube_events" }],
+
   "observability": { "enabled": true }
 }

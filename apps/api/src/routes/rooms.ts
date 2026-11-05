@@ -77,7 +77,7 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
       const code = randomCode(language);
       const created = await roomStub(c.env, code).init(code, nickname, avatarSeed, settings);
       if (created) {
-        logEvent("room_created", { lang: language, signedIn: !!c.req.header("Authorization") });
+        logEvent(c.env, "room_created", { lang: language, signedIn: !!c.req.header("Authorization") });
         return c.json(created satisfies CreateRoomResponse, 201);
       }
     }

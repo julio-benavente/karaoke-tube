@@ -1,3 +1,4 @@
+import { logEvent } from "../log";
 import { Hono, type Context, type Next } from "hono";
 import {
   MIN_PASSWORD,
@@ -160,6 +161,7 @@ export const accountRoutes = new Hono<{ Bindings: Env; Variables: Vars }>()
     } catch {
       return fail(c, 409, "username_taken", "That username is taken");
     }
+    logEvent(c.env, "account_registered");
     return c.json({ token: await newSession(c.env, id), account: toAccount(user) } satisfies AuthResponse, 201);
   })
 
@@ -170,7 +172,10 @@ export const accountRoutes = new Hono<{ Bindings: Env; Variables: Vars }>()
     const user = await c.env.DB.prepare("SELECT * FROM users WHERE username = ?").bind(username).first<UserRow>();
     // Hash even for unknown users so timing doesn't reveal which usernames exist.
     const hash = await hashPassword(password, user?.pw_salt ?? "0".repeat(32));
-    if (!user || !safeEqual(hash, user.pw_hash)) return fail(c, 401, "bad_credentials", "Wrong username or password");
+    if (!user || !safeEqual(hash, user.pw_hash)) {
+      logEvent(c.env, "login_failed");
+      return fail(c, 401, "bad_credentials", "Wrong username or password");
+    }
     return c.json({ token: await newSession(c.env, user.id), account: toAccount(user) } satisfies AuthResponse);
   })
 

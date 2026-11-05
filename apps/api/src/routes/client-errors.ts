@@ -19,6 +19,6 @@ export const clientErrorRoutes = new Hono<{ Bindings: Env }>().post("/", async (
   if (!message) return c.body(null, 204);
   const kind = body?.kind === "unhandledrejection" ? "unhandledrejection" : "error";
   const screen = clip(body?.screen, 20).replace(/[^a-z0-9_-]/gi, "");
-  logEvent("client_error", { kind, screen, message, stack: clip(body?.stack, 600), version: clip(body?.version, 40) });
+  logEvent(c.env, "client_error", { kind, screen, message, stack: clip(body?.stack, 600), version: clip(body?.version, 40) });
   return c.body(null, 204);
 });

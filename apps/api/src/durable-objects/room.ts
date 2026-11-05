@@ -218,10 +218,10 @@ export class Room extends DurableObject<Env> {
       await this.handle(ws, msg);
     } catch (e) {
       if (e instanceof RoomError) {
-        logEvent("room_error", { room: this.roomTag(), code: e.code, msg: msg.type });
+        logEvent(this.env, "room_error", { room: this.roomTag(), code: e.code, msg: msg.type });
         this.send(ws, { type: "error", code: e.code, message: e.message });
       } else {
-        logEvent("handler_failed", { room: this.roomTag(), msg: msg.type });
+        logEvent(this.env, "handler_failed", { room: this.roomTag(), msg: msg.type });
         console.error("[room] handler failed", e);
         this.send(ws, { type: "error", code: "invalid_message", message: "Something went wrong" });
       }
@@ -463,7 +463,7 @@ export class Room extends DurableObject<Env> {
     this.setPlayback(idlePlayback(now));
     await this.saveRecap(now);
     const items = this.itemRows();
-    logEvent("room_ended", {
+    logEvent(this.env, "room_ended", {
       room: this.roomTag(),
       reason,
       songsPlayed: items.filter((i) => i.status === "played").length,
@@ -544,7 +544,7 @@ export class Room extends DurableObject<Env> {
           this.nextAddedAt(),
           everyone ? 1 : 0,
         );
-        logEvent("song_added", {
+        logEvent(this.env, "song_added", {
           room: this.roomTag(),
           status,
           duet: singerIds.length > 1 || everyone,
@@ -784,13 +784,13 @@ export class Room extends DurableObject<Env> {
         else this.setPlayback({ ...pb, positionSec, updatedAt: now });
         break;
       case "ended":
-        logEvent("song_ended", { room: this.roomTag(), videoId: item.song.videoId, durationSec: item.song.durationSec });
+        logEvent(this.env, "song_ended", { room: this.roomTag(), videoId: item.song.videoId, durationSec: item.song.durationSec });
         this.setItem(item.id, { status: "played" });
         this.openAwardWindow(item);
         await this.advance();
         break;
       case "error":
-        logEvent("song_unplayable", { room: this.roomTag(), videoId: item.song.videoId, channel: item.song.channel });
+        logEvent(this.env, "song_unplayable", { room: this.roomTag(), videoId: item.song.videoId, channel: item.song.channel });
         this.setItem(item.id, { status: "skipped" });
         this.notifyUnplayable(item);
         this.openAwardWindow(item);
@@ -862,7 +862,7 @@ export class Room extends DurableObject<Env> {
     this.attach(ws, memberId);
     this.send(ws, { type: "welcome", memberId, key, state: this.state() });
     this.broadcastState(undefined, ws);
-    logEvent("member_joined", { room: this.roomTag(), members: this.memberRows().length });
+    logEvent(this.env, "member_joined", { room: this.roomTag(), members: this.memberRows().length });
     await this.markActive();
   }
 
