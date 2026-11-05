@@ -65,6 +65,8 @@ export type RoomSettings = {
   tvLayout: TvLayout;
   /** How tall the TV's bar is: small (laptop or monitor up close), medium (living-room TV), large (projector, big room). */
   tvBarSize: TvBarSize;
+  /** Hide explicit songs: they are left out of search and can't be added. Undefined = false. */
+  hideExplicit?: boolean;
 };
 
 export type JoinInfoMode = "between" | "always" | "start";
@@ -296,7 +298,9 @@ export type ErrorCode =
   | "queue_limit"
   | "invalid_message"
   /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
-  | "song_unplayable";
+  | "song_unplayable"
+  /** `add_song` of a song marked `explicit` while `settings.hideExplicit` is on. */
+  | "explicit_hidden";
 
 // ── Room codes ───────────────────────────────────────────────────────────
 
@@ -350,8 +354,9 @@ export type RecapResponse = { recap: Recap };
 /**
  * Body of any non-2xx /api response.
  * `search_unavailable` (503): the YouTube quota ran out or search isn't set up. Show "Search is resting, paste a link instead".
+ * `not_embeddable` (404): the video exists but its owner doesn't allow playing it outside YouTube, so the TV can't play it.
  */
-export type ApiErrorCode = "bad_request" | "not_found" | "search_unavailable";
+export type ApiErrorCode = "bad_request" | "not_found" | "search_unavailable" | "not_embeddable";
 export type ApiErrorResponse = { error: ApiErrorCode; message: string };
 
 // ── Client interface the UI codes against ────────────────────────────────
