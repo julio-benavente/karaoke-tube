@@ -129,6 +129,9 @@
 
 .tvLink {
   align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: var(--kt-space-2) var(--kt-space-3);
   color: var(--kt-text-2);
   font-size: var(--kt-text-sm);
@@ -143,6 +146,10 @@
 }
 
 .legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--kt-space-2);
   color: var(--kt-text-2);
   text-decoration: underline;
 }

@@ -565,6 +565,7 @@ export const es: Dict = {
   "tv.castHint": "¿Vas a transmitir esta pantalla a una TV? Empieza a duplicar primero (AirPlay, Cast o Smart View) y luego presiona Iniciar.",
   "tv.rotate": "Pon el celular en horizontal para ver mejor.",
   "tv.tapForSound": "Toca para activar el sonido",
+  "tv.keepOpen": "Deja esta pantalla abierta: si cambias de pestaña o de app, el celular pausa la TV. Usa el panel del anfitrión en otro dispositivo.",
   "tv.fullscreen": "Pantalla completa (F)",
   "tv.fullscreenLabel": "Pantalla completa",
   "tv.qrAlt": "Código QR para unirse",

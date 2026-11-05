@@ -113,3 +113,11 @@
     --kt-slow: 0ms;
   }
 }
+
+/* Touch screens: every control is at least 44 x 44 px (the sm and md sizes grow; lg is already bigger). */
+@media (pointer: coarse) {
+  :root {
+    --kt-control-sm: 44px;
+    --kt-control-md: 44px;
+  }
+}

@@ -21,6 +21,12 @@
   padding: var(--kt-space-6) 0 0;
 }
 
+.top a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .body {
   display: flex;
   flex-direction: column;

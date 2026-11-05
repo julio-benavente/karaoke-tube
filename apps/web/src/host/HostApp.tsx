@@ -36,7 +36,7 @@ import {
 import { useNavigate, useParams } from "react-router";
 import { TurnAlertBanner } from "../screens/TurnAlert";
 import { RemoteVideo } from "../watch/RemoteVideo";
-import { useWatchPref } from "../watch/pref";
+import { WATCH_HERE, useWatchPref } from "../watch/pref";
 import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "./client";
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
@@ -52,6 +52,20 @@ const VIEWS = ["search", "settings", "queue", "party"] as const;
 
 /** Phones and narrow windows get the phone layout: one column, tabs at the bottom. */
 const MOBILE_QUERY = "(max-width: 820px)";
+/** True once `on` has been true for `ms` without a break; false again as soon as it stops. */
+function useAfter(on: boolean, ms: number): boolean {
+  const [v, setV] = useState(false);
+  useEffect(() => {
+    if (!on) {
+      setV(false);
+      return;
+    }
+    const id = setTimeout(() => setV(true), ms);
+    return () => clearTimeout(id);
+  }, [on, ms]);
+  return v;
+}
+
 function useIsMobile(): boolean {
   const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
   useEffect(() => {
@@ -138,6 +152,8 @@ function Host() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [queueOpen, setQueueOpen] = useState(true);
   const mobile = useIsMobile();
+  // A phone shows the "no TV" strip only once the TV has been gone a moment: a brief reconnect used to make it pop in and out and shove the page down and up.
+  const tvGone = useAfter(status === "open" && state?.playerConnected === false, 2500);
 
   useRoomErrors((e) =>
     toast.show(e.code === "song_unplayable" ? t("error.song_unplayable", { title: e.message }) : errorText(e.code, lang), { tone: "error" }),
@@ -227,14 +243,14 @@ function Host() {
     return (
       <div className={css.mobileFrame}>
         {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
-        {status === "open" && state.playerConnected === false && <TvOfflineBanner compact onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
-        <main className={`${css.mobileMain} ${status === "open" && state.playerConnected === false ? css.hasBanner : ""}`}>
+        {tvGone && <TvOfflineBanner compact onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
+        <main className={`${css.mobileMain} ${tvGone ? css.hasBanner : ""}`}>
           <NextSongFor />
           {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}
           {view === "queue" && (
             <>
-              {state.nowPlaying && <WatchHere item={state.nowPlaying} playback={state.playback} />}
+              {WATCH_HERE && state.nowPlaying && <WatchHere item={state.nowPlaying} playback={state.playback} />}
               <QueuePanel />
             </>
           )}
@@ -304,7 +320,7 @@ function Host() {
           )}
         </BottomTabs>
         {endSheet}
-        <TurnAlertBanner />
+        <TurnAlertBanner dock="mobile" />
       </div>
     );
   }
@@ -363,7 +379,7 @@ function Host() {
       </div>
 
       {endSheet}
-      <TurnAlertBanner />
+      <TurnAlertBanner dock="desktop" />
     </div>
   );
 }

@@ -89,6 +89,7 @@
   color: var(--kt-text-2);
   font-size: var(--kt-text-md);
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .compact .sub {
@@ -96,7 +97,8 @@
 }
 
 .singer {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 50%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,6 +178,14 @@
   color: var(--kt-text-3);
   cursor: grab;
   touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .handle {
+    width: 32px;
+    height: 44px;
+    margin-right: -8px;
+  }
 }
 
 .handle svg {

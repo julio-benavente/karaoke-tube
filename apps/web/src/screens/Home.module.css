@@ -2,6 +2,7 @@
   position: relative;
   isolation: isolate;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 0 var(--kt-space-4);
 }
 
@@ -36,6 +37,10 @@
 
 .me {
   flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--kt-radius-full);
   transition: transform var(--kt-fast) var(--kt-ease);
 }

@@ -24,7 +24,7 @@ import {
   ExplicitBadge,
 } from "@karaoke-tube/ui";
 import { RemoteVideo } from "../watch/RemoteVideo";
-import { useWatchPref } from "../watch/pref";
+import { WATCH_HERE, useWatchPref } from "../watch/pref";
 import css from "./NowSinging.module.css";
 
 /** G6: full-screen now singing: big artwork, progress, five reactions, host controls. */
@@ -59,7 +59,8 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
   const playback = state?.playback;
   const position = usePlaybackPosition(playback, item?.song.durationSec);
   const countdown = useCountdown(playback?.state === "get_ready" ? playback.countdownEndsAt : null);
-  const [watching, setWatching] = useWatchPref();
+  const [watchPref, setWatching] = useWatchPref();
+  const watching = WATCH_HERE && watchPref;
   const [cooldown, setCooldown] = useState(false);
   const [popped, setPopped] = useState<Reaction | null>(null);
 
@@ -120,11 +121,15 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
         </div>
       </div>
 
-      <button type="button" className={css.watchBtn} aria-pressed={watching} onClick={() => setWatching(!watching)}>
-        <MonitorPlay size={18} />
-        {watching ? t("watch.off") : t("watch.on")}
-      </button>
-      {!watching && <p className={css.watchHint}>{t("watch.hint")}</p>}
+      {WATCH_HERE && (
+        <>
+          <button type="button" className={css.watchBtn} aria-pressed={watching} onClick={() => setWatching(!watching)}>
+            <MonitorPlay size={18} />
+            {watching ? t("watch.off") : t("watch.on")}
+          </button>
+          {!watching && <p className={css.watchHint}>{t("watch.hint")}</p>}
+        </>
+      )}
 
       <div className={css.meta}>
         <div className={css.titleBlock}>

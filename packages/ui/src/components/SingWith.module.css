@@ -55,6 +55,12 @@
   text-overflow: ellipsis;
 }
 
+@media (pointer: coarse) {
+  .pill {
+    height: 44px;
+  }
+}
+
 .pill:hover {
   background: var(--kt-white-20);
 }

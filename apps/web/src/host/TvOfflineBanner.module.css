@@ -102,14 +102,16 @@
 
 /* Phone: a strip along the top (the page starts below it). */
 .compact {
+  /* Sticky, in the page's own flow: the page starts right below it, whatever its height (help open, two-line Spanish title). */
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
+  left: auto;
   width: auto;
   gap: var(--kt-space-1);
-  padding: var(--kt-space-2) var(--kt-space-3);
+  padding: calc(var(--kt-space-2) + env(safe-area-inset-top, 0px)) var(--kt-space-3) var(--kt-space-2);
   border-radius: 0;
   transform: none;
+  animation: none;
 }
 
 .compact .top {

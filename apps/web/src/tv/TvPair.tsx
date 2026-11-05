@@ -5,8 +5,8 @@ import { Logo, useT } from "@karaoke-tube/ui";
 import { loadScreen, saveScreen } from "./screenStore";
 import { useWakeLock } from "./useWakeLock";
 
-const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3vh", textAlign: "center", padding: 24, fontFamily: '"Figtree", system-ui, sans-serif' } as const;
-const button = { font: "inherit", fontWeight: 800, fontSize: "2.6vh", padding: "1.4vh 3.6vh", borderRadius: 999, border: "0.3vh solid #ff4f8b", background: "transparent", color: "#fff", cursor: "pointer" } as const;
+const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3dvh", textAlign: "center", padding: 24, fontFamily: '"Figtree", system-ui, sans-serif' } as const;
+const button = { font: "inherit", fontWeight: 800, fontSize: "2.6dvh", padding: "1.4dvh 3.6dvh", minHeight: 44, borderRadius: 999, border: "0.3dvh solid #ff4f8b", background: "transparent", color: "#fff", cursor: "pointer" } as const;
 
 /** The TV swaps its code for a fresh one this many seconds before the old one would expire. */
 const REFRESH_BEFORE_SEC = 45;
@@ -104,21 +104,21 @@ function Waiting() {
   return (
     <div style={page} data-testid="tv-pair">
       <Logo size={56} />
-      <h1 style={{ margin: 0, fontSize: "5vh" }}>{t("tvpair.title")}</h1>
+      <h1 style={{ margin: 0, fontSize: "5dvh" }}>{t("tvpair.title")}</h1>
       {failed ? (
         <>
-          <p style={{ fontSize: "3vh", opacity: 0.8 }}>{t("tvpair.failed")}</p>
+          <p style={{ fontSize: "3dvh", opacity: 0.8 }}>{t("tvpair.failed")}</p>
           <button autoFocus style={button} onClick={() => void begin()}>
             {t("common.tryAgain")}
           </button>
         </>
       ) : (
         <>
-          <div data-testid="tv-pair-code" style={{ fontSize: "min(16vh, 15vw)", fontWeight: 900, letterSpacing: "0.12em", color: "#ff4f8b", lineHeight: 1 }}>
+          <div data-testid="tv-pair-code" style={{ fontSize: "min(16dvh, 15vw)", fontWeight: 900, letterSpacing: "0.12em", color: "#ff4f8b", lineHeight: 1 }}>
             {pair ? `${pair.code.slice(0, 3)} ${pair.code.slice(3)}` : "…"}
           </div>
-          <p style={{ fontSize: "3vh", opacity: 0.85, maxWidth: "70vw", margin: 0 }}>{t("tvpair.hint")}</p>
-          <p data-testid="tv-pair-timer" style={{ fontSize: "2.2vh", opacity: 0.55, margin: 0 }}>
+          <p style={{ fontSize: "3dvh", opacity: 0.85, maxWidth: "70vw", margin: 0 }}>{t("tvpair.hint")}</p>
+          <p data-testid="tv-pair-timer" style={{ fontSize: "2.2dvh", opacity: 0.55, margin: 0 }}>
             {t("tvpair.renews", { time: mmss })}
           </p>
           <button autoFocus style={button} onClick={() => void begin()} data-testid="tv-pair-new">

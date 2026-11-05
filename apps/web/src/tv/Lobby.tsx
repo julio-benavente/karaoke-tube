@@ -15,7 +15,7 @@ export function Lobby({ code, members, action, hint }: { code: string; members: 
       data-testid="tv-lobby"
       style={{ position: "absolute", inset: 0, zIndex: 10, background: "radial-gradient(ellipse at top, #2a0f1d 0%, #070609 70%)", color: "#fff", overflowY: "auto", textAlign: "center", padding: 24 }}
     >
-      <div style={{ minHeight: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2.5dvh" }}>
+      <div style={{ minHeight: "100%", boxSizing: "border-box", paddingTop: 56, /* room for the "Tap for sound" button */ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2.5dvh" }}>
       <h1 style={{ fontSize: "5dvh", margin: 0 }}>Karaoke Tube</h1>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "2dvh 4vw" }}>
         <div style={{ background: "#fff", padding: "1.2dvh", borderRadius: 16, width: "min(34dvh, 62vw)", height: "min(34dvh, 62vw)" }}>
