@@ -76,6 +76,7 @@ export function AwardPrompt() {
             </button>
           ))}
         </div>
+        <p className={css.awardSub}>{t("award.help")}</p>
       </section>
     </div>
   );

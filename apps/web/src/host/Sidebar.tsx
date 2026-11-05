@@ -1,9 +1,9 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, Copy, Crown, Home, ListPlus, MoreHorizontal, PhoneOff, Search, Settings, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Copy, Crown, Home, ListPlus, MoreHorizontal, PhoneOff, Search, Settings, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { AddGuestSheet, Avatar, Button, Logo, Pill, useRoom, useSingWith, useT } from "@karaoke-tube/ui";
+import { AddGuestSheet, Avatar, Button, LanguageSwitcher, Logo, Pill, Toggle, useRoom, useSingWith, useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "./client";
 import type { View } from "./HostApp";
 import css from "./host.module.css";
@@ -15,6 +15,7 @@ export function Sidebar({ view, onView, only, actions }: { view: View; onView: (
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [addGuest, setAddGuest] = useState(false);
+  const sections = useSections();
   const code = state?.code ?? "";
   const joinUrl = `${WEB_URL}/join/${code}`;
 
@@ -69,39 +70,117 @@ export function Sidebar({ view, onView, only, actions }: { view: View; onView: (
       </nav>
       )}
 
-      <section className={`${css.panel} ${css.party}`}>
-        <header className={css.partyHead}>
-          <h2 className={css.partyTitle}>{t("party.title")}</h2>
-          {state.settings.locked && <Pill tone="warning">{t("host.locked")}</Pill>}
-        </header>
-        <div className={css.joinCard}>
-          <div className={css.qr}>{qr ? <img src={qr} alt={t("host.qrAlt", { code })} /> : <span />}</div>
-          <div className={css.joinText}>
-            <span className={css.codeLabel}>{t("host.code")}</span>
-            <span className={css.code}>{formatRoomCode(code)}</span>
-            <button type="button" className={css.copy} onClick={copy}>
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? t("host.copied") : t("host.copyLink")}
-            </button>
+      <div className={`${css.panel} ${css.party}`}>
+        <Section
+          id="party"
+          title={t("party.title")}
+          aside={state.settings.locked ? <Pill tone="warning">{t("host.locked")}</Pill> : undefined}
+          open={sections.isOpen("party")}
+          onToggle={sections.toggle}
+        >
+          <div className={css.joinCard}>
+            <div className={css.qr}>{qr ? <img src={qr} alt={t("host.qrAlt", { code })} /> : <span />}</div>
+            <div className={css.joinText}>
+              <span className={css.codeLabel}>{t("host.code")}</span>
+              <span className={css.code}>{formatRoomCode(code)}</span>
+              <button type="button" className={css.copy} onClick={copy}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? t("host.copied") : t("host.copyLink")}
+              </button>
+            </div>
           </div>
-        </div>
-        {actions}
-        <h3 className={css.guestsTitle}>
-          {t("host.guests")} <span className={css.muted}>{t("host.hereCount", { n: state.members.filter((m) => m.connected).length })}</span>
-        </h3>
-        <div className={css.addGuest}>
-          <Button size="sm" variant="secondary" icon={<UserPlus size={16} />} onClick={() => setAddGuest(true)}>
-            {t("host.addGuest")}
-          </Button>
-        </div>
-        <ul className={css.guests}>
-          {members.map((m) => (
-            <GuestRow key={m.id} member={m} temp={m.id === state.tempHostId} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
-          ))}
-        </ul>
-      </section>
+          {actions}
+        </Section>
+        <Section id="quick" title={t("host.quick")} open={sections.isOpen("quick")} onToggle={sections.toggle}>
+          <QuickSettings />
+        </Section>
+        <Section
+          id="guests"
+          title={t("host.guests")}
+          aside={<span className={css.muted}>{t("host.hereCount", { n: state.members.filter((m) => m.connected).length })}</span>}
+          open={sections.isOpen("guests")}
+          onToggle={sections.toggle}
+          grow
+        >
+          <div className={css.addGuest}>
+            <Button size="sm" variant="secondary" icon={<UserPlus size={16} />} onClick={() => setAddGuest(true)}>
+              {t("host.addGuest")}
+            </Button>
+          </div>
+          <ul className={css.guests}>
+            {members.map((m) => (
+              <GuestRow key={m.id} member={m} temp={m.id === state.tempHostId} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
+            ))}
+          </ul>
+        </Section>
+      </div>
       <AddGuestSheet open={addGuest} onClose={() => setAddGuest(false)} />
     </aside>
+  );
+}
+
+const SECTIONS_KEY = "kt:host:sections";
+type SectionId = "party" | "quick" | "guests";
+
+/** Which left-side sections the host folded away; remembered on this device. */
+function useSections() {
+  const [closed, setClosed] = useState<SectionId[]>(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "[]") as unknown;
+      return Array.isArray(v) ? (v.filter((x) => x === "party" || x === "quick" || x === "guests") as SectionId[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const toggle = (id: SectionId) =>
+    setClosed((cur) => {
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      try {
+        localStorage.setItem(SECTIONS_KEY, JSON.stringify(next));
+      } catch {
+        // storage blocked: the choice lasts until reload
+      }
+      return next;
+    });
+  return { isOpen: (id: SectionId) => !closed.includes(id), toggle };
+}
+
+/** A left-side section with a header that folds it open and closed. */
+function Section({ id, title, aside, open, onToggle, grow, children }: { id: SectionId; title: ReactNode; aside?: ReactNode; open: boolean; onToggle: (id: SectionId) => void; grow?: boolean; children: ReactNode }) {
+  const t = useT();
+  return (
+    <section className={`${css.sec} ${grow && open ? css.secGrow : ""}`} data-section={id}>
+      <button type="button" className={css.secHead} aria-expanded={open} aria-controls={`sec-${id}`} onClick={() => onToggle(id)} title={open ? t("host.collapse") : t("host.expand")}>
+        <ChevronDown size={16} className={`${css.secChevron} ${open ? "" : css.secClosed}`} aria-hidden />
+        <span className={css.secTitle}>{title}</span>
+        {aside}
+      </button>
+      {open && (
+        <div id={`sec-${id}`} className={css.secBody}>
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Quick settings: the few switches a host reaches for during the night. Everything else lives in Settings. */
+function QuickSettings() {
+  const { state, send } = useRoom();
+  const t = useT();
+  if (!state) return null;
+  const s = state.settings;
+  const set = (patch: Partial<typeof s>) => send({ type: "update_settings", settings: patch });
+  return (
+    <div className={css.quick} data-testid="quick-settings">
+      <Toggle label={t("settings.lock")} checked={s.locked} onChange={(v) => set({ locked: v })} />
+      <Toggle label={t("settings.tvHideBar")} checked={!!s.tvHideBar} onChange={(v) => set({ tvHideBar: v })} />
+      {/* Room for more switches (e.g. hide explicit songs). */}
+      <div className={css.quickLang}>
+        <span className={css.quickLabel}>{t("lang.label")}</span>
+        <LanguageSwitcher />
+      </div>
+    </div>
   );
 }
 

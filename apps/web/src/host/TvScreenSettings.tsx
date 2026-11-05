@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { MonitorUp, Tv } from "lucide-react";
 import { localStorageCredentials } from "@karaoke-tube/client";
 import type { PairClaimRequest, TvBarSize, TvLayout } from "@karaoke-tube/shared";
-import { Button, TextField, useRoom, useT, useToast } from "@karaoke-tube/ui";
+import { Button, TextField, Toggle, useRoom, useT, useToast } from "@karaoke-tube/ui";
 import { openTvScreen } from "./client";
 import css from "./host.module.css";
 
@@ -124,7 +124,13 @@ export function TvScreenSettings() {
           ))}
         </div>
       </div>
-      {(state.settings.tvLayout ?? "bar") === "bar" && (
+      <Toggle
+        label={t("settings.tvHideBar")}
+        description={t("settings.tvHideBarDesc")}
+        checked={!!state.settings.tvHideBar}
+        onChange={(v) => send({ type: "update_settings", settings: { tvHideBar: v } })}
+      />
+      {(state.settings.tvLayout ?? "bar") === "bar" && !state.settings.tvHideBar && (
         <div className={`${css.settingRow} ${css.settingStack}`}>
           <div className={css.settingText}>
             <span className={css.settingLabel}>{t("tvscreen.barSize")}</span>

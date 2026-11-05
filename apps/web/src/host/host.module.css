@@ -127,16 +127,76 @@
   padding: var(--kt-space-3) var(--kt-space-2) 0;
 }
 
-.partyHead {
+/* Foldable left-side sections */
+.sec {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.secGrow {
+  flex: 1;
+}
+
+.secHead {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  width: 100%;
+  padding: var(--kt-space-2);
+  border-radius: var(--kt-radius-xs);
+  font-size: var(--kt-text-md);
+  font-weight: var(--kt-weight-bold);
+  text-align: left;
+}
+
+.secHead:hover {
+  background: var(--kt-white-10);
+}
+
+.secTitle {
+  flex: 0 1 auto;
+}
+
+.secHead > :last-child:not(.secTitle) {
+  margin-left: auto;
+}
+
+.secChevron {
+  flex: none;
+  color: var(--kt-text-2);
+  transition: transform var(--kt-fast) var(--kt-ease);
+}
+
+.secClosed {
+  transform: rotate(-90deg);
+}
+
+.secBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--kt-space-1);
+}
+
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 var(--kt-space-2) var(--kt-space-3);
+}
+
+.quickLang {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--kt-space-1) var(--kt-space-2) var(--kt-space-3);
+  gap: var(--kt-space-2);
+  flex-wrap: wrap;
 }
 
-.partyTitle {
-  font-size: var(--kt-text-base);
-  font-weight: var(--kt-weight-bold);
+.quickLabel {
+  font-size: var(--kt-text-md);
 }
 
 .joinCard {
@@ -199,15 +259,6 @@
 .copy:hover {
   opacity: 1;
   text-decoration: underline;
-}
-
-.guestsTitle {
-  display: flex;
-  gap: var(--kt-space-2);
-  align-items: baseline;
-  padding: var(--kt-space-2) var(--kt-space-2);
-  font-size: var(--kt-text-md);
-  font-weight: var(--kt-weight-bold);
 }
 
 .guests {
@@ -592,6 +643,11 @@
   font-weight: var(--kt-weight-bold);
 }
 
+/* Plain text in the queue panel lines up with the headings and rows (16px in). */
+.queueNote {
+  padding: 0 var(--kt-space-2);
+}
+
 .queueList {
   display: flex;
   flex-direction: column;
@@ -913,4 +969,43 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--kt-space-2);
+}
+
+/* "Next song is for Ana" with Cancel (host adds one song for someone else) */
+.nextFor {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  padding: var(--kt-space-2) var(--kt-space-4);
+  background: var(--kt-accent);
+  color: #1f0711;
+  font-weight: var(--kt-weight-bold);
+}
+
+.nextForText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nextForCancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 4px 12px;
+  border-radius: var(--kt-radius-full);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+}
+
+.nextForCancel:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
