@@ -52,6 +52,9 @@
 }
 
 .links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--kt-text-2);
   text-decoration: underline;
 }

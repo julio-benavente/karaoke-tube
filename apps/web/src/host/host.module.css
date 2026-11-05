@@ -6,6 +6,7 @@
   grid-template-rows: minmax(0, 1fr) var(--kt-player-height);
   gap: var(--kt-space-2);
   height: 100vh;
+  height: 100dvh;
   padding: var(--kt-space-2) var(--kt-space-2) 0;
   background: var(--kt-base);
   overflow: hidden;
@@ -20,10 +21,16 @@
     --kt-sidebar-width: 240px;
     --kt-queue-width: 300px;
   }
+
+  .joinCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .center {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -124,6 +131,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--kt-space-3) var(--kt-space-2) 0;
 }
 
@@ -131,11 +140,11 @@
 .sec {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  flex-shrink: 0;
 }
 
 .secGrow {
-  flex: 1;
+  flex: 1 0 auto;
 }
 
 .secHead {
@@ -243,7 +252,7 @@
   font-weight: var(--kt-weight-black);
   letter-spacing: -0.01em;
   line-height: 1.15;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .copy {
@@ -465,6 +474,14 @@
   width: 28px;
   height: 28px;
   color: var(--kt-text-2);
+}
+
+@media (pointer: coarse) {
+  .searchClear {
+    right: 2px;
+    width: 44px;
+    height: 44px;
+  }
 }
 
 .searchClear:hover {
@@ -915,8 +932,10 @@
   line-height: 1.2;
 }
 
+/* The strip sits in the flow above the page (and covers the status-bar area itself), so the page needs no top room of its own. */
 .mobileMain.hasBanner {
-  padding-top: calc(env(safe-area-inset-top) + 88px);
+  min-height: 0;
+  padding-top: 0;
 }
 
 /* Phone: next to the search field "Who sings?" is just its icon until someone is picked, so the field keeps its room. */
@@ -1008,4 +1027,19 @@
 
 .nextForCancel:hover {
   background: rgba(0, 0, 0, 0.4);
+}
+
+/* Touch screens: controls on the host pages are at least 44 px tall. */
+@media (pointer: coarse) {
+  .segmented button,
+  .select,
+  .secHead,
+  .copy {
+    min-height: 44px;
+  }
+
+  .guestMore {
+    width: 44px;
+    height: 44px;
+  }
 }

@@ -38,12 +38,18 @@
 .artBox {
   position: relative;
   align-self: center;
-  width: min(100%, 46vh);
+  width: min(100%, 34dvh);
   margin: var(--kt-space-4) 0 var(--kt-space-2);
 }
 
 .art {
   width: 100%;
+}
+
+@media (min-height: 820px) {
+  .artBox {
+    width: min(100%, 46dvh);
+  }
 }
 
 .getReady {
@@ -237,7 +243,8 @@
   align-items: center;
   gap: var(--kt-space-2);
   align-self: center;
-  height: 36px;
+  min-height: 44px;
+  height: 44px;
   padding: 0 var(--kt-space-4);
   border-radius: var(--kt-radius-full);
   background: var(--kt-white-10);

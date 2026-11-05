@@ -1,6 +1,7 @@
 .page {
   max-width: 480px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   padding: var(--kt-space-6) var(--kt-space-4) var(--kt-space-10);
   display: flex;

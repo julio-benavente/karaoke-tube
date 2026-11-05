@@ -11,6 +11,17 @@
   pointer-events: none;
 }
 
+/* On the host the top of the screen belongs to the search field, so the alert sits just above the player bar / tabs. */
+.dockDesktop {
+  top: auto;
+  bottom: calc(var(--kt-player-height) + var(--kt-space-4));
+}
+
+.dockMobile {
+  top: auto;
+  bottom: calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-8) + env(safe-area-inset-bottom));
+}
+
 .turn {
   display: flex;
   align-items: center;
@@ -54,6 +65,14 @@
   height: 32px;
   border-radius: var(--kt-radius-full);
   color: var(--kt-text-2);
+}
+
+@media (pointer: coarse) {
+  .close {
+    width: 44px;
+    height: 44px;
+    margin: -6px -6px -6px 0;
+  }
 }
 
 .close:hover {

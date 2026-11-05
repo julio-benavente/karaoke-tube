@@ -806,7 +806,8 @@
  * 16:9-or-wider screen and the width on a narrower one (a small or portrait window), so the content always fits.
  * Narrow windows drop the "up next" block first, then the join URL. */
 .kt-tvbar {
-  --u: min(calc(var(--b) * 1cqh), calc(var(--b) * 0.5625cqw));
+  /* The floor keeps the text readable in a small or portrait window (a phone used as the TV); it never exceeds the bar's own height. */
+  --u: max(min(calc(var(--b) * 1cqh), calc(var(--b) * 0.5625cqw)), min(56px, calc(var(--b) * 1cqh)));
   position: absolute;
   left: 0;
   right: 0;
@@ -823,7 +824,7 @@
 }
 
 .kt-tvbar-now {
-  flex: 1 1 0;
+  flex: 2 1 0;
   min-width: 0;
   display: flex;
   align-items: center;

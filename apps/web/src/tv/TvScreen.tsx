@@ -250,12 +250,12 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
   return (
     <div style={page} data-testid="tv-page">
       {/* The video: full screen, or (bar layout) a 16:9 box above the bar, so nothing covers the lyrics. */}
-      <div style={barPct ? { position: "absolute", inset: `0 0 ${barPct}vh 0`, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" } : { position: "absolute", inset: 0, pointerEvents: "none" }}>
+      <div style={barPct ? { position: "absolute", inset: `0 0 ${barPct}dvh 0`, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" } : { position: "absolute", inset: 0, pointerEvents: "none" }}>
         <div
           ref={wrapRef}
           style={
             barPct
-              ? { width: `min(100vw, calc((100vh - ${barPct}vh) * 16 / 9))`, height: `min(calc(100vh - ${barPct}vh), calc(100vw * 9 / 16))`, overflow: "hidden", visibility: "hidden", pointerEvents: "none" }
+              ? { width: `min(100vw, calc((100dvh - ${barPct}dvh) * 16 / 9))`, height: `min(calc(100dvh - ${barPct}dvh), calc(100vw * 9 / 16))`, overflow: "hidden", visibility: "hidden", pointerEvents: "none" }
               : { position: "absolute", inset: 0, visibility: "hidden", pointerEvents: "none" }
           }
         >
@@ -288,6 +288,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
               <>
                 <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
                 {touch && <p style={{ opacity: 0.6, margin: 0, maxWidth: "80vw" }}>{t("tv.castHint")}</p>}
+                {touch && <p style={{ opacity: 0.85, margin: 0, maxWidth: "80vw", fontWeight: 700 }}>{t("tv.keepOpen")}</p>}
                 {touch && portrait && <p style={{ color: "#ff4f8b", fontWeight: 700, margin: 0 }}>{t("tv.rotate")}</p>}
               </>
             )
@@ -307,7 +308,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
       )}
       {started && muted && (
         <button
-          style={{ ...bigBtn, position: "absolute", left: "50%", top: 16, transform: "translateX(-50%)", zIndex: 90, fontSize: 20, padding: "12px 24px" }}
+          style={{ ...bigBtn, position: "absolute", right: 12, top: 12, zIndex: 90, minHeight: 44, fontSize: 16, padding: "10px 18px", whiteSpace: "nowrap" }}
           data-testid="tv-unmute"
           onClick={() => playerRef.current?.unmute()}
         >
@@ -319,7 +320,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
           onClick={fullscreen}
           title={t("tv.fullscreen")}
           aria-label={t("tv.fullscreenLabel")}
-          style={{ position: "absolute", right: 12, bottom: 12, zIndex: 70, opacity: 0.25, background: "#000a", color: "#fff", border: 0, borderRadius: 8, padding: 8, cursor: "pointer" }}
+          style={{ position: "absolute", right: 8, bottom: 8, zIndex: 70, opacity: 0.4, background: "#000a", color: "#fff", border: 0, borderRadius: 8, width: 44, height: 44, display: "grid", placeItems: "center", cursor: "pointer" }}
         >
           <Maximize size={18} />
         </button>

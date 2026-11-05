@@ -562,6 +562,7 @@ export const en = {
   "tv.castHint": "Casting this screen to a TV? Start mirroring first (AirPlay, Cast or Smart View), then press Start.",
   "tv.rotate": "Turn your phone sideways for the best picture.",
   "tv.tapForSound": "Tap for sound",
+  "tv.keepOpen": "Keep this screen open: if you switch tabs or apps, the phone pauses the TV. Run the host panel on another device.",
   "tv.fullscreen": "Full screen (F)",
   "tv.fullscreenLabel": "Full screen",
   "tv.qrAlt": "Join QR code",
