@@ -4,8 +4,10 @@ import { serverNow, type Playback, type QueueItem } from "@karaoke-tube/shared";
 import { loadApi, type YTPlayer } from "../tv/player";
 import css from "./RemoteVideo.module.css";
 
-/** Off by this much (seconds) and the video jumps back in step with the room. */
+/** Behind the room by this much (seconds) and the video jumps ahead to catch up. */
 const DRIFT_SEC = 2.5;
+/** A room position this close to the start, with the video well past it, is a restart: the one time it jumps backward. */
+const RESTART_SEC = 5;
 const CHECK_MS = 1500;
 // YT.PlayerState
 const PLAYING = 1;
@@ -84,7 +86,12 @@ export function RemoteVideo({ item, playback, className }: { item: QueueItem; pl
     const s = yt.getPlayerState();
     if (pb.state === "playing") {
       if (s === PAUSED || s === CUED || s === -1) yt.playVideo();
-      if (s !== BUFFERING && (force || Math.abs(yt.getCurrentTime() - want) > DRIFT_SEC)) yt.seekTo(want, true);
+      // Forward only: a backgrounded TV reports its position late, so the room's clock can lag a few seconds. Being a
+      // little ahead of it is harmless; jumping back to it made the music rewind every few seconds.
+      const cur = yt.getCurrentTime();
+      const behind = want - cur > DRIFT_SEC;
+      const restarted = want < RESTART_SEC && cur - want > DRIFT_SEC;
+      if (s !== BUFFERING && (force || behind || restarted)) yt.seekTo(want, true);
     } else if (pb.state === "paused") {
       if (s === PLAYING || s === BUFFERING) yt.pauseVideo();
       if (Math.abs(yt.getCurrentTime() - want) > 1) yt.seekTo(want, true);
