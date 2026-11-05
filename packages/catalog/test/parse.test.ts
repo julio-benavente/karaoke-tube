@@ -62,6 +62,12 @@ const CASES: Array<[string, Order, string | null, string]> = [
   ['"Don\'t Lose Ur Head" (Karaoke) – Six: The Musical | Lyrics on Screen', "song-artist", "Six: The Musical", "Don't Lose Ur Head"],
 
   // Things that must survive
+  // Karaoke Rudissimo: "(Version Karaoke Profesional)" with a bracket missing or the text cut off
+  ["Amar Y Querer - José José (Version Karaoke Profesional)", "song-artist", "José José", "Amar Y Querer"],
+  ["Si Tú Supieras - Alejándro Fernández Version Karaoke Profesional)", "song-artist", "Alejándro Fernández", "Si Tú Supieras"],
+  ["Oh Que Será - Jose Feliciano (Version Karaoke Profesional", "song-artist", "Jose Feliciano", "Oh Que Será"],
+  ["Mi Viejo - Felipe Pirela (Version Karaoke Profesion", "song-artist", "Felipe Pirela", "Mi Viejo"],
+  ["Cariño Malo - Tony Vega (Version Karaoke (Balada) Profesional)", "song-artist", "Tony Vega", "Cariño Malo"],
   ["Skeleton Key - Artist (Karaoke Version)", "song-artist", "Artist", "Skeleton Key"],
   ["Rock & Roll - Led Zeppelin (Karaoke Version)", "song-artist", "Led Zeppelin", "Rock & Roll"],
   ["No - Meghan Trainor (Karaoke Version)", "song-artist", "Meghan Trainor", "No"],

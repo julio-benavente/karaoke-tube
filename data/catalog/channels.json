@@ -19,5 +19,8 @@
   {"key": "canto-karaoke", "id": "UCvqNy3lqyC7dN5g-Wil19pg", "title": "Canto Karaoke", "order": "song-artist", "priority": 55},
   {"key": "karsing", "id": "UC4UikUyoKG8XTp6AL6v1kVw", "title": "Karsing Karaoke", "order": "song-artist", "priority": 50, "tidyCase": true},
   {"key": "karaoke-latino-co", "id": "UCa15S_h2sqNcle5QaUKqTsg", "title": "Karaoke Latino", "order": "song-artist", "priority": 45},
-  {"key": "karaokes-pistas", "id": "UC0I6nSW1J-MWgc-I_4su-BA", "title": "Karaokes & Pistas", "order": "song-artist", "priority": 30, "karaokePrefix": true}
+  {"key": "karaokes-pistas", "id": "UC0I6nSW1J-MWgc-I_4su-BA", "title": "Karaokes & Pistas", "order": "song-artist", "priority": 30, "karaokePrefix": true},
+  {"key": "zoom-karaoke", "id": "UCrk8mp-ugqtAbjif6JARjlw", "title": "Zoom Karaoke Official", "order": "artist-song", "priority": 75},
+  {"key": "karaoke-principiantes", "id": "UCn9FI9W4K0EzHiqoW7znusQ", "title": "Karaoke Para Principiantes", "order": "artist-song", "priority": 42},
+  {"key": "karaoke-rudissimo", "id": "UCYPTiInEsLVf7oxpj_tXN2Q", "title": "Karaoke Rudissimo", "order": "song-artist", "priority": 40}
 ]

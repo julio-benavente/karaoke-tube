@@ -99,6 +99,9 @@ export function parseTitle(raw: string, opts: ParseOptions = {}): ParsedTitle {
     .replace(/@[\w.]+/g, " ")
     .replace(/\bISRC:?\s*\S+/gi, " ");
 
+  // Karaoke Rudissimo ends titles with "(Version Karaoke Profesional)", sometimes with a bracket missing or the text cut
+  // off ("... Version Karaoke Profesional)", "... (Version Karaoke Profesion"). Cut from "Version Karaoke" to the end.
+  t = t.replace(/\s*\(?\s*versi[oó]n\s+karaoke\b[^-–—|]*$/i, "");
   // Drop boilerplate brackets, keep meaningful ones. Twice, for one level of nesting.
   for (let i = 0; i < 2; i++) {
     t = t.replace(/\s*[(\[{]([^()\[\]{}]*)[)\]}]/g, (m, inner: string) => (BRACKET_NOISE.test(inner) ? " " : m));
