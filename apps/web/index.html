@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Everything the app saves (the host's login, the paired screen) belongs to one address, and http://karaokeetube.com is a different
+      // address from https://karaokeetube.com: a page opened over http looks like a brand-new browser. Always go to https, except on
+      // localhost and private addresses (local testing over http).
+      if (location.protocol === "http:" && !/^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|.*\.local$|\[)/.test(location.hostname)) {
+        location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#070609" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
