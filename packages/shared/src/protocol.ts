@@ -65,7 +65,13 @@ export type RoomSettings = {
   tvLayout: TvLayout;
   /** How tall the TV's bar is: small (laptop or monitor up close), medium (living-room TV), large (projector, big room). */
   tvBarSize: TvBarSize;
+  /** The session language, chosen when the party is created: every screen in the room (host, guests, TV, recap) uses it. Missing = "en". */
+  language?: RoomLanguage;
 };
+
+/** Languages a session can run in. Spanish rooms also get Spanish-word room codes. */
+export type RoomLanguage = "en" | "es";
+export const ROOM_LANGUAGES: readonly RoomLanguage[] = ["en", "es"];
 
 export type JoinInfoMode = "between" | "always" | "start";
 export type TvLayout = "bar" | "clean";
@@ -88,6 +94,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   joinInfo: "between",
   tvLayout: "bar",
   tvBarSize: "medium",
+  language: "en",
 };
 
 export type PlaybackState = "idle" | "get_ready" | "playing" | "paused";
@@ -213,6 +220,8 @@ export type Recap = {
   titles: Record<string, TitleId[]>;
   /** The most-cheered performance. */
   topMoment: RecapPerformance | null;
+  /** The session language, so the recap page, image and share text match the night. Missing = "en". */
+  language?: RoomLanguage;
 };
 
 export const REACTIONS = ["clap", "fire", "laugh", "heart", "party"] as const;
@@ -307,6 +316,7 @@ export type ErrorCode =
 /**
  * Room codes are three words, e.g. "fuzzy-golden-panda": easy to say across a room, ~57 million combinations
  * (the API also rate-limits lookups per IP). Always lowercase with dashes in URLs and storage.
+ * Spanish rooms use Spanish words (ASCII only, no accents, e.g. "feliz-dorado-panda"); the same pattern accepts both.
  */
 export const ROOM_CODE_EXAMPLE = "fuzzy-golden-panda";
 export const ROOM_CODE_RE = /^[a-z]+-[a-z]+-[a-z]+$/;
@@ -336,11 +346,11 @@ export function isRoomCode(code: string): boolean {
 // ── HTTP: /api ───────────────────────────────────────────────────────────
 
 /** POST /api/rooms  body: CreateRoomRequest */
-export type CreateRoomRequest = { nickname: string; avatarSeed: string };
+export type CreateRoomRequest = { nickname: string; avatarSeed: string; /** The session language; also picks the room code's words. Default "en". */ language?: RoomLanguage };
 export type CreateRoomResponse = { code: string; memberId: string; key: string };
 
 /** GET /api/rooms/:code */
-export type RoomInfoResponse = { code: string; exists: boolean; locked: boolean; status: "open" | "ended" | null };
+export type RoomInfoResponse = { code: string; exists: boolean; locked: boolean; status: "open" | "ended" | null; language?: RoomLanguage };
 
 /** GET /api/search?q=  (the API adds "karaoke" to the query and caches results) */
 export type SearchResponse = { query: string; results: Song[] };
