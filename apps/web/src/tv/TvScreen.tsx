@@ -15,7 +15,7 @@ import { useWakeLock } from "./useWakeLock";
 const AWARDS_SHOW_MS = 60_000;
 const JOIN_FLASH_MS = 15_000;
 
-const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
+const page = { position: "fixed", inset: 0, height: "100dvh", background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
 
 const center = { ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", padding: 24 } as const;
 const bigBtn = { font: "inherit", fontWeight: 800, fontSize: 24, padding: "16px 32px", borderRadius: 999, border: 0, background: "#ff4f8b", color: "#1f0711", cursor: "pointer" } as const;
@@ -272,7 +272,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
           action={
             !started && (
               <button
-                style={{ ...bigBtn, fontSize: "4vh", padding: "2vh 6vh" }}
+                style={{ ...bigBtn, fontSize: "max(18px, 4dvh)", padding: "max(10px, 2dvh) max(24px, 6dvh)" }}
                 data-testid="tv-start"
                 onClick={() => {
                   setStarted(true);
