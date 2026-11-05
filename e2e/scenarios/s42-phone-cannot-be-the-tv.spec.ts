@@ -24,7 +24,7 @@ test("S42b · The no-TV banner on a phone @tv @phone", async ({ night }) => {
   await page.getByTestId("tv-banner").getByRole("button", { name: /different device/i }).click();
   await expect(page.getByTestId("tv-link")).toBeVisible();
   expect(await page.getByTestId("tv-link").evaluate((el) => el.tagName)).not.toBe("A");
-  await page.getByTestId("tv-banner-code").fill("ABC 123");
+  await page.getByTestId("tv-banner-code").fill("12345");
   await page.screenshot({ path: "/private/tmp/claude-501/-Users-juliobenavente-Documents-web-projects-karaoke-tube/938fa91a-4fb9-4bc5-966e-91eceba85531/scratchpad/phone-banner.png" });
 });
 

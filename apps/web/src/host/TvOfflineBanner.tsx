@@ -63,10 +63,10 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
                 hideLabel
                 value={pair.code}
                 onChange={(e) => pair.setCode(e.target.value)}
-                placeholder="ABC 123"
-                maxLength={8}
+                placeholder="12345"
+                maxLength={5}
+                inputMode="numeric"
                 autoComplete="off"
-                autoCapitalize="characters"
                 spellCheck={false}
                 error={pair.error}
                 data-testid="tv-banner-code"

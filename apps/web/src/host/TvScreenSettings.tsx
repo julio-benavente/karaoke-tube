@@ -28,8 +28,8 @@ export function TvScreenSettings() {
   const pair = async (e: FormEvent) => {
     e.preventDefault();
     const creds = localStorageCredentials().load(state.code);
-    const clean = code.replace(/[\s-]/g, "").toUpperCase();
-    if (!creds || clean.length !== 6 || busy) return setError(t("tvscreen.codeHint"));
+    const clean = code.replace(/\D/g, "");
+    if (!creds || clean.length !== 5 || busy) return setError(t("tvscreen.codeHint"));
     setBusy(true);
     setError(null);
     try {
@@ -93,17 +93,17 @@ export function TvScreenSettings() {
               label={t("tvscreen.codeLabel")}
               hideLabel
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="ABC 123"
-              maxLength={8}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+              placeholder="12345"
+              maxLength={5}
+              inputMode="numeric"
               autoComplete="off"
-              autoCapitalize="characters"
               spellCheck={false}
               error={error}
               data-testid="tv-pair-input"
             />
           </div>
-          <Button size="sm" type="submit" disabled={busy || code.replace(/[\s-]/g, "").length !== 6}>
+          <Button size="sm" type="submit" disabled={busy || code.replace(/\D/g, "").length !== 5}>
             {t("tvscreen.pairButton")}
           </Button>
         </form>

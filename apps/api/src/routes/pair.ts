@@ -32,7 +32,7 @@ export const pairRoutes = new Hono<{ Bindings: Env }>()
     const body = await c.req.json<Partial<PairClaimRequest>>().catch(() => null);
     const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().replace(/[\s-]/g, "") : "";
     const roomCode = normalizeRoomCode(typeof body?.roomCode === "string" ? body.roomCode : "");
-    if (!/^[A-Z2-9]{6}$/.test(code) || !isRoomCode(roomCode) || typeof body?.memberId !== "string" || typeof body.key !== "string") {
+    if (!/^[0-9]{5}$/.test(code) || !isRoomCode(roomCode) || typeof body?.memberId !== "string" || typeof body.key !== "string") {
       return fail(c, 400, "That code doesn't look right.");
     }
     const pairing = stub(c.env);

@@ -3,7 +3,6 @@ import { DurableObject } from "cloudflare:workers";
 /** How long a code on a TV stays valid. The TV replaces it a bit before that, so the code on screen is always fresh. */
 const TTL_MS = 6 * 60_000;
 /** Unambiguous letters and digits (no 0/O, 1/I/L), easy to read off a TV and type on a phone. */
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 type Row = { id: string; code: string; created_at: number; room_code: string | null; screen_key: string | null };
 
@@ -26,8 +25,8 @@ export class Pairing extends DurableObject<Env> {
   }
 
   private newCode(): string {
-    const bytes = crypto.getRandomValues(new Uint8Array(6));
-    return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
+    // Five digits, easy to read off a TV and type on a phone ("00042" is a code too).
+    return String(crypto.getRandomValues(new Uint32Array(1))[0] % 100_000).padStart(5, "0");
   }
 
   /** A TV asks for a code. With `previousId` (the TV is replacing its code) the old code stops working at once. */

@@ -25,7 +25,7 @@ async function pairedScreen(room: { code: string; memberId: string; key: string 
 describe("TV pairing", () => {
   it("hands a TV a short code, then the room's screen key once the host enters it", async () => {
     const tv = await start();
-    expect(tv.code).toMatch(/^[A-HJKMNP-Z2-9]{6}$/);
+    expect(tv.code).toMatch(/^\d{5}$/);
     expect(await status(tv.id)).toEqual({ state: "waiting" });
 
     const room = await hostRoom({ player: false });
@@ -55,7 +55,7 @@ describe("TV pairing", () => {
     const tv = await start();
     expect((await claim(tv.code, { code: room.code, memberId: ana.id, key: ana.key })).status).toBe(403);
     expect((await claim(tv.code, { ...room, key: "wrong" })).status).toBe(403);
-    expect((await claim("ZZZZZZ", room)).status).toBe(404);
+    expect((await claim("00000", room)).status).toBe(404);
     expect((await claim("nope", room)).status).toBe(400);
     expect(await status(tv.id)).toEqual({ state: "waiting" }); // nothing leaked to the TV
   });

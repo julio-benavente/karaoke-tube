@@ -120,7 +120,7 @@ function Waiting() {
       ) : (
         <>
           <div data-testid="tv-pair-code" style={{ fontSize: "min(16dvh, 15vw)", fontWeight: 900, letterSpacing: "0.12em", color: "#ff4f8b", lineHeight: 1 }}>
-            {pair ? `${pair.code.slice(0, 3)} ${pair.code.slice(3)}` : "…"}
+            {pair ? pair.code : "…"}
           </div>
           <p style={{ fontSize: "3dvh", opacity: 0.85, maxWidth: "70vw", margin: 0 }}>{t("tvpair.hint")}</p>
           <p data-testid="tv-pair-timer" style={{ fontSize: "2.2dvh", opacity: 0.55, margin: 0 }}>

@@ -10,12 +10,12 @@ export function usePairClaim(roomCode: string) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const clean = code.replace(/[\s-]/g, "").toUpperCase();
+  const clean = code.replace(/\D/g, "");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const creds = localStorageCredentials().load(roomCode);
-    if (!creds || clean.length !== 6 || busy) return setError(t("tvscreen.codeHint"));
+    if (!creds || clean.length !== 5 || busy) return setError(t("tvscreen.codeHint"));
     setBusy(true);
     setError(null);
     try {
@@ -38,5 +38,5 @@ export function usePairClaim(roomCode: string) {
     }
   };
 
-  return { code, setCode: (v: string) => setCode(v.toUpperCase()), ready: clean.length === 6, busy, error, submit };
+  return { code, setCode: (v: string) => setCode(v.replace(/\D/g, "").slice(0, 5)), ready: clean.length === 5, busy, error, submit };
 }
