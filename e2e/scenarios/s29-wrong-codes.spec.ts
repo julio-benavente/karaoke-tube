@@ -4,7 +4,7 @@ import { es } from "../../packages/ui/src/i18n/es";
 import { newContext, PHONE } from "../lib/people";
 
 test("S29 · Wrong, old and odd codes @join @i18n", async ({ night, browser }) => {
-  await night.setup({ tv: false });
+  await night.setup({ tv: false, lang: "es" }) // the room speaks Spanish: so does its join page;
   const code = night.code;
   const ctx = await newContext(browser, { ...PHONE, locale: "es-ES" });
   const page = await ctx.newPage();
@@ -40,7 +40,7 @@ test("S29 · Wrong, old and odd codes @join @i18n", async ({ night, browser }) =
   // 4. An ended party's code says it ended.
   await night.host.send({ type: "end_party" });
   await night.host.waitForState("ended", (s) => s.status === "ended");
-  const late = await night.tryJoin("Cy", { lang: "es" });
+  const late = await night.tryJoin("Cy");
   expect(late.ok).toBe(false);
   await expect(late.phone.page.getByText(es["error.room_ended"])).toBeVisible();
 

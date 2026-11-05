@@ -5,6 +5,8 @@ test("S36 · Finding songs @search", async ({ night }) => {
   await night.setup({ tv: false });
   const ana = await night.join("Ana", { viewport: { width: 820, height: 1180 } });
   const page = ana.page;
+  // The catalog is real data: now and then a song's YouTube thumbnail is gone (404 from i.ytimg.com). The art falls back to a placeholder.
+  ana.ignore.push("status of 404");
   const results = () => page.getByRole("button", { name: /^Add .* to queue$/ });
   const box = () => page.getByPlaceholder(en["search.placeholder"]);
 
@@ -33,7 +35,8 @@ test("S36 · Finding songs @search", async ({ night }) => {
   const first = await results().count();
   const more = page.getByRole("button", { name: en["search.showMore"] });
   if (await more.count()) {
-    await more.first().click();
+    // Scrolling to the button also triggers the infinite scroll, so the list grows under the pointer: click it directly.
+    await more.first().dispatchEvent("click").catch(() => {});
     await expect.poll(() => results().count()).toBeGreaterThan(first);
   }
 

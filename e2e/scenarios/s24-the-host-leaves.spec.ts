@@ -4,9 +4,9 @@ import { en } from "../../packages/ui/src/i18n/en";
 import { song } from "../lib/songs";
 
 test("S24 · The host leaves @leaving @i18n", async ({ night }) => {
-  const { host, tv } = await night.setup({ songSec: 30, settings: { tvLayout: "clean" } });
-  const ana = await night.join("Ana", { lang: "es" });
-  const ben = await night.join("Ben", { lang: "es" });
+  const { host, tv } = await night.setup({ songSec: 30, lang: "es", settings: { tvLayout: "clean" } });
+  const ana = await night.join("Ana");
+  const ben = await night.join("Ben");
   await ana.addSong(song("a1"));
   await ben.addSong(song("b1"));
   await host.waitForState("playing", (s) => s.playback.state === "playing");
@@ -24,7 +24,7 @@ test("S24 · The host leaves @leaving @i18n", async ({ night }) => {
   await expect(ana.page.locator("body")).not.toContainText(en["shell.thanks"]);
 
   // A newcomer is told the party has ended (in Spanish too).
-  const late = await night.tryJoin("Late", { lang: "es" });
+  const late = await night.tryJoin("Late");
   expect(late.ok).toBe(false);
   await expect(late.phone.page.getByText(es["error.room_ended"])).toBeVisible();
 

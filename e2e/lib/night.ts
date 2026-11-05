@@ -62,6 +62,7 @@ export class Night {
 
   /** A guest joins from a phone: the join page, a nickname, "Join". */
   async join(name: string, opts: Opts = {}) {
+    opts = { ...opts, lang: opts.lang ?? this.lang }; // the join page speaks the ROOM's language, whatever the phone's
     const ctx = await newContext(this.browser, { ...PHONE, ...(opts.viewport ? { viewport: opts.viewport } : {}), ...(opts.lang === "es" ? { locale: "es-ES" } : {}) });
     if (opts.token) await ctx.addInitScript((t) => localStorage.setItem("kt:account-token", t), opts.token);
     if (opts.clockOffsetMs) await ctx.addInitScript((ms) => { const real = Date.now.bind(Date); (window as unknown as { __realNow: () => number }).__realNow = real; Date.now = () => real() + ms; }, opts.clockOffsetMs);
@@ -80,6 +81,7 @@ export class Night {
 
   /** Tries to join; says whether it worked, and what the page showed if not. Nothing is asserted. */
   async tryJoin(name: string, opts: Opts = {}): Promise<{ phone: Phone; ok: boolean; text: string }> {
+    opts = { ...opts, lang: opts.lang ?? this.lang };
     const ctx = await newContext(this.browser, { ...PHONE, ...(opts.viewport ? { viewport: opts.viewport } : {}), ...(opts.lang === "es" ? { locale: "es-ES" } : {}) });
     if (opts.token) await ctx.addInitScript((t) => localStorage.setItem("kt:account-token", t), opts.token);
     if (opts.clockOffsetMs) await ctx.addInitScript((ms) => { const real = Date.now.bind(Date); (window as unknown as { __realNow: () => number }).__realNow = real; Date.now = () => real() + ms; }, opts.clockOffsetMs);

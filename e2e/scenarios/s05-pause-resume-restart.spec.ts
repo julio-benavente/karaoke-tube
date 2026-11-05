@@ -51,7 +51,8 @@ test("S05 · Pause, resume, restart @core", async ({ night }) => {
   expect(afterRestart.nowPlaying?.id).toBe(itemId);
   expect(afterRestart.playback.state).toBe("playing");
 
-  // 4. Pause, then refresh the TV: it comes back paused at the same place.
+  // 4. Let the song get past the first few seconds (a TV reopened before that starts the song over), then pause and refresh the TV: it comes back paused at the same place.
+  await expect.poll(async () => (await tv.player()).pos, { timeout: 10_000 }).toBeGreaterThan(4);
   await host.send({ type: "pause" });
   await host.waitForState("paused", (s) => s.playback.state === "paused");
   const pausedAt = (await host.state())!.playback.positionSec;

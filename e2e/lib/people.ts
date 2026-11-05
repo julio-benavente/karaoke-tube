@@ -268,6 +268,9 @@ export class Phone extends Person {
     await this.tab("Search");
     await this.page.getByPlaceholder("What do you want to sing?").fill(query);
     await this.page.getByRole("button", { name: `Add ${title} to queue`, exact: true }).first().click({ timeout: 20_000 });
+    // Duets on: every way of adding asks "who do you sing with?" first; a solo song is one tap on "Skip".
+    const skip = this.page.getByTestId("add-flow-skip");
+    await skip.waitFor({ state: "visible", timeout: 1500 }).then(() => skip.click(), () => {});
   }
 }
 

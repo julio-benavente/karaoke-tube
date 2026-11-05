@@ -7,14 +7,14 @@ import { song } from "../lib/songs";
 // awards during countdowns, and the end of the night. The watcher (C1, C2, C3, C6, C8) runs the whole time.
 test("S39 · Grand finale @chaos", async ({ night }) => {
   test.setTimeout(240_000);
-  const { host } = await night.setup({ countdown: 2, songSec: 4, settings: { maxWaitingPerMember: 3 } });
+  const { host } = await night.setup({ lang: "es", countdown: 2, songSec: 4, settings: { maxWaitingPerMember: 3 } });
   let tv = night.tv!;
   await tv.fake({ failing: { "e2e-song-bad": true } });
 
   // 1. Hana, Ben (co-host) and six guests, one name twice, two phones in Spanish, plus Gran.
-  const ana = await night.join("Ana", { lang: "es" });
+  const ana = await night.join("Ana");
   const ben = await night.join("Ben");
-  const cleo = await night.join("Cleo", { lang: "es" });
+  const cleo = await night.join("Cleo");
   const dev = await night.join("Dev");
   const eli = await night.join("Eli");
   const ana2 = await night.join("Ana");

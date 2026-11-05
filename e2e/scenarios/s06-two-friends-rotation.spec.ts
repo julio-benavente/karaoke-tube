@@ -4,9 +4,9 @@ import { song } from "../lib/songs";
 
 test("S06 · Two friends, fair rotation @queue @i18n", async ({ night }) => {
   // No TV: the first song stays in "get ready", so the queue order is easy to read.
-  const { host } = await night.setup({ tv: false });
-  const ana = await night.join("Ana", { lang: "es" });
-  const ben = await night.join("Ben", { lang: "es" });
+  const { host } = await night.setup({ tv: false, lang: "es" });
+  const ana = await night.join("Ana");
+  const ben = await night.join("Ben");
 
   await host.addSong(song("blocker"));
   await host.waitForState("blocker in get ready", (s) => s.nowPlaying?.song.videoId === "e2e-song-blocker");

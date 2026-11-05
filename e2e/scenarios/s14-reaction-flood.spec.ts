@@ -11,7 +11,6 @@ test("S14 · Reaction flood @social", async ({ night }) => {
 
   // Four phones spam reactions every 100 ms for 3 seconds.
   const ids = await Promise.all(phones.map((p) => p.memberId()));
-  const t0 = Date.now();
   const spam = phones.map(async (p) => {
     for (let i = 0; i < 30; i++) {
       await p.send({ type: "react", reaction: REACTIONS[i % REACTIONS.length] });
@@ -19,18 +18,17 @@ test("S14 · Reaction flood @social", async ({ night }) => {
     }
   });
   await Promise.all(spam);
-  const seconds = (Date.now() - t0) / 1000;
   await sleep(1000);
 
-  // At most one per 500 ms each gets through, and they all reached the host and the TV.
+  // One cheer per person per song: exactly one of each person's 30 gets through, the rest are refused, and the
+  // host and the TV both saw every one that did.
   const got = await host.reactions();
   for (const id of ids) {
-    const n = got.filter((r) => r.memberId === id).length;
-    expect(n, "reactions that got through per person").toBeGreaterThanOrEqual(3);
-    expect(n, `at most one per 500 ms over ${seconds.toFixed(1)}s`).toBeLessThanOrEqual(Math.ceil(seconds / 0.5) + 1);
-    expect(n, "the limiter did drop some").toBeLessThan(30);
+    expect(got.filter((r) => r.memberId === id).length, `reactions that got through for ${id} (one cheer per song)`).toBe(1);
   }
+  expect(got.length).toBe(ids.length);
   expect((await tv!.reactions()).length).toBe(got.length);
+  expect(await phones[0].expectRefused({ type: "react", reaction: "clap" })).toBe("already_cheered");
 
   // The TV is still responsive after the flood and its floating reactions have cleared.
   await expect.poll(async () => (await tv!.snapshot())?.state?.nowPlaying?.song.videoId).toBe("e2e-song-loud");

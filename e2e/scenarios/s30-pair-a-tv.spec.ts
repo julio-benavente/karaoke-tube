@@ -15,11 +15,13 @@ test("S30 · Pair a TV with a code @tv", async ({ night, browser }) => {
     await expect(tv.page.getByTestId("tv-pair-code")).toHaveText(/[A-Z2-9]{3}\s?[A-Z2-9]{3}/);
     return tv;
   };
+  // The offline banner has its own pair form (testid tv-banner-code): this scenario uses the one in Settings → TV screen.
+  const pairButton = () => host.page.getByTestId("tv-screen-settings").getByRole("button", { name: en["tvscreen.pairButton"] });
   const pairFromHost = async (code: string) => {
     const input = host.page.getByTestId("tv-pair-input");
     if (!(await input.isVisible())) await host.page.getByRole("button", { name: "Settings", exact: true }).click();
     await input.fill(code);
-    await host.page.getByRole("button", { name: en["tvscreen.pairButton"] }).click();
+    await pairButton().click();
   };
 
   // 1. The TV shows a code and a renewal timer; the host types the code in Settings → TV screen and the TV joins the party.
@@ -56,12 +58,12 @@ test("S30 · Pair a TV with a code @tv", async ({ night, browser }) => {
 
   // 4. A wrong code says so and pairs nothing.
   await host.page.getByTestId("tv-pair-input").fill("ZZZZZZ");
-  await host.page.getByRole("button", { name: en["tvscreen.pairButton"] }).click();
+  await pairButton().click();
   await expect(host.page.getByText(en["tvscreen.notFound"])).toBeVisible();
 
   // 5. The new code pairs the second TV, which replaces the first one: the first goes back to showing a code.
   await host.page.getByTestId("tv-pair-input").fill(await readCode(tv2));
-  await host.page.getByRole("button", { name: en["tvscreen.pairButton"] }).click();
+  await pairButton().click();
   await expect(tv2.page).toHaveURL(new RegExp(`/tv/${night.code}`), { timeout: 15_000 });
   await expect(tv1.page).toHaveURL(/\/tv(\?|$)/, { timeout: 15_000 });
   await expect(tv1.page.getByTestId("tv-pair-code")).toBeVisible();
