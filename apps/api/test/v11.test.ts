@@ -204,3 +204,15 @@ describe("phoneless guests", () => {
     expect(after.members.some((m) => m.id === tio.id)).toBe(false);
   });
 });
+
+describe("tvHideBar setting", () => {
+  it("the host can hide the TV's bottom bar; junk values are ignored", async () => {
+    const { host } = await party();
+    let state = await host.act({ type: "update_settings", settings: { tvHideBar: true } });
+    expect(state.settings.tvHideBar).toBe(true);
+    state = await host.act({ type: "update_settings", settings: { tvHideBar: "yes" as unknown as boolean } });
+    expect(state.settings.tvHideBar).toBe(true);
+    state = await host.act({ type: "update_settings", settings: { tvHideBar: false } });
+    expect(state.settings.tvHideBar).toBe(false);
+  });
+});

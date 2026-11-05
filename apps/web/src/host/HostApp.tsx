@@ -41,6 +41,7 @@ import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
+import { NextSongFor } from "./NextSongFor";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
 import css from "./host.module.css";
@@ -232,6 +233,7 @@ function Host() {
           </div>
         )}
         <main className={`${css.mobileMain} ${status === "open" && state.playerConnected === false ? css.hasBanner : ""}`}>
+          <NextSongFor />
           {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}
           {view === "queue" && (
@@ -326,6 +328,7 @@ function Host() {
       )}
       <Sidebar view={view} onView={setView} />
       <main className={css.main}>
+        <NextSongFor />
         {view === "home" && <HomeView onSearch={() => setView("search")} />}
         {view === "search" && <SearchView />}
         {view === "settings" && <SettingsView />}
@@ -432,7 +435,9 @@ function AwardCounts() {
       data-testid="award-counts"
       aria-live="polite"
     >
-      <span className={css.awardsLabel}>{t("host.awards")}</span>
+      <span className={css.awardsLabel} title={t("award.help")}>
+        {t("host.awards")}
+      </span>
       {given.length === 0 ? (
         <span className={css.awardsIdle}>{left}s</span>
       ) : (

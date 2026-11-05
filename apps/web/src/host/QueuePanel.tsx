@@ -49,9 +49,9 @@ export function QueuePanel({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <aside className={`${css.panel} ${css.queue}`} aria-label={t("host.queueAria")}>
+    <aside className={`${css.panel} ${css.queue}`} aria-labelledby="host-queue-title">
       <header className={css.queueHead}>
-        <h2 className={css.queueTitle}>{t("tab.queue")}</h2>
+        <h2 id="host-queue-title" className={css.queueTitle}>{t("tab.queue")}</h2>
         {onClose && (
           <IconButton label={t("host.closeQueue")} size="sm" onClick={onClose}>
             <X size={18} />
@@ -103,7 +103,7 @@ export function QueuePanel({ onClose }: { onClose?: () => void }) {
         {state.nowPlaying ? (
           <QueueRow item={state.nowPlaying} members={state.members} playing compact showOffline onRemoveAllOf={(m) => send({ type: "remove_member_songs", memberId: m.id })} />
         ) : (
-          <p className={css.muted}>{t("host.nothingYet")}</p>
+          <p className={`${css.muted} ${css.queueNote}`}>{t("host.nothingYet")}</p>
         )}
         <h3 className={css.queueSub}>
           {t("queue.nextUp")} <span className={css.muted}>{items.length}</span>

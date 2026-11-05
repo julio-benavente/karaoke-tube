@@ -61,7 +61,7 @@ export function cleanSettings(input: unknown): Partial<RoomSettings> {
   if (s.joinInfo === "between" || s.joinInfo === "always" || s.joinInfo === "start") out.joinInfo = s.joinInfo;
   if (s.tvLayout === "bar" || s.tvLayout === "clean") out.tvLayout = s.tvLayout;
   if (s.tvBarSize === "small" || s.tvBarSize === "medium" || s.tvBarSize === "large") out.tvBarSize = s.tvBarSize;
-  for (const k of ["hostsOnlyAdd", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
+  for (const k of ["hostsOnlyAdd", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles", "tvHideBar"] as const) {
     if (typeof s[k] === "boolean") out[k] = s[k];
   }
   return out;
