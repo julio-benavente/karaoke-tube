@@ -1,8 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import { songParts, useAddSong, useSingWith, useT, useToast } from "@karaoke-tube/ui";
 
-/** Add a song as the host, with the "Added to queue · 3rd" toast. Sends the "Sing with…" choice, then goes back to solo. */
+/**
+ * Add a song as the host, with the "Added to queue · 3rd" toast. The "Sing with…" / "add a song for Ana" choice
+ * applies to this one song only: right after it is sent, the choice goes back to "just me".
+ */
 export function useHostAdd() {
   const toast = useToast();
   const t = useT();
@@ -15,12 +18,16 @@ export function useHostAdd() {
       </>,
     );
   });
+  // Always read the choice as it is now. A memoized callback kept an old copy of it (the "for Ana" choice was not
+  // in its dependencies), so the reset below could not be trusted to line up with what was sent.
+  const latest = useRef(sing);
+  latest.current = sing;
   return useCallback(
     (song: Song) => {
-      add(song, sing.singers());
-      sing.reset();
+      const choice = latest.current;
+      add(song, choice.singers());
+      choice.reset();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [add, sing.everyone, sing.partnerIds.join(",")],
+    [add],
   );
 }
