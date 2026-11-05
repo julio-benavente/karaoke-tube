@@ -2,10 +2,10 @@ import clsx from "clsx";
 import { RotateCcw, SkipForward } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
-import { songParts } from "../format";
+import { singerSeeds, songParts } from "../format";
 import { usePlaybackPosition, useCountdown } from "../hooks/room";
 import { Artwork } from "./Artwork";
-import { Avatar } from "./Avatar";
+import { AvatarStack } from "./Avatar";
 import { IconButton, PlayButton } from "./Button";
 import { ProgressBar } from "./ProgressBar";
 import { singerNames } from "./QueueRow";
@@ -47,7 +47,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
             <div className={css.meta}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>
-                {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={16} />}
+                {!item.everyone && <AvatarStack seeds={singerSeeds(item, members)} size={singer && item.singerIds.length > 1 ? 22 : 16} />}
                 <span className={css.singer}>{singerNames(item, members, t)}</span>
                 <span>·</span>
                 <span className={css.artist}>{parts.artist}</span>

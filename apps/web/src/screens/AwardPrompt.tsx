@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AWARDS, AWARD_INFO, type Award } from "@karaoke-tube/shared";
-import { Avatar, awardLabel, singerLabel, songParts, useCountdown, useRoom, useT } from "@karaoke-tube/ui";
+import { AvatarStack, awardLabel, singerLabel, singerSeeds, songParts, useCountdown, useRoom, useT } from "@karaoke-tube/ui";
 import css from "./Alerts.module.css";
 
 /**
@@ -47,7 +47,7 @@ export function AwardPrompt() {
     <div className={css.awardWrap}>
       <section className={css.award} aria-label={t("award.give")} data-testid="award-prompt">
         <header className={css.awardHead}>
-          {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={32} />}
+          {singer && !item.everyone && <AvatarStack seeds={singerSeeds(item, state.members)} size={32} />}
           <div className={css.awardTitle}>
             <span className={css.awardLine}>
               <b>{who}</b> {t("award.justSang")} <b>{songParts(item.song).title}</b>

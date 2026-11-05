@@ -26,7 +26,7 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
           </div>
           {sing.enabled && (
             <div className={css.sing}>
-              <div className={css.singTitle}>{t("singwith.title")}</div>
+              <div className={css.singTitle}>{song.duet ? t("song.duetHint") : t("singwith.title")}</div>
               <SingWithPicker />
             </div>
           )}
