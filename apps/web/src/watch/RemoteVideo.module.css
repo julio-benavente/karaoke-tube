@@ -43,10 +43,11 @@
   position: absolute;
   right: var(--kt-space-2);
   bottom: var(--kt-space-2);
-  padding: 4px 10px;
+  min-height: 44px; /* a thumb-sized target */
+  padding: 0 var(--kt-space-4);
   border-radius: var(--kt-radius-full);
-  background: rgba(7, 6, 9, 0.7);
+  background: rgba(7, 6, 9, 0.75);
   color: #fff;
-  font-size: var(--kt-text-sm);
+  font-size: 15px;
   font-weight: var(--kt-weight-bold);
 }
