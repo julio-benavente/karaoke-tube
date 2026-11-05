@@ -28,7 +28,7 @@ export default defineConfig({
   webServer: [
     {
       // The API with the short timers on (E2E_FAST) and its own throw-away state.
-      command: `pnpm --filter @karaoke-tube/api exec wrangler dev --port ${API_PORT} --inspector-port 9330 --var E2E_FAST:1 --persist-to .wrangler/e2e`,
+      command: `pnpm --filter @karaoke-tube/api exec wrangler dev --port ${API_PORT} --inspector-port 9330 --var E2E_FAST:1 --var ACCOUNTS_ENABLED:true --persist-to .wrangler/e2e`,
       url: `http://localhost:${API_PORT}/api/health`,
       reuseExistingServer: true,
       timeout: 120_000,
@@ -36,7 +36,7 @@ export default defineConfig({
       stderr: "ignore",
     },
     {
-      command: `API_PORT=${API_PORT} pnpm --filter @karaoke-tube/web exec vite --port ${WEB_PORT} --strictPort`,
+      command: `VITE_ACCOUNTS=1 API_PORT=${API_PORT} pnpm --filter @karaoke-tube/web exec vite --port ${WEB_PORT} --strictPort`,
       url: `http://localhost:${WEB_PORT}`,
       reuseExistingServer: true,
       timeout: 120_000,

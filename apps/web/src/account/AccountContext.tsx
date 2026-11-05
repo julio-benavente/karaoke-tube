@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createAccountApi, localStorageCredentials, type AccountApi } from "@karaoke-tube/client";
 import type { Account, AccountStats, RegisterRequest } from "@karaoke-tube/shared";
+import { ACCOUNTS_ENABLED } from "./enabled";
 
 /** Accounts are optional. `account === null` is a guest, and everything outside /account works the same for them. */
 type Ctx = {
@@ -23,10 +24,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const api = useMemo(() => createAccountApi(), []);
   const [account, setAccount] = useState<Account | null>(null);
   const [stats, setStats] = useState<AccountStats | null>(null);
-  const [loading, setLoading] = useState(() => api.token() !== null);
+  const [loading, setLoading] = useState(() => ACCOUNTS_ENABLED && api.token() !== null);
 
   const refresh = useCallback(async () => {
-    if (!api.token()) {
+    if (!ACCOUNTS_ENABLED || !api.token()) {
       setAccount(null);
       setStats(null);
       return;

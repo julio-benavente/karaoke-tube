@@ -18,6 +18,7 @@ import {
   USE_MOCK,
 } from "../session";
 import { useAccount } from "../account/AccountContext";
+import { ACCOUNTS_ENABLED } from "../account/enabled";
 import { useLiveParties } from "../account/useLiveParties";
 import css from "./Join.module.css";
 
@@ -200,9 +201,11 @@ function JoinFormBody({ roomLang, onRoomLanguage }: { roomLang: RoomLanguage | u
       <p className={css.hint}>
         {t("join.host")} <Link to="/host/new">{t("join.hostLink")}</Link>
       </p>
-      <p className={css.hint}>
-        <Link to="/account">{account ? t("acct.linkIn", { name: account.displayName }) : t("acct.link")}</Link>
-      </p>
+      {ACCOUNTS_ENABLED && (
+        <p className={css.hint}>
+          <Link to="/account">{account ? t("acct.linkIn", { name: account.displayName }) : t("acct.link")}</Link>
+        </p>
+      )}
       {!roomLang && <LanguageSwitcher />}
     </div>
   );

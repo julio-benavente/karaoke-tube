@@ -12,6 +12,7 @@ import { PartyScreen } from "./screens/Party";
 import { RecapPage } from "./screens/RecapPage";
 import { AccountProvider } from "./account/AccountContext";
 import { AccountPage } from "./account/AccountPage";
+import { ACCOUNTS_ENABLED } from "./account/enabled";
 
 // Design previews live under /dev/*. They exist only in development: in a production build DEV is false, so these routes
 // are not registered and the preview code is dropped from the bundle (a /dev/... address falls through to /join).
@@ -42,7 +43,7 @@ export function App() {
           </Route>
           <Route path="/privacy" element={<LegalPage doc="privacy" />} />
           <Route path="/terms" element={<LegalPage doc="terms" />} />
-          <Route path="/account" element={<AccountPage />} />
+          {ACCOUNTS_ENABLED && <Route path="/account" element={<AccountPage />} />}
           <Route path="/recap/:id" element={<RecapPage />} />
           <Route path="/host/new" element={<NewParty />} />
           <Route path="/tv" element={<TvPair />} />

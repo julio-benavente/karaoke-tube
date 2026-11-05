@@ -86,6 +86,7 @@ function cleanSong(v: unknown): Song | null {
 
 /** The user for a Bearer token, or null. */
 export async function userFromRequest(env: Env, req: Request): Promise<UserRow | null> {
+  if (env.ACCOUNTS_ENABLED !== "true") return null; // accounts are switched off: a saved token means nothing
   const m = /^Bearer\s+([0-9a-f]{64})$/.exec(req.headers.get("Authorization") ?? "");
   if (!m) return null;
   await ensureSchema(env.DB);
@@ -130,6 +131,11 @@ async function stats(db: D1Database, userId: string): Promise<AccountStats> {
 }
 
 export const accountRoutes = new Hono<{ Bindings: Env; Variables: Vars }>()
+  // Switched off (wrangler.jsonc: ACCOUNTS_ENABLED): the whole account API is hidden.
+  .use("*", async (c, next) => {
+    if (c.env.ACCOUNTS_ENABLED !== "true") return c.json({ error: "not_found", message: "Accounts are switched off." }, 404);
+    await next();
+  })
   .use("*", async (c, next) => {
     await ensureSchema(c.env.DB);
     await next();
