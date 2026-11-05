@@ -11,13 +11,16 @@ import {
   SAMPLE_SONGS,
   Shelf,
   ShortcutTile,
+  Tile,
   greeting,
   hueOf,
+  presetDescription,
   songParts,
   useRoom,
   useRoomSongs,
   useSearch,
 } from "@karaoke-tube/ui";
+import { fromBrowseFilter, writeFilters } from "../catalogFilters";
 import { useShell } from "./RoomShell";
 import { SongSheet } from "./SongSheet";
 import { useAddWithToast } from "./useAdd";
@@ -32,7 +35,7 @@ export function HomeScreen() {
   const navigate = useNavigate();
   const { code } = useShell();
   const roomSongs = useRoomSongs(state);
-  const { add, pending } = useAddWithToast();
+  const { add, addNow, pending } = useAddWithToast();
   const [sheetSong, setSheetSong] = useState<Song | null>(null);
   const [genre, setGenre] = useState<string | null>(null);
   const genreSearch = useSearch();
@@ -139,12 +142,25 @@ export function HomeScreen() {
               />
             ))}
           </div>
+          <Shelf title={t("home.byGenre")}>
+            {BROWSE_PRESETS.map((p) => (
+              <div key={p.id} className={css.mixCell}>
+              <Tile
+                id={p.id}
+                title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
+                color={p.color}
+                onClick={() => navigate({ pathname: `/r/${code}/search`, search: `?${writeFilters(new URLSearchParams(), fromBrowseFilter(p.filter))}` })}
+              />
+              </div>
+            ))}
+          </Shelf>
           {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
           {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
         </section>
       )}
 
-      <SongSheet song={sheetSong} onClose={() => setSheetSong(null)} onAdd={add} />
+      <SongSheet song={sheetSong} onClose={() => setSheetSong(null)} onAdd={addNow} />
     </div>
   );
 }

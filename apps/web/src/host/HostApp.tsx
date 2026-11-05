@@ -18,6 +18,7 @@ import {
   RoomLanguage,
   RoomProvider,
   Sheet,
+  AddFlowProvider,
   SingWithProvider,
   Spinner,
   ToastProvider,
@@ -100,7 +101,9 @@ export function HostApp() {
       <RoomLanguage>
         <ToastProvider offset={96}>
           <SingWithProvider>
-            <Host />
+            <AddFlowProvider>
+              <Host />
+            </AddFlowProvider>
           </SingWithProvider>
         </ToastProvider>
       </RoomLanguage>

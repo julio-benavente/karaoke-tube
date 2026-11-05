@@ -114,22 +114,44 @@ export async function searchYouTube(apiKey: string | undefined, query: string): 
  * reports it once the video loads. Returns null when the video doesn't exist or can't be embedded.
  */
 export async function oembedSong(videoId: string): Promise<Song | null> {
+  const found = await oembedLookup(videoId);
+  return "song" in found ? found.song : null;
+}
+
+/** Why a pasted video can't be offered: it doesn't exist (or is private), or its owner doesn't allow playing it elsewhere. */
+export type VideoMiss = { reason: "not_found" | "not_embeddable" };
+
+/** Like `oembedSong`, but says why there is no song. oEmbed answers 401 when embedding is off, 404/400 when there is no such video. */
+export async function oembedLookup(videoId: string): Promise<{ song: Song } | VideoMiss> {
   const url = new URL("https://www.youtube.com/oembed");
   url.searchParams.set("url", `https://www.youtube.com/watch?v=${videoId}`);
   url.searchParams.set("format", "json");
   const res = await fetch(url);
-  if (!res.ok) return null; // 400/404: no such video, 401: embedding disabled
+  if (res.status === 401 || res.status === 403) return { reason: "not_embeddable" };
+  if (!res.ok) return { reason: "not_found" };
   const data = await res.json<{ title?: string; author_name?: string }>();
-  if (!data.title) return null;
+  if (!data.title) return { reason: "not_found" };
   return {
-    videoId,
-    title: data.title,
-    channel: data.author_name ?? "",
-    durationSec: 0,
-    thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+    song: {
+      videoId,
+      title: data.title,
+      channel: data.author_name ?? "",
+      durationSec: 0,
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+    },
   };
 }
 
 export async function videoDetails(apiKey: string | undefined, videoId: string): Promise<Song | null> {
   return (await videosById(apiKey, [videoId])).get(videoId) ?? null;
+}
+
+/** A video by id, or why it can't be offered: no such video (or live), or embedding is off so the TV couldn't play it. */
+export async function videoLookup(apiKey: string | undefined, videoId: string): Promise<{ song: Song } | VideoMiss> {
+  const data = await call<{ items?: VideoResource[] }>(apiKey, "videos", { part: "snippet,contentDetails,status", id: videoId });
+  const v = data.items?.[0];
+  if (!v || v.snippet?.liveBroadcastContent === "live") return { reason: "not_found" };
+  if (v.status?.embeddable === false) return { reason: "not_embeddable" };
+  const song = toSong(v);
+  return song ? { song } : { reason: "not_found" };
 }

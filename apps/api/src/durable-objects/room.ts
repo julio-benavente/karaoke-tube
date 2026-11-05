@@ -507,7 +507,16 @@ export class Room extends DurableObject<Env> {
         // "Host picks": guests' songs wait for a host's OK.
         const status = settings.queueMode === "approval" && !isHost ? "pending" : "waiting";
         const s = msg.song;
-        const song: Song = { videoId: s.videoId, title: s.title, channel: s.channel, durationSec: s.durationSec, thumbnailUrl: s.thumbnailUrl };
+        if (settings.hideExplicit && s.explicit === true) throw new RoomError("explicit_hidden", "Explicit songs are hidden in this room.");
+        const song: Song = {
+          videoId: s.videoId,
+          title: s.title,
+          channel: s.channel,
+          durationSec: s.durationSec,
+          thumbnailUrl: s.thumbnailUrl,
+          ...(s.explicit === true ? { explicit: true } : {}),
+          ...(s.duet === true ? { duet: true } : {}),
+        };
         this.sql.exec(
           "INSERT INTO items (id, song, singer_ids, added_by, status, added_at, started_at, pin_index, everyone) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?)",
           crypto.randomUUID(),
@@ -1253,6 +1262,7 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   if (input.joinInfo === "between" || input.joinInfo === "always" || input.joinInfo === "start") out.joinInfo = input.joinInfo;
   if (input.tvLayout === "bar" || input.tvLayout === "clean") out.tvLayout = input.tvLayout;
   if (input.tvBarSize === "small" || input.tvBarSize === "medium" || input.tvBarSize === "large") out.tvBarSize = input.tvBarSize;
+  if (typeof input.hideExplicit === "boolean") out.hideExplicit = input.hideExplicit;
   for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles", "tvHideBar"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }

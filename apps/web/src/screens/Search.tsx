@@ -13,15 +13,15 @@ import {
   SongRow,
   TextField,
   Tile,
-  SAMPLE_SONGS,
   parseYouTubeId,
+  presetDescription,
   presetName,
   useRoom,
   useSearch,
   useT,
 } from "@karaoke-tube/ui";
-import { getSearchApi } from "../session";
 import { useCatalogSearch } from "../useCatalogSearch";
+import { LINK_MESSAGE, useLinkLookup } from "../useLinkLookup";
 import { ArtistSuggestions, FilterChips } from "../FilterChips";
 import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
@@ -34,29 +34,12 @@ export function SearchScreen() {
   const t = useT();
   const search = useSearch();
   const { add, pending } = useAddWithToast();
-  const [linkSong, setLinkSong] = useState<Song | null>(null);
-  const [linkState, setLinkState] = useState<"idle" | "loading" | "error">("idle");
   const [pasteOpen, setPasteOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // A pasted YouTube link in the search field becomes a single "From your link" result.
   const linkId = parseYouTubeId(search.query);
-  useEffect(() => {
-    if (!linkId) {
-      setLinkSong(null);
-      setLinkState("idle");
-      return;
-    }
-    let alive = true;
-    setLinkState("loading");
-    getSearchApi()
-      .video(linkId)
-      .then((r) => alive && (setLinkSong(r.song), setLinkState("idle")))
-      .catch(() => alive && setLinkState("error"));
-    return () => {
-      alive = false;
-    };
-  }, [linkId]);
+  const link = useLinkLookup(linkId);
 
   // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
   const cs = useCatalogSearch(search);
@@ -131,12 +114,6 @@ export function SearchScreen() {
             {t("search.paste")}
           </Chip>
           <FilterChips cs={cs} />
-          {cs.inBrowse &&
-            BROWSE_PRESETS.slice(0, 5).map((p) => (
-              <Chip key={p.id} onClick={() => cs.applyPreset(p)}>
-                {presetName(t, p.id)}
-              </Chip>
-            ))}
         </ChipRow>
       </div>
 
@@ -153,12 +130,13 @@ export function SearchScreen() {
         <section>
           <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
-            {BROWSE_PRESETS.map((p, i) => (
+            {BROWSE_PRESETS.map((p) => (
               <Tile
                 key={p.id}
+                id={p.id}
                 title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
                 color={p.color}
-                image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => cs.applyPreset(p)}
               />
             ))}
@@ -167,9 +145,20 @@ export function SearchScreen() {
       ) : linkId ? (
         <section>
           <h2 className={css.h2}>{t("search.fromLink")}</h2>
-          {linkState === "loading" && <SkeletonRows n={1} />}
-          {linkState === "error" && <p className={css.muted}>{t("search.linkError")}</p>}
-          {linkSong && row(linkSong)}
+          {link.status === "loading" && (
+            <>
+              <p className={css.muted} role="status" data-testid="link-searching">
+                {t("search.linkSearching")}
+              </p>
+              <SkeletonRows n={1} />
+            </>
+          )}
+          {link.status !== "idle" && link.status !== "loading" && link.status !== "found" && (
+            <p className={css.muted} role="alert" data-testid="link-error" data-reason={link.status}>
+              {t(LINK_MESSAGE[link.status])}
+            </p>
+          )}
+          {link.status === "found" && row(link.song)}
         </section>
       ) : searchUnavailable ? (
         <EmptyState

@@ -10,6 +10,7 @@ import {
   MiniPlayer,
   RoomLanguage,
   RoomProvider,
+  AddFlowProvider,
   SingWithProvider,
   Spinner,
   ToastProvider,
@@ -53,6 +54,7 @@ export function RoomShell() {
       <RoomLanguage>
         <ToastProvider offset={148}>
           <SingWithProvider>
+            <AddFlowProvider>
             <Shell
               code={code}
               retry={() => {
@@ -60,6 +62,7 @@ export function RoomShell() {
                 setAttempt((n) => n + 1);
               }}
             />
+            </AddFlowProvider>
           </SingWithProvider>
         </ToastProvider>
       </RoomLanguage>

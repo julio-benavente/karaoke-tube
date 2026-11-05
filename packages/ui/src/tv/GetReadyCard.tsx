@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatRoomCode, serverNow, type Member, type QueueItem } from "@karaoke-tube/shared";
-import { avatarUri } from "../avatar";
+import { SingerAvatars } from "./TvOverlay";
 import { singerLabel, songParts } from "../format";
 import { detectLang, makeT, type TFn } from "../i18n/core";
 
@@ -28,8 +28,6 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5,
     return () => clearInterval(t);
   }, []);
 
-  const singers = item.singerIds.map((id) => members.find((m) => m.id === id));
-  const first = singers[0];
   const label = singerLabel(item, members, undefined, t);
   const { title, artist } = songParts(item.song);
   const msLeft = Math.max(0, countdownEndsAt - now);
@@ -44,7 +42,7 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5,
       <div className="kt-tv-ready-bg" style={{ backgroundImage: `url("${item.song.thumbnailUrl}")` }} />
       <div className="kt-tv-ready-shade" />
       <div className="kt-tv-ready-body">
-        <img className="kt-tv-ready-avatar" src={avatarUri(first?.avatarSeed ?? item.id)} alt="" />
+        <SingerAvatars item={item} members={members} wrap="kt-tv-avatars kt-tv-ready-avatars" className="kt-tv-ready-avatar" />
         <div className="kt-tv-ready-text">
           <span className="kt-tv-ready-kicker">{t("now.getReady")}</span>
           <span className="kt-tv-ready-name">{label}</span>

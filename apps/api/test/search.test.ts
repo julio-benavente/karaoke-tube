@@ -125,6 +125,15 @@ describe("GET /api/videos/:id", () => {
     expect((await SELF.fetch(`${BASE}/api/videos/nope`)).status).toBe(400);
   });
 
+  it("tells a missing video from one that can't be embedded", async () => {
+    const missing = await SELF.fetch(`${BASE}/api/videos/zzzzzzzzzzz`);
+    expect(await missing.json()).toMatchObject({ error: "not_found" });
+    noEmbed = true;
+    const blocked = await SELF.fetch(`${BASE}/api/videos/bbbbbbbbbbb`);
+    expect(blocked.status).toBe(404);
+    expect(await blocked.json()).toMatchObject({ error: "not_embeddable" });
+  });
+
   it("falls back to oEmbed (no duration) when the quota runs out", async () => {
     quotaOut = true;
     const res = await SELF.fetch(`${BASE}/api/videos/${encodeURIComponent("https://youtu.be/ccccccccccc")}`);

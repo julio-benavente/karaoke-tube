@@ -26,6 +26,10 @@ export type Song = {
   channel: string;
   durationSec: number;
   thumbnailUrl: string;
+  /** Best-effort: the title or catalog labels say the song has explicit lyrics. Absent = not known to be explicit. */
+  explicit?: boolean;
+  /** The catalog tags the song as a duet: the UI offers to pick a partner. */
+  duet?: boolean;
 };
 
 /** "pending": waiting for a host's OK in the "approval" queue mode (v1.1). */
@@ -69,6 +73,8 @@ export type RoomSettings = {
   language?: RoomLanguage;
   /** Take the bottom bar off the TV: the video fills the screen (same as `tvLayout: "clean"`). Missing = false. */
   tvHideBar?: boolean;
+  /** Hide explicit songs: they are left out of search and can't be added. Undefined = false. */
+  hideExplicit?: boolean;
 };
 
 /** Languages a session can run in. Spanish rooms also get Spanish-word room codes. */
@@ -315,7 +321,9 @@ export type ErrorCode =
   /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
   | "song_unplayable"
   /** To a member who sent a second reaction ("cheer") during the same performance. One per person per song. */
-  | "already_cheered";
+  | "already_cheered"
+  /** `add_song` of a song marked `explicit` while `settings.hideExplicit` is on. */
+  | "explicit_hidden";
 
 // ── Room codes ───────────────────────────────────────────────────────────
 
@@ -370,8 +378,9 @@ export type RecapResponse = { recap: Recap };
 /**
  * Body of any non-2xx /api response.
  * `search_unavailable` (503): the YouTube quota ran out or search isn't set up. Show "Search is resting, paste a link instead".
+ * `not_embeddable` (404): the video exists but its owner doesn't allow playing it outside YouTube, so the TV can't play it.
  */
-export type ApiErrorCode = "bad_request" | "not_found" | "search_unavailable";
+export type ApiErrorCode = "bad_request" | "not_found" | "search_unavailable" | "not_embeddable";
 export type ApiErrorResponse = { error: ApiErrorCode; message: string };
 
 // ── Client interface the UI codes against ────────────────────────────────

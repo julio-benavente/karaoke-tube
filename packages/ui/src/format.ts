@@ -56,6 +56,14 @@ export function parseYouTubeId(input: string): string | null {
   return null;
 }
 
+/** Avatar seeds of everyone who sings an item (a duet has two or more), in singing order. Unknown members are skipped. */
+export function singerSeeds(item: Pick<QueueItem, "singerIds">, members: Pick<Member, "id" | "avatarSeed">[]): string[] {
+  return item.singerIds.flatMap((id) => {
+    const m = members.find((x) => x.id === id);
+    return m ? [m.avatarSeed] : [];
+  });
+}
+
 /** Who sings an item: "Ana", "Ana & Ben", "Ana, Ben & Cy", or "Everyone" for a group song. */
 export function singerLabel(item: Pick<QueueItem, "singerIds" | "everyone">, members: Pick<Member, "id" | "nickname">[], meId?: string, t: TFn = makeT("en")): string {
   if (item.everyone) return t("singer.everyone");

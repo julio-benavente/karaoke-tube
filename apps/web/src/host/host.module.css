@@ -404,7 +404,9 @@
   width: min(100%, 420px);
   height: var(--kt-control-lg);
   border-radius: var(--kt-radius-full);
-  background: var(--kt-card);
+  /* The look it used to get only on hover, so the bar is easy to see all the time. */
+  background: var(--kt-hover);
+  box-shadow: inset 0 0 0 1px var(--kt-white-10);
   color: var(--kt-text-2);
   font-size: var(--kt-text-md);
   transition: background-color var(--kt-fast) var(--kt-ease), box-shadow var(--kt-fast) var(--kt-ease);
@@ -417,13 +419,11 @@
 
 .fakeSearch:hover,
 .searchField:hover {
-  background: var(--kt-hover);
-  box-shadow: inset 0 0 0 1px var(--kt-white-10);
+  background: var(--kt-white-20);
 }
 
 .searchField {
   position: relative;
-  background: var(--kt-card);
 }
 
 .searchField:focus-within {

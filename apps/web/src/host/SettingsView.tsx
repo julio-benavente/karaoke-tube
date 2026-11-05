@@ -143,6 +143,12 @@ export function SettingsView() {
           onChange={(v) => set({ duets: v })}
         />
         <Toggle
+          label={t("settings.hideExplicit")}
+          description={t("settings.hideExplicitDesc")}
+          checked={!!s.hideExplicit}
+          onChange={(v) => set({ hideExplicit: v })}
+        />
+        <Toggle
           label={t("settings.turnAlerts")}
           description={t("settings.turnAlertsDesc")}
           checked={s.turnAlerts}

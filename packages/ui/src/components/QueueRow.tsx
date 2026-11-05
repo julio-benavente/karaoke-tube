@@ -79,7 +79,7 @@ export function QueueRow({
           {item.everyone ? (
             <span aria-hidden>🎉</span>
           ) : (
-            <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={16} />
+            <AvatarStack seeds={singers.map((m, i) => m?.avatarSeed ?? `x${i}`)} size={singers.length > 1 ? 22 : 16} />
           )}
           <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId, t) : t("singer.you")) : singerNames(item, members, t)}</span>
           {offline.length > 0 && <span className={css.offlineTag}>{t("queue.offline")}</span>}

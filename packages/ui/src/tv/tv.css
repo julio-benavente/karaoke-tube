@@ -942,3 +942,26 @@
     transform: none;
   }
 }
+
+/* Duets: the singers' avatars overlap a little (one avatar = no overlap). */
+.kt-tv-avatars {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.kt-tv-avatars > img + img {
+  margin-left: -1.2cqw;
+}
+
+.kt-tv-next .kt-tv-avatars > img + img {
+  margin-left: -0.8cqw;
+}
+
+.kt-tvbar-avatars > img + img {
+  margin-left: calc(var(--u) * -0.22);
+}
+
+.kt-tv-ready-avatars > img + img {
+  margin-left: -6cqw;
+}

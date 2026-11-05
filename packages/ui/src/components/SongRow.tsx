@@ -31,7 +31,14 @@ export function SongRow({ song, onAdd, added, adding, onClick, showDuration = tr
       <Artwork src={song.thumbnailUrl} label={song.title} size={48} className={css.art} />
       <div className={css.text}>
         <div className={css.title}>{title}</div>
-        <div className={css.sub}>{artist}</div>
+        <div className={css.sub}>
+          {song.explicit && (
+            <span className={css.explicit} title={t("song.explicit")} aria-label={t("song.explicit")}>
+              E
+            </span>
+          )}
+          <span className={css.artist}>{artist}</span>
+        </div>
       </div>
       {showDuration && <span className={css.duration}>{formatTime(song.durationSec)}</span>}
       {trailing}

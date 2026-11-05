@@ -4,18 +4,18 @@ import type { Song } from "@karaoke-tube/shared";
 import {
   BROWSE_PRESETS,
   EmptyState,
-  SAMPLE_SONGS,
   SingWithButton,
   SongRow,
   Tile,
   parseYouTubeId,
+  presetDescription,
   presetName,
   useRoom,
   useSearch,
-  useSearchApi,
   useT,
 } from "@karaoke-tube/ui";
 import { useCatalogSearch } from "../useCatalogSearch";
+import { LINK_MESSAGE, useLinkLookup } from "../useLinkLookup";
 import { ArtistSuggestions, FilterChips } from "../FilterChips";
 import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
@@ -28,28 +28,14 @@ export function SearchView() {
   const t = useT();
   const search = useSearch();
   const add = useHostAdd();
-  const api = useSearchApi();
-  const [linkSong, setLinkSong] = useState<Song | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const linkId = parseYouTubeId(search.query);
+  const link = useLinkLookup(linkId);
 
   // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
   const cs = useCatalogSearch(search);
 
   useEffect(() => inputRef.current?.focus(), []);
-
-  useEffect(() => {
-    setLinkSong(null);
-    if (!linkId) return;
-    let alive = true;
-    api
-      .video(linkId)
-      .then((r) => alive && setLinkSong(r.song))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [linkId, api]);
 
   if (!state) return null;
   const queued = new Set(state.upNext.map((q) => q.song.videoId));
@@ -88,12 +74,13 @@ export function SearchView() {
         <section>
           <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
-            {BROWSE_PRESETS.map((p, i) => (
+            {BROWSE_PRESETS.map((p) => (
               <Tile
                 key={p.id}
+                id={p.id}
                 title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
                 color={p.color}
-                image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => cs.applyPreset(p)}
               />
             ))}
@@ -105,11 +92,25 @@ export function SearchView() {
           <ArtistSuggestions cs={cs} />
           {search.error ? (
             <EmptyState title={t("search.resting")}>{t("search.restingHostHint")}</EmptyState>
+          ) : linkId ? (
+            <div className={css.results}>
+              {link.status === "loading" && (
+                <p className={css.muted} role="status" data-testid="link-searching">
+                  {t("search.linkSearching")}
+                </p>
+              )}
+              {link.status !== "idle" && link.status !== "loading" && link.status !== "found" && (
+                <p className={css.muted} role="alert" data-testid="link-error" data-reason={link.status}>
+                  {t(LINK_MESSAGE[link.status])}
+                </p>
+              )}
+              {link.status === "found" && <SongRow song={link.song} index={1} onAdd={() => add(link.song)} added={queued.has(link.song.videoId)} />}
+            </div>
           ) : search.loading && !search.results.length ? (
             <p className={css.muted}>{t("search.searching")}</p>
           ) : (
             <div className={css.results}>
-              {(linkId ? (linkSong ? [linkSong] : []) : search.results).map((s, i) => (
+              {search.results.map((s, i) => (
                 <SongRow
                   key={s.videoId + s.title}
                   song={s}
@@ -122,7 +123,7 @@ export function SearchView() {
               {!search.loading && search.resultsFor && !search.results.length && cs.q.trim() && (
                 <p className={css.muted}>{t("search.noResultsHost", { query: search.resultsFor })}</p>
               )}
-              {!linkId && <LoadMore search={search} />}
+              <LoadMore search={search} />
             </div>
           )}
         </section>

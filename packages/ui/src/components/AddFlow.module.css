@@ -1,0 +1,50 @@
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-3);
+  padding: var(--kt-space-2) var(--kt-space-4) var(--kt-space-6);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+  padding-bottom: var(--kt-space-3);
+  border-bottom: 1px solid var(--kt-white-10);
+}
+
+.text {
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--kt-text-base);
+  font-weight: var(--kt-weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--kt-text-xl);
+  font-weight: var(--kt-weight-bold);
+}
+
+.hint {
+  margin: 0;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-2);
+  margin-top: var(--kt-space-2);
+}

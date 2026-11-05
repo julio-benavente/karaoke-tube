@@ -2,7 +2,7 @@ import { formatRoomCode } from "@karaoke-tube/shared";
 import type { CSSProperties } from "react";
 import { REACTION_EMOJI, TV_BAR_PERCENT, type Member, type QueueItem, type Reaction, type TvBarSize, type TvLayout } from "@karaoke-tube/shared";
 import { avatarUri } from "../avatar";
-import { singerLabel as itemSingers, songParts } from "../format";
+import { singerLabel as itemSingers, singerSeeds, songParts } from "../format";
 import { detectLang, makeT, type TFn } from "../i18n/core";
 
 /** How long a floating reaction animates. Remove it from `reactions` after this. */
@@ -42,6 +42,20 @@ export type TvOverlayProps = {
 
 const name = (members: Member[], id: string | undefined) => members.find((m) => m.id === id);
 
+/** The avatar of whoever sings, or two overlapping ones (up to three) for a duet. `wrap` styles the overlap. */
+export function SingerAvatars({ item, members, wrap, className }: { item: QueueItem; members: Member[]; wrap: string; className: string }) {
+  const seeds = singerSeeds(item, members);
+  const shown = (item.everyone ? seeds.slice(0, 1) : seeds.slice(0, 3)).map((s) => avatarUri(s));
+  const srcs = shown.length ? shown : [avatarUri(item.id)];
+  return (
+    <span className={wrap}>
+      {srcs.map((src, i) => (
+        <img key={i} className={className} src={src} alt="" />
+      ))}
+    </span>
+  );
+}
+
 /**
  * T1: overlay on the YouTube player. Now-singing chip, up-next chip, QR + code, floating reactions.
  * Pure: props in, no room access. Render inside the player element (and a shadow root) with `tvCss`.
@@ -49,8 +63,6 @@ const name = (members: Member[], id: string | undefined) => members.find((m) => 
 export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, reactions, hideJoin, layout = "overlay", barSize = "medium", t = makeT(detectLang()) }: TvOverlayProps) {
   const bar = layout === "bar";
   const next = upNext[0];
-  const singer = nowPlaying ? name(members, nowPlaying.singerIds[0]) : undefined;
-  const nextSinger = next ? name(members, next.singerIds[0]) : undefined;
   const nowParts = nowPlaying ? songParts(nowPlaying.song) : null;
   const nextParts = next ? songParts(next.song) : null;
   const singerLabel = (item: QueueItem) => itemSingers(item, members, undefined, t);
@@ -62,7 +74,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
           <div className="kt-tvbar-now">
             {nowPlaying && nowParts ? (
               <>
-                <img className="kt-tvbar-avatar" src={avatarUri(singer?.avatarSeed ?? nowPlaying.id)} alt="" />
+                <SingerAvatars item={nowPlaying} members={members} wrap="kt-tv-avatars kt-tvbar-avatars" className="kt-tvbar-avatar" />
                 <div className="kt-tvbar-text" key={nowPlaying.id}>
                   <span className="kt-tvbar-kicker">{t("queue.nowSinging")}</span>
                   <span className="kt-tvbar-singer">{singerLabel(nowPlaying)}</span>
@@ -100,7 +112,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
       )}
       {!bar && nowPlaying && nowParts && (
         <div className="kt-tv-chip kt-tv-now" key={nowPlaying.id}>
-          <img className="kt-tv-avatar" src={avatarUri(singer?.avatarSeed ?? nowPlaying.id)} alt="" />
+          <SingerAvatars item={nowPlaying} members={members} wrap="kt-tv-avatars" className="kt-tv-avatar" />
           <div className="kt-tv-chiptext">
             <span className="kt-tv-kicker">{t("queue.nowSinging")}</span>
             <span className="kt-tv-singer">{singerLabel(nowPlaying)}</span>
@@ -113,7 +125,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
 
       {!bar && next && nextParts && (
         <div className="kt-tv-chip kt-tv-next" key={next.id}>
-          <img className="kt-tv-avatar" src={avatarUri(nextSinger?.avatarSeed ?? next.id)} alt="" />
+          <SingerAvatars item={next} members={members} wrap="kt-tv-avatars" className="kt-tv-avatar" />
           <span className="kt-tv-nextline">
             <span>{t("tv.upNext")} </span>
             <b>{singerLabel(next)}</b>

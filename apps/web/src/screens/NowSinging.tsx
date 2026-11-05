@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { REACTIONS, REACTION_EMOJI, type Reaction } from "@karaoke-tube/shared";
 import {
   Artwork,
-  Avatar,
+  AvatarStack,
   IconButton,
   PlayButton,
   ProgressBar,
   Sheet,
   hueOf,
   singerLabel,
+  singerSeeds,
   songParts,
   isWaitingForTv,
   useCountdown,
@@ -131,7 +132,7 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
         </div>
       </div>
       <div className={css.singer}>
-        {singer && !item.everyone && <Avatar seed={singer.avatarSeed} size={28} />}
+        {singer && !item.everyone && <AvatarStack seeds={singerSeeds(item, state.members)} size={28} />}
         <span>
           🎤 <b>{singerLabel(item, state.members, me.id, t)}</b>
           {playback.state === "paused" && <span className={css.paused}> · {t("now.paused")}</span>}

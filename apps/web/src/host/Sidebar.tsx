@@ -175,7 +175,7 @@ function QuickSettings() {
     <div className={css.quick} data-testid="quick-settings">
       <Toggle label={t("settings.lock")} checked={s.locked} onChange={(v) => set({ locked: v })} />
       <Toggle label={t("settings.tvHideBar")} checked={!!s.tvHideBar} onChange={(v) => set({ tvHideBar: v })} />
-      {/* Room for more switches (e.g. hide explicit songs). */}
+      <Toggle label={t("settings.hideExplicit")} checked={!!s.hideExplicit} onChange={(v) => set({ hideExplicit: v })} />
       <div className={css.quickLang}>
         <span className={css.quickLabel}>{t("lang.label")}</span>
         <LanguageSwitcher />
