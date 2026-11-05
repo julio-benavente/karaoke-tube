@@ -152,3 +152,10 @@
     scroll-snap-type: none;
   }
 }
+
+/* A regular desktop: exactly five cards across, so the thumbnails are bigger. */
+@media (hover: hover) and (min-width: 1024px) {
+  .shelfRow {
+    grid-auto-columns: calc(100% / 5);
+  }
+}

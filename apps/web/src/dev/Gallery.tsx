@@ -114,7 +114,7 @@ function GalleryBody() {
       <h2>Tiles</h2>
       <div className={css.tiles}>
         {SAMPLE_SONGS.slice(0, 4).map((s, i) => (
-          <Tile key={s.videoId} title={["Pop", "Rock", "80s", "Ballads"][i]!} color={`var(--kt-tile-${i + 1})`} image={s.thumbnailUrl} />
+          <Tile key={s.videoId} title={["Pop", "Rock", "80s", "Ballads"][i]!} color={`var(--kt-tile-${i + 1})`} description="Short description" />
         ))}
       </div>
       <div className={css.shortcuts}>

@@ -13,8 +13,8 @@ import {
   SongRow,
   TextField,
   Tile,
-  SAMPLE_SONGS,
   parseYouTubeId,
+  presetDescription,
   presetName,
   useRoom,
   useSearch,
@@ -131,12 +131,6 @@ export function SearchScreen() {
             {t("search.paste")}
           </Chip>
           <FilterChips cs={cs} />
-          {cs.inBrowse &&
-            BROWSE_PRESETS.slice(0, 5).map((p) => (
-              <Chip key={p.id} onClick={() => cs.applyPreset(p)}>
-                {presetName(t, p.id)}
-              </Chip>
-            ))}
         </ChipRow>
       </div>
 
@@ -153,12 +147,13 @@ export function SearchScreen() {
         <section>
           <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
-            {BROWSE_PRESETS.map((p, i) => (
+            {BROWSE_PRESETS.map((p) => (
               <Tile
                 key={p.id}
+                id={p.id}
                 title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
                 color={p.color}
-                image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => cs.applyPreset(p)}
               />
             ))}

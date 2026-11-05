@@ -4,11 +4,11 @@ import type { Song } from "@karaoke-tube/shared";
 import {
   BROWSE_PRESETS,
   EmptyState,
-  SAMPLE_SONGS,
   SingWithButton,
   SongRow,
   Tile,
   parseYouTubeId,
+  presetDescription,
   presetName,
   useRoom,
   useSearch,
@@ -88,12 +88,13 @@ export function SearchView() {
         <section>
           <h2 className={css.h2}>{t("search.browse")}</h2>
           <div className={css.tiles}>
-            {BROWSE_PRESETS.map((p, i) => (
+            {BROWSE_PRESETS.map((p) => (
               <Tile
                 key={p.id}
+                id={p.id}
                 title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
                 color={p.color}
-                image={SAMPLE_SONGS[(i * 7) % SAMPLE_SONGS.length]!.thumbnailUrl}
                 onClick={() => cs.applyPreset(p)}
               />
             ))}

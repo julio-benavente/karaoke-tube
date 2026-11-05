@@ -95,3 +95,9 @@
     opacity: 0.5;
   }
 }
+
+/* A category card inside a shelf, spaced like the song cards beside it. */
+.mixCell {
+  min-width: 0;
+  padding: var(--kt-space-3);
+}

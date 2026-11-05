@@ -11,13 +11,16 @@ import {
   SAMPLE_SONGS,
   Shelf,
   ShortcutTile,
+  Tile,
   greeting,
   hueOf,
+  presetDescription,
   songParts,
   useRoom,
   useRoomSongs,
   useSearch,
 } from "@karaoke-tube/ui";
+import { fromBrowseFilter, writeFilters } from "../catalogFilters";
 import { useShell } from "./RoomShell";
 import { SongSheet } from "./SongSheet";
 import { useAddWithToast } from "./useAdd";
@@ -139,6 +142,19 @@ export function HomeScreen() {
               />
             ))}
           </div>
+          <Shelf title={t("home.byGenre")}>
+            {BROWSE_PRESETS.map((p) => (
+              <div key={p.id} className={css.mixCell}>
+              <Tile
+                id={p.id}
+                title={presetName(t, p.id)}
+                description={presetDescription(t, p.id)}
+                color={p.color}
+                onClick={() => navigate({ pathname: `/r/${code}/search`, search: `?${writeFilters(new URLSearchParams(), fromBrowseFilter(p.filter))}` })}
+              />
+              </div>
+            ))}
+          </Shelf>
           {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
           {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
         </section>

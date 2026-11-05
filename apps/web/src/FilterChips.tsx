@@ -17,7 +17,16 @@ export function FilterChips({ cs }: { cs: CS }) {
   const [lang] = useLang();
   const [open, setOpen] = useState(false);
   const count = countFilters(cs.filters);
-  const active = (Object.keys(cs.filters) as FilterKind[]).flatMap((kind) => cs.filters[kind].map((id) => ({ kind, id })));
+  // Filters that already have a one-click chip are shown there (highlighted); the others (decades, sub-genres, artists…) get a removable chip.
+  const quick = quickFilters();
+  const isQuick = (kind: FilterKind, id: string) => quick.some((q) => q.kind === kind && q.id === id);
+  const active = (Object.keys(cs.filters) as FilterKind[]).flatMap((kind) => cs.filters[kind].filter((id) => !isQuick(kind, id)).map((id) => ({ kind, id })));
+  // One click = just this filter (click it again to clear). Combining filters is what the Filters sheet is for.
+  const pick = (kind: FilterKind, id: string) => {
+    const only = count === 1 && cs.filters[kind].length === 1 && cs.filters[kind][0] === id;
+    cs.setFilters(only ? { ...NO_FILTERS } : { ...NO_FILTERS, [kind]: [id] });
+    window.scrollTo({ top: 0 });
+  };
   return (
     <>
       {!cs.inBrowse && (
@@ -33,9 +42,31 @@ export function FilterChips({ cs }: { cs: CS }) {
           {filterLabel(kind, id, lang)}
         </Chip>
       ))}
+      {quick.map(({ kind, id }) => (
+        <Chip key={kind + id} selected={cs.filters[kind].includes(id)} onClick={() => pick(kind, id)} data-testid="quick-filter" data-filter={`${kind}:${id}`}>
+          {filterLabel(kind, id, lang)}
+        </Chip>
+      ))}
       <FilterSheet open={open} onClose={() => setOpen(false)} cs={cs} />
     </>
   );
+}
+
+/** Tags that have a chip and a place in the Filters sheet. */
+const SHEET_TAGS = ["party", "ballad", "easy", "duet", "explicit"];
+
+/**
+ * Every filter of the Filters sheet (except decades, which only live there), as a one-click chip: the main genres
+ * first, then the rest of the top-level genres, languages and tags. The language chips come first: they are the quickest cut.
+ */
+function quickFilters(): Array<{ kind: FilterKind; id: string }> {
+  const tops = GENRES.filter((g) => !g.parent).map((g) => g.id);
+  const genres = [...MAIN_GENRES.filter((id) => tops.includes(id)), ...tops.filter((id) => !MAIN_GENRES.includes(id))];
+  return [
+    ...MAIN_LANGUAGES.map((id) => ({ kind: "language" as const, id })),
+    ...genres.map((id) => ({ kind: "genre" as const, id })),
+    ...SHEET_TAGS.map((id) => ({ kind: "tag" as const, id })),
+  ];
 }
 
 /** "Artists: Queen · Queen Latifah": tap one to see only that artist's songs. */
@@ -111,6 +142,10 @@ function FilterSheet({ open, onClose, cs }: { open: boolean; onClose: () => void
           <section>
             <h3 className={css.h3}>{t("filters.decade")}</h3>
             <div className={css.chips}>{DECADES.map((d) => chip("decade", d.id, d[lang]))}</div>
+          </section>
+          <section>
+            <h3 className={css.h3}>{t("filters.tags")}</h3>
+            <div className={css.chips}>{SHEET_TAGS.map((id) => chip("tag", id, filterLabel("tag", id, lang)))}</div>
           </section>
           <section>
             <h3 className={css.h3}>{t("filters.language")}</h3>
