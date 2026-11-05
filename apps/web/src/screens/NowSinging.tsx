@@ -21,6 +21,7 @@ import {
   useRoomErrors,
   useT,
   reactionName,
+  ExplicitBadge,
 } from "@karaoke-tube/ui";
 import { RemoteVideo } from "../watch/RemoteVideo";
 import { useWatchPref } from "../watch/pref";
@@ -128,7 +129,10 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
       <div className={css.meta}>
         <div className={css.titleBlock}>
           <h2 className={css.title}>{parts.title}</h2>
-          <p className={css.artist}>{parts.artist}</p>
+          <p className={css.artist}>
+            <ExplicitBadge song={item.song} />
+            {parts.artist}
+          </p>
         </div>
       </div>
       <div className={css.singer}>

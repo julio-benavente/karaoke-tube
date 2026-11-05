@@ -19,6 +19,7 @@ const NewParty = lazy(() => import("./host/NewParty").then((m) => ({ default: m.
 const TvPair = lazy(() => import("./tv/TvPair").then((m) => ({ default: m.TvPair })));
 const TvScreen = lazy(() => import("./tv/TvScreen").then((m) => ({ default: m.TvScreen })));
 const RecapDev = lazy(() => import("./dev/RecapDev").then((m) => ({ default: m.RecapDev })));
+const SongCards = lazy(() => import("./dev/SongCards").then((m) => ({ default: m.SongCards })));
 const TvPreview = lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview })));
 
 export function App() {
@@ -46,6 +47,7 @@ export function App() {
           <Route path="/dev/ui" element={<Gallery />} />
           <Route path="/dev/recap" element={<RecapDev />} />
           <Route path="/dev/tv" element={<TvPreview />} />
+          <Route path="/dev/song-cards" element={<SongCards />} />
           <Route path="*" element={<Navigate to="/join" replace />} />
         </Routes>
       </Suspense>

@@ -71,7 +71,7 @@ export type RoomSettings = {
   tvBarSize: TvBarSize;
   /** The session language, chosen when the party is created: every screen in the room (host, guests, TV, recap) uses it. Missing = "en". */
   language?: RoomLanguage;
-  /** Take the bottom bar off the TV: the video fills the screen (same as `tvLayout: "clean"`). Missing = false. */
+  /** Hide the song info on the TV: no bottom bar, no singer, no next song, just the karaoke video. Missing = false. */
   tvHideBar?: boolean;
   /** Hide explicit songs: they are left out of search and can't be added. Undefined = false. */
   hideExplicit?: boolean;

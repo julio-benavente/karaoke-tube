@@ -16,7 +16,7 @@ import {
 } from "@karaoke-tube/ui";
 import { useCatalogSearch } from "../useCatalogSearch";
 import { LINK_MESSAGE, useLinkLookup } from "../useLinkLookup";
-import { ArtistSuggestions, FilterChips } from "../FilterChips";
+import { ArtistSuggestions, FilterCards, FilterChips } from "../FilterChips";
 import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
 import { useHostAdd } from "./useHostAdd";
@@ -71,21 +71,24 @@ export function SearchView() {
       </div>
 
       {cs.inBrowse ? (
-        <section>
-          <h2 className={css.h2}>{t("search.browse")}</h2>
-          <div className={css.tiles}>
-            {BROWSE_PRESETS.map((p) => (
-              <Tile
-                key={p.id}
-                id={p.id}
-                title={presetName(t, p.id)}
-                description={presetDescription(t, p.id)}
-                color={p.color}
-                onClick={() => cs.applyPreset(p)}
-              />
-            ))}
-          </div>
-        </section>
+        <>
+          <section>
+            <h2 className={css.h2}>{t("search.browse")}</h2>
+            <div className={css.tiles}>
+              {BROWSE_PRESETS.map((p) => (
+                <Tile
+                  key={p.id}
+                  id={p.id}
+                  title={presetName(t, p.id)}
+                  description={presetDescription(t, p.id)}
+                  color={p.color}
+                  onClick={() => cs.applyPreset(p)}
+                />
+              ))}
+            </div>
+          </section>
+          <FilterCards cs={cs} gridClassName={css.tiles} headingClassName={css.h2} />
+        </>
       ) : (
         <section>
           <h2 className={css.h2}>{linkId ? t("search.fromLink") : t("search.songs.heading")}</h2>

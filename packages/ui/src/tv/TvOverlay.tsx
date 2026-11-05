@@ -32,8 +32,9 @@ export type TvOverlayProps = {
   /**
    * "overlay" (default): chips and join card float over the video. "bar": a bar of its own along the bottom with the
    * singer, what is up next and the join QR + code; the page leaves that space free so nothing covers the video.
+   * "video": just the karaoke video (no singer or up-next, no bar); the join card and reactions still show when asked for.
    */
-  layout?: TvLayout | "overlay";
+  layout?: TvLayout | "overlay" | "video";
   /** Height of the bar, when `layout` is "bar". */
   barSize?: TvBarSize;
   /** Translator (these render in a shadow root, outside the app's React tree). Default: the saved/browser language. */
@@ -62,6 +63,7 @@ export function SingerAvatars({ item, members, wrap, className }: { item: QueueI
  */
 export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, reactions, hideJoin, layout = "overlay", barSize = "medium", t = makeT(detectLang()) }: TvOverlayProps) {
   const bar = layout === "bar";
+  const info = layout !== "video";
   const next = upNext[0];
   const nowParts = nowPlaying ? songParts(nowPlaying.song) : null;
   const nextParts = next ? songParts(next.song) : null;
@@ -110,7 +112,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
           </div>
         </div>
       )}
-      {!bar && nowPlaying && nowParts && (
+      {!bar && info && nowPlaying && nowParts && (
         <div className="kt-tv-chip kt-tv-now" key={nowPlaying.id}>
           <SingerAvatars item={nowPlaying} members={members} wrap="kt-tv-avatars" className="kt-tv-avatar" />
           <div className="kt-tv-chiptext">
@@ -123,7 +125,7 @@ export function TvOverlay({ nowPlaying, upNext, members, code, qrSrc, joinText, 
         </div>
       )}
 
-      {!bar && next && nextParts && (
+      {!bar && info && next && nextParts && (
         <div className="kt-tv-chip kt-tv-next" key={next.id}>
           <SingerAvatars item={next} members={members} wrap="kt-tv-avatars" className="kt-tv-avatar" />
           <span className="kt-tv-nextline">

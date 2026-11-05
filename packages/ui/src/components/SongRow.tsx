@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import { formatTime, songParts } from "../format";
 import { useT } from "../i18n/context";
+import { ExplicitBadge } from "./ExplicitBadge";
 import { Artwork } from "./Artwork";
 import css from "./Rows.module.css";
 
@@ -32,11 +33,7 @@ export function SongRow({ song, onAdd, added, adding, onClick, showDuration = tr
       <div className={css.text}>
         <div className={css.title}>{title}</div>
         <div className={css.sub}>
-          {song.explicit && (
-            <span className={css.explicit} title={t("song.explicit")} aria-label={t("song.explicit")}>
-              E
-            </span>
-          )}
+          <ExplicitBadge song={song} />
           <span className={css.artist}>{artist}</span>
         </div>
       </div>

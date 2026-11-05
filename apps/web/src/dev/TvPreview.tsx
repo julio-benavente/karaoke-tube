@@ -117,7 +117,7 @@ function Preview() {
               qrSrc={qr}
               joinText={`${location.host}/join`}
               reactions={reactions}
-              layout={new URLSearchParams(location.search).get("layout") === "bar" ? "bar" : "overlay"}
+              layout={((l) => (l === "bar" || l === "video" ? l : "overlay"))(new URLSearchParams(location.search).get("layout"))}
               barSize={(new URLSearchParams(location.search).get("size") as "small" | "medium" | "large") ?? "medium"}
             />
           )}

@@ -12,8 +12,8 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-const LIGHT = "rgba(255,255,255,0.2)";
-const DARK = "rgba(0,0,0,0.16)";
+const LIGHT = "rgba(255,255,255,0.12)";
+const DARK = "rgba(0,0,0,0.09)";
 
 /** Bold geometric patterns for the cover, in SVG (no image files). `n` picks one and a small variation of it. */
 function MixPattern({ seed }: { seed: string }) {
@@ -93,6 +93,7 @@ export function Tile({
   color,
   description,
   id,
+  pattern,
   onClick,
   className,
 }: {
@@ -103,13 +104,21 @@ export function Tile({
   description?: string;
   /** Picks the pattern; the same id always gets the same one. Defaults to the title. */
   id?: string;
+  /** Your own pattern for the cover (SVG shapes on a 100 x 100 canvas) instead of the generated one. */
+  pattern?: ReactNode;
   onClick?: () => void;
   className?: string;
 }) {
   return (
     <button type="button" className={clsx(css.mix, className)} onClick={onClick} data-testid="mix-card">
-      <span className={css.cover} style={{ background: color, ["--strip" as string]: `color-mix(in oklab, ${color} 45%, white)` }}>
-        <MixPattern seed={id ?? title} />
+      <span className={css.cover} style={{ background: color, ["--strip" as string]: `color-mix(in oklab, ${color} 78%, white)` }}>
+        {pattern ? (
+          <svg className={css.pattern} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden focusable="false">
+            {pattern}
+          </svg>
+        ) : (
+          <MixPattern seed={id ?? title} />
+        )}
         <span className={css.mixTitle}>{title}</span>
         <span className={css.strip} aria-hidden />
       </span>

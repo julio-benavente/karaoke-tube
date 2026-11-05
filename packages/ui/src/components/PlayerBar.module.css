@@ -1,6 +1,7 @@
 .bar {
   display: grid;
-  grid-template-columns: minmax(180px, 30%) minmax(0, 40%) minmax(180px, 30%);
+  /* The right side takes what its buttons need (with the TV connected there is one more); the centre gives way first. */
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 40%) minmax(max-content, 1fr);
   align-items: center;
   height: var(--kt-player-height);
   padding: 0 var(--kt-space-2);
@@ -106,6 +107,10 @@
   gap: var(--kt-space-2);
   padding-right: var(--kt-space-2);
   min-width: 0;
+}
+
+.right > * {
+  flex: none;
 }
 
 .divider {

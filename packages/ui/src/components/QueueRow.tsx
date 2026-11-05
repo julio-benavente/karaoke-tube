@@ -7,6 +7,7 @@ import { useT } from "../i18n/context";
 import type { TFn } from "../i18n/core";
 import { Artwork } from "./Artwork";
 import { AvatarStack } from "./Avatar";
+import { ExplicitBadge } from "./ExplicitBadge";
 import css from "./Rows.module.css";
 
 export type QueueRowProps = {
@@ -84,6 +85,7 @@ export function QueueRow({
           <span className={clsx(css.singer, mine && css.mine)}>{mine ? (meId ? singerLabel(item, members, meId, t) : t("singer.you")) : singerNames(item, members, t)}</span>
           {offline.length > 0 && <span className={css.offlineTag}>{t("queue.offline")}</span>}
           <span className={css.dotSep}>·</span>
+          <ExplicitBadge song={item.song} />
           <span className={css.artist}>{artist}</span>
         </div>
       </div>

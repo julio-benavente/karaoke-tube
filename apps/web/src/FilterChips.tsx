@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Mic2, SlidersHorizontal, X } from "lucide-react";
 import { DECADES, GENRES, LANGUAGES } from "@karaoke-tube/catalog";
-import { Button, Chip, Sheet, useLang, useT } from "@karaoke-tube/ui";
+import { BROWSE_PRESETS, Button, Chip, Sheet, Tile, filterCardArt, filterCardDescription, useLang, useT } from "@karaoke-tube/ui";
 import { countFilters, filterLabel, hasFilters, NO_FILTERS, type FilterKind, type Filters } from "./catalogFilters";
 import type { useCatalogSearch } from "./useCatalogSearch";
 import css from "./FilterChips.module.css";
@@ -17,16 +17,8 @@ export function FilterChips({ cs }: { cs: CS }) {
   const [lang] = useLang();
   const [open, setOpen] = useState(false);
   const count = countFilters(cs.filters);
-  // Filters that already have a one-click chip are shown there (highlighted); the others (decades, sub-genres, artists…) get a removable chip.
-  const quick = quickFilters();
-  const isQuick = (kind: FilterKind, id: string) => quick.some((q) => q.kind === kind && q.id === id);
-  const active = (Object.keys(cs.filters) as FilterKind[]).flatMap((kind) => cs.filters[kind].filter((id) => !isQuick(kind, id)).map((id) => ({ kind, id })));
-  // One click = just this filter (click it again to clear). Combining filters is what the Filters sheet is for.
-  const pick = (kind: FilterKind, id: string) => {
-    const only = count === 1 && cs.filters[kind].length === 1 && cs.filters[kind][0] === id;
-    cs.setFilters(only ? { ...NO_FILTERS } : { ...NO_FILTERS, [kind]: [id] });
-    window.scrollTo({ top: 0 });
-  };
+  // Every active filter shows as a removable chip; the one-click ones live as cards on the Browse page.
+  const active = (Object.keys(cs.filters) as FilterKind[]).flatMap((kind) => cs.filters[kind].map((id) => ({ kind, id })));
   return (
     <>
       {!cs.inBrowse && (
@@ -42,31 +34,71 @@ export function FilterChips({ cs }: { cs: CS }) {
           {filterLabel(kind, id, lang)}
         </Chip>
       ))}
-      {quick.map(({ kind, id }) => (
-        <Chip key={kind + id} selected={cs.filters[kind].includes(id)} onClick={() => pick(kind, id)} data-testid="quick-filter" data-filter={`${kind}:${id}`}>
-          {filterLabel(kind, id, lang)}
-        </Chip>
-      ))}
       <FilterSheet open={open} onClose={() => setOpen(false)} cs={cs} />
     </>
   );
 }
 
-/** Tags that have a chip and a place in the Filters sheet. */
+/** Tags that have a card and a place in the Filters sheet. */
 const SHEET_TAGS = ["party", "ballad", "easy", "duet", "explicit"];
 
+/** True when one of the "Browse all" cards already is exactly this single filter (Pop, 80s, Ballads…). */
+function hasPreset(kind: FilterKind, id: string): boolean {
+  return BROWSE_PRESETS.some((p) => {
+    const v = (p.filter as Record<string, string | string[] | undefined>)[kind];
+    const only = Object.keys(p.filter).length === 1;
+    return only && (Array.isArray(v) ? v.length === 1 && v[0] === id : v === id);
+  });
+}
+
+/** Colours the cards take in turn (the same twelve as the Browse all cards). */
+const cardColor = (i: number) => `var(--kt-tile-${(i % 12) + 1})`;
+
 /**
- * Every filter of the Filters sheet (except decades, which only live there), as a one-click chip: the main genres
- * first, then the rest of the top-level genres, languages and tags. The language chips come first: they are the quickest cut.
+ * The rest of the one-click filters as cards under "Browse all": the other genres, the languages and the other tags
+ * (anything that does not already have a card above). One click = just this filter.
  */
-function quickFilters(): Array<{ kind: FilterKind; id: string }> {
+export function FilterCards({ cs, gridClassName, headingClassName }: { cs: CS; gridClassName?: string; headingClassName?: string }) {
+  const t = useT();
+  const [lang] = useLang();
   const tops = GENRES.filter((g) => !g.parent).map((g) => g.id);
   const genres = [...MAIN_GENRES.filter((id) => tops.includes(id)), ...tops.filter((id) => !MAIN_GENRES.includes(id))];
-  return [
-    ...MAIN_LANGUAGES.map((id) => ({ kind: "language" as const, id })),
-    ...genres.map((id) => ({ kind: "genre" as const, id })),
-    ...SHEET_TAGS.map((id) => ({ kind: "tag" as const, id })),
-  ];
+  const groups = [
+    { key: "language", heading: t("filters.language"), items: MAIN_LANGUAGES.map((id) => ({ kind: "language" as FilterKind, id })) },
+    { key: "genre", heading: t("filters.genre"), items: genres.map((id) => ({ kind: "genre" as FilterKind, id })) },
+    { key: "tag", heading: t("filters.tags"), items: SHEET_TAGS.map((id) => ({ kind: "tag" as FilterKind, id })) },
+  ]
+    .map((g) => ({ ...g, items: g.items.filter((x) => !hasPreset(x.kind, x.id)) }))
+    .filter((g) => g.items.length > 0);
+  let n = 0;
+  return (
+    <>
+      {groups.map((g) => (
+        <section key={g.key} data-testid={`filter-cards-${g.key}`}>
+          <h2 className={headingClassName}>{g.heading}</h2>
+          <div className={gridClassName}>
+            {g.items.map(({ kind, id }) => {
+              const art = filterCardArt(kind, id);
+              return (
+              <Tile
+                key={kind + id}
+                id={`${kind}-${id}`}
+                title={art?.title?.[lang] ?? filterLabel(kind, id, lang)}
+                description={filterCardDescription(t, kind, id)}
+                color={art?.color ?? cardColor(n++ + 3)}
+                pattern={art?.pattern}
+                onClick={() => {
+                  cs.setFilters({ ...NO_FILTERS, [kind]: [id] });
+                  window.scrollTo({ top: 0 });
+                }}
+              />
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </>
+  );
 }
 
 /** "Artists: Queen · Queen Latifah": tap one to see only that artist's songs. */

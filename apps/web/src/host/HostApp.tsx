@@ -10,7 +10,6 @@ import {
   Button,
   EmptyState,
   IconButton,
-  LanguageSwitcher,
   Logo,
   MiniPlayer,
   PlayerBar,
@@ -335,16 +334,6 @@ function Host() {
               <AwardCounts />
               <ReactionCount />
               <PlayerBarDivider />
-              <IconButton
-                label={locked ? t("host.unlock") : t("host.lock")}
-                active={locked}
-                onClick={() => {
-                  send({ type: "update_settings", settings: { locked: !locked } });
-                  toast.show(locked ? t("host.unlocked") : t("host.lockedToast"));
-                }}
-              >
-                {locked ? <Lock size={18} /> : <LockOpen size={18} />}
-              </IconButton>
               <IconButton label={queueOpen ? t("host.hideQueue") : t("host.showQueue")} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
                 <QueueIcon />
               </IconButton>
@@ -367,7 +356,6 @@ function Host() {
               <Button size="sm" variant="ghost" icon={<Power size={16} />} onClick={() => setConfirmEnd(true)}>
                 {t("host.end")}
               </Button>
-              <LanguageSwitcher />
             </>
           }
         />

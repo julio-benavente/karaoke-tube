@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
 import { singerSeeds, songParts } from "../format";
 import { usePlaybackPosition, useCountdown, isWaitingForTv } from "../hooks/room";
+import { ExplicitBadge } from "./ExplicitBadge";
 import { Artwork } from "./Artwork";
 import { AvatarStack } from "./Avatar";
 import { IconButton, PlayButton } from "./Button";
@@ -50,6 +51,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
                 {!item.everyone && <AvatarStack seeds={singerSeeds(item, members)} size={singer && item.singerIds.length > 1 ? 22 : 16} />}
                 <span className={css.singer}>{singerNames(item, members, t)}</span>
                 <span>·</span>
+                <ExplicitBadge song={item.song} />
                 <span className={css.artist}>{parts.artist}</span>
               </div>
             </div>

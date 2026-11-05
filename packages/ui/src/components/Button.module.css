@@ -13,6 +13,11 @@
     color var(--kt-fast) var(--kt-ease);
 }
 
+/* Icons keep their size when the button is squeezed (a crowded bar used to shrink them to nothing). */
+.btn > svg {
+  flex: none;
+}
+
 .btn:hover:not(:disabled) {
   transform: scale(1.04);
 }
