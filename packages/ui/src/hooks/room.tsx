@@ -307,9 +307,16 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   return { query, setQuery, run, browse, setFilter, apply, results, loading, error, resultsFor, hasMore, loadingMore, loadMore };
 }
 
-/** Current playback position in seconds, extrapolated while playing. Re-renders ~4×/s. */
+/** A backgrounded TV reports its position late; a step back smaller than this is that lag, not a real rewind. */
+const BACK_JUMP_IGNORED_SEC = 6;
+
+/**
+ * Current playback position in seconds, extrapolated while playing. Re-renders ~4×/s.
+ * While playing it never steps back by a few seconds (a late report from the TV); a restart or a new song still does.
+ */
 export function usePlaybackPosition(playback: Playback | null | undefined, durationSec = Infinity): number {
   const [, force] = useState(0);
+  const shown = useRef(0);
   const playing = playback?.state === "playing";
   useEffect(() => {
     if (!playing) return;
@@ -318,7 +325,10 @@ export function usePlaybackPosition(playback: Playback | null | undefined, durat
   }, [playing]);
   if (!playback) return 0;
   const pos = playing ? playback.positionSec + (serverNow() - playback.updatedAt) / 1000 : playback.positionSec;
-  return Math.max(0, Math.min(pos, durationSec));
+  let out = Math.max(0, Math.min(pos, durationSec));
+  if (playing && out < shown.current && shown.current - out < BACK_JUMP_IGNORED_SEC) out = shown.current;
+  shown.current = out;
+  return out;
 }
 
 /**
