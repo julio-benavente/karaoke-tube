@@ -65,6 +65,13 @@ export function useRoom(): UseRoom {
   return { state, me, status, closeReason, isHost: me?.role === "host" || me?.role === "cohost", send };
 }
 
+/** True when the host turned on "hide explicit songs". False outside a room. */
+export function useHideExplicit(): boolean {
+  const client = useContext(RoomContext)?.client;
+  const subscribe = useCallback((l: () => void) => client?.subscribe(l) ?? (() => {}), [client]);
+  return useSyncExternalStore(subscribe, () => !!client?.state?.settings.hideExplicit);
+}
+
 export type FloatingReaction = { id: number; memberId: string; reaction: Reaction; at: number };
 
 /**
@@ -146,7 +153,10 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   const searchApi = api ?? ctx?.search;
   if (!searchApi) throw new Error("useSearch needs a SearchApi (argument or RoomProvider `search`)");
   const [query, setQueryState] = useState("");
-  const [results, setResults] = useState<Song[]>([]);
+  const [allResults, setResults] = useState<Song[]>([]);
+  // A room that hides explicit songs never shows them.
+  const hideExplicit = useHideExplicit();
+  const results = useMemo(() => (hideExplicit ? allResults.filter((s) => !s.explicit) : allResults), [allResults, hideExplicit]);
   const [resultsFor, setResultsFor] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -157,7 +167,7 @@ export function useSearch(api?: SearchApi, debounceMs = 300): UseSearch {
   /** What the current results came from, so "load more" asks for the same thing. */
   const source = useRef<Source | null>(null);
   const count = useRef(0);
-  count.current = results.length;
+  count.current = allResults.length;
   const filterRef = useRef<BrowseFilter | undefined>(undefined);
   const queryRef = useRef("");
   queryRef.current = query;
