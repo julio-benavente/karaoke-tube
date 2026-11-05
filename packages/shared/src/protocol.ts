@@ -26,6 +26,10 @@ export type Song = {
   channel: string;
   durationSec: number;
   thumbnailUrl: string;
+  /** Best-effort: the title or catalog labels say the song has explicit lyrics. Absent = not known to be explicit. */
+  explicit?: boolean;
+  /** The catalog tags the song as a duet: the UI offers to pick a partner. */
+  duet?: boolean;
 };
 
 /** "pending": waiting for a host's OK in the "approval" queue mode (v1.1). */
