@@ -68,6 +68,7 @@ export function App() {
 
 function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) => void }) {
   const t = useT();
+  const [lang] = useLang();
   const initial = loadIdentity();
   const [nickname, setNickname] = useState(initial.nickname);
   const [seed, setSeed] = useState(initial.avatarSeed);
@@ -85,7 +86,7 @@ function Start({ api, onStarted }: { api: PartyApi; onStarted: (code: string) =>
     } catch {
       // ignore
     }
-    const r = await api.start(name, seed);
+    const r = await api.start(name, seed, lang);
     setBusy(false);
     if (r.ok) onStarted(r.code);
     else setError(t("popup.startError"));

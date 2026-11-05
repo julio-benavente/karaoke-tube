@@ -5,12 +5,14 @@ import {
   type ApiErrorResponse,
   type CreateRoomRequest,
   type CreateRoomResponse,
+  type RoomLanguage,
   type RoomInfoResponse,
   type RoomSettings,
 } from "@karaoke-tube/shared";
 import type { Context, Next } from "hono";
 import { userFromRequest } from "./account";
 import { ADJECTIVES, NOUNS } from "../words";
+import { ADJECTIVES_ES, NOUNS_ES } from "../words-es";
 
 /** Unbiased random integer in [0, n). */
 function randomInt(n: number): number {
@@ -21,12 +23,14 @@ function randomInt(n: number): number {
   return buf[0]! % n;
 }
 
-/** "<adjective>-<adjective>-<noun>" with two different adjectives, e.g. "fuzzy-golden-panda". */
-export function randomCode(): string {
-  const first = randomInt(ADJECTIVES.length);
-  let second = randomInt(ADJECTIVES.length - 1);
+/** "<adjective>-<adjective>-<noun>" with two different adjectives, e.g. "fuzzy-golden-panda" (Spanish rooms: "feliz-dorado-panda"). */
+export function randomCode(language: RoomLanguage = "en"): string {
+  const adjectives: readonly string[] = language === "es" ? ADJECTIVES_ES : ADJECTIVES;
+  const nouns: readonly string[] = language === "es" ? NOUNS_ES : NOUNS;
+  const first = randomInt(adjectives.length);
+  let second = randomInt(adjectives.length - 1);
   if (second >= first) second++;
-  return `${ADJECTIVES[first]}-${ADJECTIVES[second]}-${NOUNS[randomInt(NOUNS.length)]}`;
+  return `${adjectives[first]}-${adjectives[second]}-${nouns[randomInt(nouns.length)]}`;
 }
 
 /**
@@ -57,15 +61,19 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
     const avatarSeed = typeof body?.avatarSeed === "string" ? body.avatarSeed : "";
     if (!nickname || nickname.length > 100) return c.json({ error: "nickname is required" }, 400);
 
+    // The session language is chosen here, once: it picks the room code's words and every screen in the room follows it.
+    const language: RoomLanguage = body?.language === "es" ? "es" : "en";
+
     // Signed-in hosts get their saved room settings; guests (no token) get the defaults.
     let settings: Partial<RoomSettings> | undefined;
     if (c.req.header("Authorization")) {
       const user = await userFromRequest(c.env, c.req.raw).catch(() => null);
       if (user?.room_settings) settings = JSON.parse(user.room_settings) as Partial<RoomSettings>;
     }
+    settings = { ...settings, language };
 
     for (let attempt = 0; attempt < 20; attempt++) {
-      const code = randomCode();
+      const code = randomCode(language);
       const created = await roomStub(c.env, code).init(code, nickname, avatarSeed, settings);
       if (created) return c.json(created satisfies CreateRoomResponse, 201);
     }

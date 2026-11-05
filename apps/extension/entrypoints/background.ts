@@ -1,5 +1,5 @@
 import { createRoomClient, memoryCredentials } from "@karaoke-tube/client";
-import type { CreateRoomResponse, QueueItem, RoomClient, ServerMessage } from "@karaoke-tube/shared";
+import type { CreateRoomResponse, QueueItem, RoomClient, RoomLanguage, ServerMessage } from "@karaoke-tube/shared";
 import {
   API_URL,
   WEB_URL,
@@ -92,7 +92,7 @@ async function handleMessage(msg: ExtMessage): Promise<unknown> {
     case "PING_API":
       return { ok: true, health: await fetchHealth() };
     case "START_PARTY":
-      return startParty(msg.nickname, msg.avatarSeed);
+      return startParty(msg.nickname, msg.avatarSeed, msg.language);
     case "END_PARTY":
       return endParty();
     case "GET_PARTY":
@@ -104,7 +104,7 @@ async function handleMessage(msg: ExtMessage): Promise<unknown> {
   }
 }
 
-async function startParty(nickname: string, avatarSeed: string): Promise<StartPartyResponse> {
+async function startParty(nickname: string, avatarSeed: string, language?: RoomLanguage): Promise<StartPartyResponse> {
   if (party) {
     // Already running: just bring back the YouTube window if it was closed.
     if (party.youtubeTabId === null) party.youtubeTabId = await openYouTubeWindow();
@@ -114,7 +114,7 @@ async function startParty(nickname: string, avatarSeed: string): Promise<StartPa
   const res = await fetch(`${API_URL}/api/rooms`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ nickname, avatarSeed }),
+    body: JSON.stringify({ nickname, avatarSeed, language }),
   });
   if (!res.ok) return { ok: false, error: `Couldn't create a room (${res.status})` };
   const created = (await res.json()) as CreateRoomResponse;

@@ -1,4 +1,4 @@
-import type { HealthResponse } from "@karaoke-tube/shared";
+import type { HealthResponse, RoomLanguage } from "@karaoke-tube/shared";
 
 export const API_URL: string = import.meta.env.WXT_API_URL ?? "http://localhost:8787";
 
@@ -15,7 +15,7 @@ export type PartyInfo = { code: string; guestCount: number; tvOpen: boolean };
 export type ExtMessage =
   | { type: "PING_API" }
   /** Creates a room, opens the host app and a YouTube window for the TV. */
-  | { type: "START_PARTY"; nickname: string; avatarSeed: string }
+  | { type: "START_PARTY"; nickname: string; avatarSeed: string; language?: RoomLanguage }
   | { type: "END_PARTY" }
   | { type: "GET_PARTY" }
   /** Popup's "Open host app": open or focus the host app (on the website). */

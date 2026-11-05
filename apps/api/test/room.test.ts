@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import type { RoomSettings } from "@karaoke-tube/shared";
+import { isRoomCode, type RoomSettings } from "@karaoke-tube/shared";
 import { describe, expect, it } from "vitest";
 import { BASE, TestClient, createRoom, guest, hostRoom, song } from "./helpers";
 
@@ -8,7 +8,22 @@ describe("rooms HTTP", () => {
     const room = await createRoom("Julio");
     expect(room.code).toMatch(/^[a-z]+-[a-z]+-[a-z]+$/);
     const info = await (await SELF.fetch(`${BASE}/api/rooms/${room.code.toUpperCase().replace(/-/g, "%20")}`)).json();
-    expect(info).toEqual({ code: room.code, exists: true, locked: false, status: "open" });
+    expect(info).toEqual({ code: room.code, exists: true, locked: false, status: "open", language: "en" });
+  });
+
+  it("gives a Spanish session Spanish-word codes and remembers its language", async () => {
+    const { ADJECTIVES_ES, NOUNS_ES } = await import("../src/words-es");
+    const room = await createRoom("Julia", "es");
+    expect(isRoomCode(room.code)).toBe(true);
+    const [a, b, n] = room.code.split("-");
+    expect(ADJECTIVES_ES as readonly string[]).toContain(a);
+    expect(ADJECTIVES_ES as readonly string[]).toContain(b);
+    expect(NOUNS_ES as readonly string[]).toContain(n);
+    const info = await (await SELF.fetch(`${BASE}/api/rooms/${room.code}`)).json<{ language: string }>();
+    expect(info.language).toBe("es");
+    const host = await TestClient.open(room.code);
+    const welcome = await host.request({ type: "rejoin", memberId: room.memberId, key: room.key }, "welcome");
+    expect(welcome.state.settings.language).toBe("es");
   });
 
   it("reports unknown rooms", async () => {

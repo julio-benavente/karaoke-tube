@@ -1,10 +1,11 @@
 // Popup ↔ background messages (Spec A implements the background side; see "Requests for the other track" in B's spec).
+import type { RoomLanguage } from "@karaoke-tube/shared";
 
 /** `tvOpen`: whether the party's YouTube window (the TV) is open. */
 export type PartyInfo = { code: string; guestCount: number; tvOpen?: boolean };
 
 export type PopupMessage =
-  | { type: "START_PARTY"; nickname: string; avatarSeed: string } // → { ok: true, code } | { ok: false, error }
+  | { type: "START_PARTY"; nickname: string; avatarSeed: string; language?: RoomLanguage } // → { ok: true, code } | { ok: false, error }
   | { type: "GET_PARTY" } // → { ok: true, party: PartyInfo | null }
   | { type: "END_PARTY" } // → { ok: true }
   | { type: "OPEN_HOST" } // background opens or focuses the host app on the website
@@ -47,7 +48,7 @@ function setDemoParty(p: PartyInfo | null) {
 export type PartyApi = {
   demo: boolean;
   get(): Promise<PartyInfo | null>;
-  start(nickname: string, avatarSeed: string): Promise<{ ok: true; code: string } | { ok: false; error: string }>;
+  start(nickname: string, avatarSeed: string, language?: RoomLanguage): Promise<{ ok: true; code: string } | { ok: false; error: string }>;
   end(): Promise<void>;
   openHost(): Promise<void>;
 };
@@ -71,8 +72,8 @@ export async function createPartyApi(): Promise<PartyApi> {
   return {
     demo,
     get: async () => (await send({ type: "GET_PARTY" }))?.party ?? null,
-    start: async (nickname, avatarSeed) => {
-      const r = await send({ type: "START_PARTY", nickname, avatarSeed });
+    start: async (nickname, avatarSeed, language) => {
+      const r = await send({ type: "START_PARTY", nickname, avatarSeed, language });
       if (r?.ok && r.code) return { ok: true, code: r.code };
       return { ok: false, error: r?.error ?? "Couldn't start the party. Check your connection and try again." };
     },

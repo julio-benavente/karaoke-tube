@@ -3,11 +3,11 @@ import type { ClientMessage, CreateRoomResponse, RoomState, ServerMessage, Song 
 
 export const BASE = "http://karaoke.test";
 
-export async function createRoom(nickname = "Host"): Promise<CreateRoomResponse> {
+export async function createRoom(nickname = "Host", language?: "en" | "es"): Promise<CreateRoomResponse> {
   const res = await SELF.fetch(`${BASE}/api/rooms`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ nickname, avatarSeed: "seed" }),
+    body: JSON.stringify({ nickname, avatarSeed: "seed", ...(language ? { language } : {}) }),
   });
   if (res.status !== 201) throw new Error(`create failed: ${res.status}`);
   return res.json();

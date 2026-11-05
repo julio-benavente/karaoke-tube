@@ -185,7 +185,7 @@ export class Room extends DurableObject<Env> {
   async info(): Promise<RoomInfoResponse> {
     const code = this.getMeta<string>("code");
     if (code === null) return { code: "", exists: false, locked: false, status: null };
-    return { code, exists: true, locked: this.settings().locked, status: this.status() };
+    return { code, exists: true, locked: this.settings().locked, status: this.status(), language: this.settings().language ?? "en" };
   }
 
   // ── WebSocket ──────────────────────────────────────────────────────────
@@ -992,6 +992,7 @@ export class Room extends DurableObject<Env> {
       performances,
       titles,
       topMoment,
+      language: this.settings().language ?? "en",
     };
     this.setMeta("recap", recap);
     try {
@@ -1236,6 +1237,7 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   if (typeof input.countdownSec === "number" && Number.isFinite(input.countdownSec)) {
     out.countdownSec = Math.max(0, Math.min(30, Math.trunc(input.countdownSec)));
   }
+  if (input.language === "en" || input.language === "es") out.language = input.language;
   if (input.joinInfo === "between" || input.joinInfo === "always" || input.joinInfo === "start") out.joinInfo = input.joinInfo;
   if (input.tvLayout === "bar" || input.tvLayout === "clean") out.tvLayout = input.tvLayout;
   if (input.tvBarSize === "small" || input.tvBarSize === "medium" || input.tvBarSize === "large") out.tvBarSize = input.tvBarSize;

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { localStorageCredentials } from "@karaoke-tube/client";
 import { normalizeRoomCode, type CreateRoomResponse } from "@karaoke-tube/shared";
-import { AvatarPicker, Button, LanguageSwitcher, Logo, TextField, randomSeed, useT } from "@karaoke-tube/ui";
+import { AvatarPicker, Button, LanguageSwitcher, Logo, TextField, randomSeed, useLang, useT } from "@karaoke-tube/ui";
 import { useAccount } from "../account/AccountContext";
 import css from "../screens/Join.module.css";
 
@@ -22,6 +22,7 @@ function loadIdentity(): { nickname: string; avatarSeed: string } {
 export function NewParty() {
   const nav = useNavigate();
   const t = useT();
+  const [lang] = useLang();
   const { account, api } = useAccount();
   const [initial] = useState(() => (account ? { nickname: account.displayName, avatarSeed: account.avatarSeed } : loadIdentity()));
   const [nickname, setNickname] = useState(initial.nickname);
@@ -56,7 +57,7 @@ export function NewParty() {
         method: "POST",
         // A signed-in host also sends the token so the room starts with their saved settings (guests send nothing).
         headers: { "content-type": "application/json", ...(api.token() ? { Authorization: `Bearer ${api.token()}` } : {}) },
-        body: JSON.stringify({ nickname: name, avatarSeed: seed }),
+        body: JSON.stringify({ nickname: name, avatarSeed: seed, language: lang }),
       });
       if (!res.ok) throw new Error(t("newparty.errorStatus", { status: res.status }));
       const created = (await res.json()) as CreateRoomResponse;
@@ -73,12 +74,16 @@ export function NewParty() {
     <div className={css.page}>
       <header className={css.top}>
         <Logo size={32} />
-        <LanguageSwitcher />
       </header>
       <form className={css.card} onSubmit={submit} noValidate>
         <h1 className={css.title}>{t("newparty.title")}</h1>
         <p className={css.lead}>{t("newparty.lead")}</p>
         <AvatarPicker value={seed} onChange={setSeed} />
+        <div>
+          <p className={css.lead}>{t("newparty.language")}</p>
+          <LanguageSwitcher />
+          <p className={css.hint}>{t("newparty.languageHint")}</p>
+        </div>
         <TextField
           label={t("newparty.name")}
           value={nickname}
