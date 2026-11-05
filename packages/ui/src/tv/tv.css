@@ -673,14 +673,17 @@
 }
 
 /* ── Bar layout: a bar of its own under the video ──────────
- * --b is the bar's height in cqh (1% of the screen). Everything inside scales from it, so one rule serves every size. */
+ * --b is the bar's height in cqh (1% of the screen). Everything inside scales from --u, which follows the height on a
+ * 16:9-or-wider screen and the width on a narrower one (a small or portrait window), so the content always fits.
+ * Narrow windows drop the "up next" block first, then the join URL. */
 .kt-tvbar {
-  --u: calc(var(--b) * 1cqh);
+  --u: min(calc(var(--b) * 1cqh), calc(var(--b) * 0.5625cqw));
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: var(--u);
+  height: calc(var(--b) * 1cqh);
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: calc(var(--u) * 0.45);
@@ -784,4 +787,21 @@
   color: var(--tv-text-2);
   font-size: calc(var(--u) * 0.17);
   white-space: nowrap;
+}
+
+@container (max-aspect-ratio: 3/2) {
+  .kt-tvbar-next {
+    display: none;
+  }
+}
+
+@container (max-aspect-ratio: 1/1) {
+  .kt-tvbar-url {
+    display: none;
+  }
+
+  .kt-tvbar {
+    gap: calc(var(--u) * 0.3);
+    padding: 0 calc(var(--u) * 0.3);
+  }
 }
