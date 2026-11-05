@@ -1,7 +1,7 @@
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
-import { TITLE_INFO, type Recap } from "@karaoke-tube/shared";
-import { Artwork, Avatar, Button, songParts, titleDesc, titleName, useLang, useT, type TFn } from "@karaoke-tube/ui";
+import { TITLE_INFO, type QueueItem, type Recap } from "@karaoke-tube/shared";
+import { Artwork, Avatar, AvatarStack, Button, songParts, titleDesc, titleName, useLang, useT, type TFn } from "@karaoke-tube/ui";
 import { cheersOf, shareRecap, singerCount, songsOf, type ShareResult } from "./recap";
 import css from "./RecapView.module.css";
 
@@ -11,6 +11,8 @@ export function RecapView({ recap, meId }: { recap: Recap; meId?: string }) {
   const [lang] = useLang();
   const songs = recap.performances.length;
   const nameOf = (id: string) => recap.members.find((m) => m.id === id)?.nickname ?? t("singer.someone");
+  /** The avatars of everyone who sang a song: both singers of a duet (nothing for a sing-along). */
+  const seedsOf = (item: QueueItem) => (item.everyone ? [] : item.singerIds.flatMap((id) => recap.members.find((m) => m.id === id)?.avatarSeed ?? []));
   const totalCheers = recap.performances.reduce((n, p) => n + p.cheers, 0);
   const hasTitles = Object.values(recap.titles).some((t) => t.length > 0);
   const moment = recap.topMoment && recap.topMoment.cheers > 0 ? recap.topMoment : null;
@@ -42,6 +44,7 @@ export function RecapView({ recap, meId }: { recap: Recap; meId?: string }) {
               </span>
               <em>🙌 {t("recap.cheersCount", { count: moment.cheers })}</em>
             </div>
+            <AvatarStack seeds={seedsOf(moment.item)} size={36} />
           </div>
         </section>
       )}
@@ -90,6 +93,7 @@ export function RecapView({ recap, meId }: { recap: Recap; meId?: string }) {
                   <b>{songParts(p.item.song).title}</b>
                   <span>{p.item.everyone ? t("singer.everyone") : p.item.singerIds.map(nameOf).join(` ${t("singer.and")} `)}</span>
                 </span>
+                <AvatarStack seeds={seedsOf(p.item)} size={28} />
                 <span className={css.cheers}>🙌 {p.cheers}</span>
               </li>
             ))}

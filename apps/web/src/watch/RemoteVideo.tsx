@@ -43,7 +43,7 @@ export function RemoteVideo({ item, playback, className }: { item: QueueItem; pl
         player = new YT.Player(targetRef.current, {
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
+          playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, fs: 0, disablekb: 1 },
           events: {
             onReady: () => {
               if (dead) return;

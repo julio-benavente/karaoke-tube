@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router";
 import type { PairStartResponse, PairStatusResponse } from "@karaoke-tube/shared";
 import { Logo, useT } from "@karaoke-tube/ui";
 import { loadScreen, saveScreen } from "./screenStore";
+import { useWakeLock } from "./useWakeLock";
 
 const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3vh", textAlign: "center", padding: 24, fontFamily: '"Figtree", system-ui, sans-serif' } as const;
 const button = { font: "inherit", fontWeight: 800, fontSize: "2.6vh", padding: "1.4vh 3.6vh", borderRadius: 999, border: "0.3vh solid #ff4f8b", background: "transparent", color: "#fff", cursor: "pointer" } as const;
@@ -25,6 +26,7 @@ export function TvPair() {
 
 function Waiting() {
   const t = useT();
+  useWakeLock(true); // a phone waiting for its code shouldn't fall asleep
   const navigate = useNavigate();
   const [pair, setPair] = useState<Pair | null>(null);
   const [failed, setFailed] = useState(false);
@@ -112,7 +114,7 @@ function Waiting() {
         </>
       ) : (
         <>
-          <div data-testid="tv-pair-code" style={{ fontSize: "16vh", fontWeight: 900, letterSpacing: "0.12em", color: "#ff4f8b", lineHeight: 1 }}>
+          <div data-testid="tv-pair-code" style={{ fontSize: "min(16vh, 15vw)", fontWeight: 900, letterSpacing: "0.12em", color: "#ff4f8b", lineHeight: 1 }}>
             {pair ? `${pair.code.slice(0, 3)} ${pair.code.slice(3)}` : "…"}
           </div>
           <p style={{ fontSize: "3vh", opacity: 0.85, maxWidth: "70vw", margin: 0 }}>{t("tvpair.hint")}</p>

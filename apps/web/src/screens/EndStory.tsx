@@ -55,7 +55,6 @@ export function EndStory({ recap, meId, onDone }: { recap: Recap; meId?: string;
         bg: BACKGROUNDS[(i + 1) % BACKGROUNDS.length]!,
         body: (
           <>
-            <span className={css.kicker}>{t("story.yourTitle")}</span>
             <span className={`${css.emoji} ${css.pop}`} aria-hidden>
               {TITLE_INFO[id].emoji}
             </span>

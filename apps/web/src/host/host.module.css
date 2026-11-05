@@ -916,7 +916,7 @@
 }
 
 .mobileMain.hasBanner {
-  padding-top: calc(env(safe-area-inset-top) + 44px);
+  padding-top: calc(env(safe-area-inset-top) + 88px);
 }
 
 /* Phone: next to the search field "Who sings?" is just its icon until someone is picked, so the field keeps its room. */

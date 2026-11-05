@@ -5,6 +5,7 @@ import type { PairClaimRequest, TvBarSize, TvLayout } from "@karaoke-tube/shared
 import { Button, TextField, Toggle, useRoom, useT, useToast } from "@karaoke-tube/ui";
 import { openTvScreen } from "./client";
 import css from "./host.module.css";
+import { PhoneAsTvHelp } from "./PhoneAsTvHelp";
 
 /**
  * Settings → TV screen. A TV opened at /tv shows a code; typing it here pairs it with this party, and from then
@@ -160,6 +161,7 @@ export function TvScreenSettings() {
           {t("host.openTv")}
         </Button>
       </div>
+      <PhoneAsTvHelp />
     </section>
   );
 }

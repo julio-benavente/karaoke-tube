@@ -14,6 +14,9 @@ export type YTPlayer = {
   unMute(): void;
   getPlayerState(): number;
   destroy(): void;
+  /** Undocumented-but-stable module controls; used to keep captions off. */
+  setOption?(module: string, option: string, value: unknown): void;
+  unloadModule?(module: string): void;
 };
 type YTGlobal = {
   Player: new (el: HTMLElement, opts: unknown) => YTPlayer;
@@ -86,7 +89,7 @@ export class TvPlayer {
         this.yt = new YT.Player(this.target, {
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
+          playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, fs: 0, disablekb: 1 },
           events: {
             onReady: () => {
               this.ready = true;
@@ -95,6 +98,8 @@ export class TvPlayer {
               if (this.pending) this.play(this.pending.item, this.pending.startAt, this.pending.paused);
             },
             onStateChange: (e: { data: number }) => this.onState(e.data),
+            // The captions module loads late for videos that have subtitles: switch it off whenever it appears.
+            onApiChange: () => this.captionsOff(),
             onError: () => this.finish("error"),
           },
         });
@@ -111,6 +116,17 @@ export class TvPlayer {
       // ignore
     }
     this.yt = null;
+  }
+
+  /** C4: captions never show on the TV, whatever the viewer's YouTube settings say (lyrics burned into the video stay). */
+  private captionsOff() {
+    try {
+      this.yt?.setOption?.("captions", "track", {});
+      this.yt?.unloadModule?.("captions");
+      this.yt?.unloadModule?.("cc");
+    } catch {
+      // ignore: the player may not have the module
+    }
   }
 
   private show(on: boolean) {
@@ -169,6 +185,7 @@ export class TvPlayer {
     this.lastState = s;
     const item = this.item;
     if (!item || this.finished) return;
+    if (s === PLAYING) this.captionsOff();
     if (s === PLAYING && !this.started) {
       this.started = true;
       this.lastProgress = Date.now();

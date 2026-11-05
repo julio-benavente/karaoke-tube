@@ -59,7 +59,7 @@ function Preview() {
   if (!state) return <p className={css.wait}>Starting the mock room…</p>;
   const item = state.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
-  const recap = state.recap ?? sampleRecap(state.members);
+  const recap = state.recap ?? withPeople(sampleRecap(state.members), Number(new URLSearchParams(location.search).get("people")) || 0);
   const mock = (client as unknown as { mock: { finishSong(): void; randomReaction(): void } }).mock;
 
   return (
@@ -128,6 +128,15 @@ function Preview() {
       </p>
     </div>
   );
+}
+
+/** `?people=N` pads the sample recap to N people (and makes the top moment a duet), to see the credits at any size. */
+function withPeople(recap: ReturnType<typeof sampleRecap>, n: number) {
+  if (n <= 0) return recap;
+  const base = recap.members;
+  const members = Array.from({ length: n }, (_, i) => (i < base.length ? base[i]! : { id: `x${i}`, nickname: `Guest ${i + 1}`, avatarSeed: `guest-${i}` }));
+  const moment = recap.topMoment && base[2] ? { ...recap.topMoment, item: { ...recap.topMoment.item, singerIds: [...recap.topMoment.item.singerIds, base[2].id] } } : recap.topMoment;
+  return { ...recap, members, topMoment: moment };
 }
 
 /** Mounts children in an open shadow root with tvCss, like the content script. */

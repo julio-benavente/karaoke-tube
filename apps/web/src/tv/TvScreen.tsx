@@ -10,15 +10,12 @@ import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
 import { Lobby } from "./Lobby";
 import { clearScreen, loadScreen } from "./screenStore";
+import { useWakeLock } from "./useWakeLock";
 
 const AWARDS_SHOW_MS = 60_000;
 const JOIN_FLASH_MS = 15_000;
 
 const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
-/** A touch screen of phone size: TV mode isn't made for it (autoplay, full screen and background tabs are all stricter there). */
-function looksLikePhone(): boolean {
-  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 700;
-}
 
 const center = { ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", padding: 24 } as const;
 const bigBtn = { font: "inherit", fontWeight: 800, fontSize: 24, padding: "16px 32px", borderRadius: 999, border: 0, background: "#ff4f8b", color: "#1f0711", cursor: "pointer" } as const;
@@ -138,6 +135,16 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
 
   // Create the YouTube player after the Start click.
   const [playerReady, setPlayerReady] = useState(false);
+  // A phone or tablet used as the TV (cast / mirrored to a real one) must not dim and sleep while the party runs.
+  useWakeLock(started);
+  const touch = useMemo(() => window.matchMedia("(pointer: coarse)").matches, []);
+  const [portrait, setPortrait] = useState(() => window.matchMedia("(orientation: portrait)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: portrait)");
+    const on = () => setPortrait(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   useEffect(() => {
     if (!started || !wrapRef.current || !targetRef.current) return;
     const report = (event: "started" | "progress" | "ended" | "error", itemId: string, positionSec?: number, durationSec?: number) =>
@@ -273,11 +280,18 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
             !started && (
               <>
                 <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
-                {looksLikePhone() && <p style={{ margin: "2vh 0 0", maxWidth: 560, color: "#ffd166" }}>{t("tv.phoneHint")}</p>}
+                {touch && <p style={{ opacity: 0.6, margin: 0, maxWidth: "80vw" }}>{t("tv.castHint")}</p>}
+                {touch && portrait && <p style={{ color: "#ff4f8b", fontWeight: 700, margin: 0 }}>{t("tv.rotate")}</p>}
               </>
             )
           }
         />
+      )}
+      {/* Connection to the party lost: a big banner, so nobody wonders why the queue does not move. */}
+      {started && status === "reconnecting" && (
+        <div role="alert" data-testid="tv-reconnecting" style={{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 80, padding: "2.4vh 4vw", background: "#ff5c5c", color: "#1f0711", textAlign: "center", fontWeight: 800, fontSize: "4.4vh" }}>
+          {t("host.reconnecting")}
+        </div>
       )}
       {started && (
         <button
