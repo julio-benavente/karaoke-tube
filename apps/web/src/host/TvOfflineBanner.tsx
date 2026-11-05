@@ -61,7 +61,7 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
                 error={pair.error}
                 data-testid="tv-banner-code"
               />
-              <Button size="sm" type="submit" disabled={pair.busy || !pair.ready}>
+              <Button size="sm" variant="light" type="submit" disabled={pair.busy || !pair.ready}>
                 {t("tvscreen.pairButton")}
               </Button>
             </form>

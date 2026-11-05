@@ -63,7 +63,8 @@
 .other {
   padding-top: var(--kt-space-3);
   border-top: 1px solid rgba(0, 0, 0, 0.25);
-  font-size: var(--kt-text-sm);
+  font-size: 16px; /* regular reading size: this is the text that explains how to connect */
+  line-height: 1.4;
 }
 
 .other p {
@@ -90,12 +91,14 @@
 
 .more {
   align-self: flex-start;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: none;
   color: inherit;
   font: inherit;
-  font-size: var(--kt-text-sm);
+  font-size: 16px;
+  font-weight: var(--kt-weight-bold);
   text-decoration: underline;
   cursor: pointer;
 }
