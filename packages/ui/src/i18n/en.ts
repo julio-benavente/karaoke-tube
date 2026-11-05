@@ -561,6 +561,7 @@ export const en = {
   "tvscreen.phone.cast": "Then mirror its screen to the TV: iPhone or iPad, Control Center → Screen Mirroring (Apple TV, AirPlay TVs, newer Rokus). Android, Smart View or Cast screen (Chromecast, smart TVs, Rokus with screen mirroring). Keep it charging.",
   "tv.castHint": "Casting this screen to a TV? Start mirroring first (AirPlay, Cast or Smart View), then press Start.",
   "tv.rotate": "Turn your phone sideways for the best picture.",
+  "tv.tapForSound": "Tap for sound",
   "tv.fullscreen": "Full screen (F)",
   "tv.fullscreenLabel": "Full screen",
   "tv.qrAlt": "Join QR code",

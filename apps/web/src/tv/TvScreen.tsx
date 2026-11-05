@@ -135,6 +135,9 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
 
   // Create the YouTube player after the Start click.
   const [playerReady, setPlayerReady] = useState(false);
+  // Phones start the video muted (the only autoplay they allow) until someone taps "Tap for sound".
+  const [muted, setMuted] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   // A phone or tablet used as the TV (cast / mirrored to a real one) must not dim and sleep while the party runs.
   useWakeLock(started);
   const touch = useMemo(() => window.matchMedia("(pointer: coarse)").matches, []);
@@ -149,7 +152,10 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
     if (!started || !wrapRef.current || !targetRef.current) return;
     const report = (event: "started" | "progress" | "ended" | "error", itemId: string, positionSec?: number, durationSec?: number) =>
       clientRef.current?.send({ type: "player_event", event, itemId, positionSec, durationSec });
-    const p = new TvPlayer(targetRef.current, wrapRef.current, report, () => setPlayerReady(true));
+    const p = new TvPlayer(targetRef.current, wrapRef.current, report, () => setPlayerReady(true), touch, setMuted, (why) => {
+      setProblem(why);
+      setTimeout(() => setProblem(null), 30_000);
+    });
     playerRef.current = p;
     // A TV reopened while the song is paused must come up paused (the room's `pause` command reached us before the player existed).
     if (wantPlay.current) p.play(wantPlay.current, startAtFor(wantPlay.current), clientRef.current?.state?.playback.state === "paused");
@@ -157,6 +163,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
       p.dispose();
       playerRef.current = null;
       setPlayerReady(false);
+      setMuted(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started]);
@@ -292,6 +299,20 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
         <div role="alert" data-testid="tv-reconnecting" style={{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 80, padding: "2.4vh 4vw", background: "#ff5c5c", color: "#1f0711", textAlign: "center", fontWeight: 800, fontSize: "4.4vh" }}>
           {t("host.reconnecting")}
         </div>
+      )}
+      {started && problem && (
+        <div data-testid="tv-problem" style={{ position: "absolute", left: 12, bottom: 12, zIndex: 90, maxWidth: "70vw", padding: "6px 10px", borderRadius: 8, background: "#000c", color: "#ffb4b4", fontSize: 14 }}>
+          {problem}
+        </div>
+      )}
+      {started && muted && (
+        <button
+          style={{ ...bigBtn, position: "absolute", left: "50%", top: 16, transform: "translateX(-50%)", zIndex: 90, fontSize: 20, padding: "12px 24px" }}
+          data-testid="tv-unmute"
+          onClick={() => playerRef.current?.unmute()}
+        >
+          🔊 {t("tv.tapForSound")}
+        </button>
       )}
       {started && (
         <button

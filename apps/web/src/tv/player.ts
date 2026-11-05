@@ -75,21 +75,32 @@ export class TvPlayer {
   private lastProgress = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastState = -1;
+  private muted: boolean;
 
-  /** `target` is an element the player replaces with its iframe; `wrap` is shown/hidden around it. */
+  /**
+   * `target` is an element the player replaces with its iframe; `wrap` is shown/hidden around it.
+   * `startMuted`: phones (iOS above all) only autoplay muted video, and the Start tap is long gone by the time the
+   * player exists, so the TV starts silent and `unmute()` is called from a tap ("Tap for sound").
+   */
   constructor(
     private readonly target: HTMLElement,
     private readonly wrap: HTMLElement,
     private readonly report: PlayerReport,
     private readonly onReady: () => void,
+    startMuted = false,
+    private readonly onMutedChange: (muted: boolean) => void = () => {},
+    /** Why a song failed ("youtube error 150", "no start, state -1"): the TV shows it, so a phone that can't play says so. */
+    private readonly onProblem: (why: string) => void = () => {},
   ) {
+    this.muted = startMuted;
+    if (startMuted) onMutedChange(true);
     this.show(false);
     loadApi()
       .then((YT) => {
         this.yt = new YT.Player(this.target, {
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, fs: 0, disablekb: 1 },
+          playerVars: { autoplay: 1, mute: startMuted ? 1 : 0, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, fs: 0, disablekb: 1 },
           events: {
             onReady: () => {
               this.ready = true;
@@ -100,7 +111,10 @@ export class TvPlayer {
             onStateChange: (e: { data: number }) => this.onState(e.data),
             // The captions module loads late for videos that have subtitles: switch it off whenever it appears.
             onApiChange: () => this.captionsOff(),
-            onError: () => this.finish("error"),
+            onError: (e: { data?: number }) => {
+              this.onProblem(`YouTube error ${e?.data ?? "?"}`);
+              this.finish("error");
+            },
           },
         });
       })
@@ -151,6 +165,19 @@ export class TvPlayer {
     this.lastProgress = 0;
     this.show(true);
     this.yt.loadVideoById({ videoId: item.song.videoId, startSeconds: resumeAt });
+  }
+
+  /** Turns the sound on. Must run inside a tap on phones. */
+  unmute() {
+    if (!this.muted) return;
+    this.muted = false;
+    try {
+      this.yt?.unMute();
+      if (this.item && !this.wantPaused && !this.finished) this.yt?.playVideo();
+    } catch {
+      // ignore
+    }
+    this.onMutedChange(false);
   }
 
   /** Nothing left to play: stop the video and hide the iframe so no recommendations show. */
@@ -204,7 +231,10 @@ export class TvPlayer {
       if (this.lastState === PAUSED && !this.wantPaused) this.yt.playVideo();
       // Ads play with state PLAYING and count as started; only buffering/unstarted time is waited out here.
       if (this.lastState !== PAUSED || !this.wantPaused) this.waitedMs += TICK_MS;
-      if (this.waitedMs >= START_TIMEOUT_MS) this.finish("error");
+      if (this.waitedMs >= START_TIMEOUT_MS) {
+        this.onProblem(`Video did not start (player state ${this.lastState}${this.muted ? ", muted" : ""})`);
+        this.finish("error");
+      }
       return;
     }
     if (this.lastState !== BUFFERING && Date.now() - this.lastProgress >= PROGRESS_EVERY_MS) {

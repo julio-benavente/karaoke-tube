@@ -564,6 +564,7 @@ export const es: Dict = {
   "tvscreen.phone.cast": "Luego duplica su pantalla en el televisor: iPhone o iPad, Centro de control → Duplicar pantalla (Apple TV, TVs con AirPlay, Rokus nuevos). Android, Smart View o Transmitir pantalla (Chromecast, smart TVs, Rokus con duplicación de pantalla). Déjalo cargando.",
   "tv.castHint": "¿Vas a transmitir esta pantalla a una TV? Empieza a duplicar primero (AirPlay, Cast o Smart View) y luego presiona Iniciar.",
   "tv.rotate": "Pon el celular en horizontal para ver mejor.",
+  "tv.tapForSound": "Toca para activar el sonido",
   "tv.fullscreen": "Pantalla completa (F)",
   "tv.fullscreenLabel": "Pantalla completa",
   "tv.qrAlt": "Código QR para unirse",
