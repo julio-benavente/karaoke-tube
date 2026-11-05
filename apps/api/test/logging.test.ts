@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { guest, hostRoom, song } from "./helpers";
 
 /** The JSON event lines the app printed (other console.log calls are ignored). */
-const events = (spy: ReturnType<typeof vi.spyOn>) =>
+const events = (spy: MockInstance<typeof console.log>) =>
   spy.mock.calls
     .map((c) => String(c[0]))
     .filter((l) => l.startsWith('{"event"'))

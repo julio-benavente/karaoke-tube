@@ -1,11 +1,11 @@
 import { SELF } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { BASE } from "./helpers";
 
 const post = (body: unknown) =>
   SELF.fetch(`${BASE}/api/client-errors`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
-const events = (spy: ReturnType<typeof vi.spyOn>) =>
+const events = (spy: MockInstance<typeof console.log>) =>
   spy.mock.calls.map((c) => String(c[0])).filter((l) => l.startsWith('{"event":"client_error"')).map((l) => JSON.parse(l) as Record<string, unknown>);
 
 describe("client error reports", () => {
