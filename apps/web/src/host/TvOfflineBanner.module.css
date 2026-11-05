@@ -1,0 +1,121 @@
+/* "TV not connected": big and impossible to miss. Floats over the top of the host app; on a phone it is a strip. */
+.banner {
+  position: fixed;
+  top: var(--kt-space-3);
+  left: 50%;
+  z-index: var(--kt-z-toast);
+  width: min(680px, calc(100vw - 2 * var(--kt-space-3)));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-3);
+  padding: var(--kt-space-4) var(--kt-space-5);
+  border-radius: 16px;
+  background: var(--kt-danger);
+  color: var(--kt-base);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 12px 40px rgba(0, 0, 0, 0.55);
+  transform: translateX(-50%);
+  animation: tvPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes tvPulse {
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 92, 92, 0.45), 0 12px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    animation: none;
+  }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-4);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: var(--kt-weight-bold);
+  line-height: 1.15;
+}
+
+.hint {
+  font-size: var(--kt-text-sm);
+}
+
+.other {
+  padding-top: var(--kt-space-3);
+  border-top: 1px solid rgba(0, 0, 0, 0.25);
+  font-size: var(--kt-text-sm);
+}
+
+.other p {
+  margin: 0 0 var(--kt-space-2);
+}
+
+.link {
+  color: inherit;
+  font-size: 18px;
+  font-weight: var(--kt-weight-bold);
+  text-decoration: underline;
+}
+
+.pair {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--kt-space-2);
+}
+
+.pair > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--kt-text-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Phone: a strip along the top (the page starts below it). */
+.compact {
+  top: 0;
+  left: 0;
+  right: 0;
+  width: auto;
+  gap: var(--kt-space-1);
+  padding: var(--kt-space-2) var(--kt-space-3);
+  border-radius: 0;
+  transform: none;
+}
+
+.compact .top {
+  gap: var(--kt-space-3);
+}
+
+.compact .title {
+  font-size: 16px;
+}

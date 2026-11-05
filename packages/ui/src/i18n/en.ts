@@ -368,6 +368,8 @@ export const en = {
   "host.noTv": "No TV screen connected",
   "host.noTvHint": "Open the TV screen, drag that window to the TV and press Start.",
   "host.openTv": "Open TV screen",
+  "host.tvOtherDevice": "Connect a different device",
+  "host.tvOtherDeviceHint": "To connect it to a different device, go to the TV link below on that device and enter the code it shows.",
   "host.unlock": "Unlock party (let new guests join)",
   "host.lock": "Lock party (no new guests)",
   "host.unlocked": "Party unlocked. New guests can join.",

@@ -371,6 +371,8 @@ export const es: Dict = {
   "host.noTv": "No hay pantalla de TV conectada",
   "host.noTvHint": "Abre la pantalla de TV, arrastra esa ventana al televisor y presiona Iniciar.",
   "host.openTv": "Abrir pantalla de TV",
+  "host.tvOtherDevice": "Conectar otro dispositivo",
+  "host.tvOtherDeviceHint": "Para conectarla a otro dispositivo, entra al enlace de la TV de abajo en ese dispositivo y escribe el código que muestra.",
   "host.unlock": "Abrir la fiesta (permitir nuevos invitados)",
   "host.lock": "Cerrar la fiesta (sin nuevos invitados)",
   "host.unlocked": "Fiesta abierta. Pueden entrar nuevos invitados.",

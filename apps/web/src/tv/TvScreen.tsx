@@ -237,6 +237,12 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
           }
         />
       )}
+      {/* Connection to the party lost: a big banner, so nobody wonders why the queue does not move. */}
+      {started && status === "reconnecting" && (
+        <div role="alert" data-testid="tv-reconnecting" style={{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 80, padding: "2.4vh 4vw", background: "#ff5c5c", color: "#1f0711", textAlign: "center", fontWeight: 800, fontSize: "4.4vh" }}>
+          {t("host.reconnecting")}
+        </div>
+      )}
       {started && (
         <button
           onClick={fullscreen}

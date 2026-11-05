@@ -41,6 +41,7 @@ import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
+import { TvOfflineBanner } from "./TvOfflineBanner";
 import css from "./host.module.css";
 
 export type View = "home" | "search" | "settings" | "queue" | "party";
@@ -218,14 +219,7 @@ function Host() {
     return (
       <div className={css.mobileFrame}>
         {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
-        {status === "open" && state.playerConnected === false && (
-          <div className={css.tvClosed} role="alert" data-testid="tv-banner">
-            <span>{state.screenPaired ? t("host.tvOffline") : t("host.noTv")}</span>
-            <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
-              {t("host.openTv")}
-            </Button>
-          </div>
-        )}
+        {status === "open" && state.playerConnected === false && <TvOfflineBanner compact onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
         <main className={`${css.mobileMain} ${status === "open" && state.playerConnected === false ? css.hasBanner : ""}`}>
           {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}
@@ -308,17 +302,7 @@ function Host() {
   return (
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
       {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
-      {status === "open" && state.playerConnected === false && (
-        <div className={css.tvClosed} role="alert" data-testid="tv-banner">
-          <span>
-            {state.screenPaired ? t("host.tvOffline") : t("host.noTv")}
-            <span className={css.tvHint}> {state.screenPaired ? t("host.tvOfflineHint") : t("host.noTvHint")}</span>
-          </span>
-          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
-            {t("host.openTv")}
-          </Button>
-        </div>
-      )}
+      {status === "open" && state.playerConnected === false && <TvOfflineBanner onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
       <Sidebar view={view} onView={setView} />
       <main className={css.main}>
         {view === "home" && <HomeView onSearch={() => setView("search")} />}
