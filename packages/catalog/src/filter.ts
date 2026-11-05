@@ -1,6 +1,7 @@
 // Filtering the catalog by label: genre, decade, language, mood/occasion tag. Reads v1 catalogs too (they have no
 // labels, so any label filter matches nothing and an empty filter matches everything).
 
+import { isExplicitText } from "./explicit";
 import { DECADE_START, genreChain } from "./taxonomy";
 import type { AnyCatalog } from "./types";
 
@@ -42,6 +43,27 @@ function artistIndexes(catalog: AnyCatalog): Map<string, number> {
   return m;
 }
 
+/** Explicit songs by index, worked out once per catalog: the catalog's own `explicit` tag, else a guess from the title. */
+const explicitCache = new WeakMap<object, (i: number) => boolean>();
+export function explicitTest(catalog: AnyCatalog): (i: number) => boolean {
+  let test = explicitCache.get(catalog);
+  if (!test) {
+    const { t, a } = catalog.songs;
+    const tag = catalog.v === 2 ? catalog.tags.indexOf("explicit") : -1;
+    const seen = new Map<number, boolean>();
+    test = (i) => {
+      let v = seen.get(i);
+      if (v === undefined) {
+        v = (tag >= 0 && catalog.v === 2 && catalog.songs.m[i]!.includes(tag)) || isExplicitText(t[i]!, a[i]! >= 0 ? catalog.artists[a[i]!] : null);
+        seen.set(i, v);
+      }
+      return v;
+    };
+    explicitCache.set(catalog, test);
+  }
+  return test;
+}
+
 /**
  * A yes/no test for one song (by index) against `filter`, or null when the filter is empty (everything matches).
  * v1 catalogs have no labels, so any label filter matches nothing; artist works on both.
@@ -50,13 +72,16 @@ export function songMatcher(catalog: AnyCatalog, filter: SongFilter): ((i: numbe
   const genres = list(filter.genre);
   const decades = list(filter.decade).map((d) => (DECADE_START[d] ?? -1) / 10);
   const languages = list(filter.language);
-  const tags = list(filter.tag);
+  // "explicit" is not only a tag column entry: see explicit.ts.
+  const tags = list(filter.tag).filter((t) => t !== "explicit");
+  const wantExplicit = list(filter.tag).includes("explicit");
   const artists = list(filter.artist);
-  if (!genres.length && !decades.length && !languages.length && !tags.length && !artists.length) return null;
+  if (!genres.length && !decades.length && !languages.length && !tags.length && !artists.length && !wantExplicit) return null;
 
   const artistOk = artists.length ? new Set(artists.map((a) => artistIndexes(catalog).get(normalizeName(a)) ?? -2)) : null;
   const { a: artistOf } = catalog.songs;
-  const byArtist = (i: number) => !artistOk || artistOk.has(artistOf[i]!);
+  const isExplicit = explicitTest(catalog);
+  const byArtist = (i: number) => (!artistOk || artistOk.has(artistOf[i]!)) && (!wantExplicit || isExplicit(i));
 
   if (catalog.v === 1) {
     if (genres.length || decades.length || languages.length || tags.length) return () => false;

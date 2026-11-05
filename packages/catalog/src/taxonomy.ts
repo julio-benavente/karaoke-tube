@@ -204,6 +204,7 @@ export const TAGS: Tag[] = [
   t("feature", "hard", "Demanding vocals", "Voz exigente"),
   t("feature", "rap-heavy", "Rap-heavy", "Mucho rap"),
   t("feature", "duet", "Duet", "Dúo"),
+  t("feature", "explicit", "Explicit", "Explícita"),
   t("feature", "fast-lyrics", "Fast lyrics", "Letra rápida"),
 ];
 

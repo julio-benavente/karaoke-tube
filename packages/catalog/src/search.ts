@@ -4,7 +4,8 @@
 
 import MiniSearch from "minisearch";
 import type { RoomInfoResponse, SearchApi, SearchResponse, Song, VideoResponse } from "@karaoke-tube/shared";
-import { filterSongs, normalizeName, songMatcher, type SongFilter } from "./filter";
+import { isExplicitText } from "./explicit";
+import { explicitTest, filterSongs, normalizeName, songMatcher, type SongFilter } from "./filter";
 import { isCatalog, type AnyCatalog } from "./types";
 
 /** Messages between the page and the catalog worker. */
@@ -106,9 +107,15 @@ function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
   const { songs, artists, channels, alts } = catalog;
   const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
 
+  const isExplicit = explicitTest(catalog);
+  const duetTag = catalog.v === 2 ? catalog.tags.indexOf("duet") : -1;
+  const isDuet = (i: number) => catalog.v === 2 && duetTag >= 0 && catalog.songs.m[i]!.includes(duetTag);
+
   const toSong = (i: number, videoId = songs.id[i]!, channel = songs.c[i]!, durationSec = songs.d[i]!): Song => {
     const artist = artistOf(i);
     return {
+      ...(isExplicit(i) ? { explicit: true } : {}),
+      ...(isDuet(i) ? { duet: true } : {}),
       videoId,
       // "Artist - Title" is what every screen already knows how to split.
       title: artist ? `${artist} - ${songs.t[i]}` : songs.t[i]!,
@@ -326,7 +333,9 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
       try {
         const live = await remote.search(query);
         const seen = new Set(local.map((s) => s.videoId));
-        return { query, results: [...local, ...live.results.filter((s) => !seen.has(s.videoId))] satisfies Song[] } satisfies SearchResponse;
+        // YouTube's results carry no labels: guess "explicit" from the title.
+        const fresh = live.results.filter((s) => !seen.has(s.videoId)).map((s) => (isExplicitText(s.title) ? { ...s, explicit: true } : s));
+        return { query, results: [...local, ...fresh] satisfies Song[] } satisfies SearchResponse;
       } catch (e) {
         if (local.length) return { query, results: local };
         throw e;
@@ -346,7 +355,8 @@ export function createCatalogSearchApi(remote: SearchApi, options: CatalogSearch
       // A catalog song needs no network (and no YouTube quota).
       const known = ready ? await engine.byVideoId(videoId) : null;
       if (known) return { song: known };
-      return remote.video(videoId);
+      const { song } = await remote.video(videoId);
+      return { song: isExplicitText(song.title) ? { ...song, explicit: true } : song };
     },
 
     roomInfo: (code): Promise<RoomInfoResponse> => remote.roomInfo(code),

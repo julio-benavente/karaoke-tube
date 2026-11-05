@@ -160,7 +160,7 @@ Unlabeled stays unlabeled (`[]`, `0`, `""`): a wrong label is worse than none.
 | `sv` | Swedish | Sueco |
 | `ar` | Arabic | Árabe |
 
-## Tags (34)
+## Tags (35)
 
 ### Mood
 
@@ -212,7 +212,14 @@ much of the lyrics is rapped, `duet` songs written for two voices, `duet-friendl
 | `hard` | Demanding vocals | Voz exigente |
 | `rap-heavy` | Rap-heavy | Mucho rap |
 | `duet` | Duet | Dúo |
+| `explicit` | Explicit | Explícita |
 | `fast-lyrics` | Fast lyrics | Letra rápida |
+
+`explicit` is **best effort**. The source data (karaoke channels) has no explicit flag, so the app works it out when it
+reads the catalog ([`explicit.ts`](../packages/catalog/src/explicit.ts)): the title says so ("Explicit", "Uncensored"), uses
+strong language, or the song is on a short list of well-known explicit songs. That finds only a few dozen songs of 46k
+and misses clean-titled songs with explicit lyrics. If the labeling data ever carries an `explicit` tag, the catalog's own
+tag wins. Searching and browsing return `Song.explicit`; hosts can hide those songs from the room (`RoomSettings.hideExplicit`).
 
 ## How labels are assigned
 
