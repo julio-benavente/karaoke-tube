@@ -21,6 +21,7 @@ type Slide =
   | { kind: "intro"; ms: number }
   | { kind: "member"; memberId: string; ms: number }
   | { kind: "moment"; ms: number }
+  | { kind: "credits"; ms: number }
   | { kind: "finale"; ms: number };
 
 const INTRO_MS = 4500;
@@ -28,6 +29,14 @@ const MEMBER_BASE_MS = 1600;
 const MEMBER_PER_TITLE_MS = 1700;
 const MOMENT_MS = 6000;
 const FINALE_MS = 7000;
+/** Up to this many people fit on one screen; more roll by like end credits. */
+export const CREDITS_FIT_MAX = 12;
+const CREDITS_FIT_MS = 9000;
+const CREDITS_ROLL_MIN_SEC = 14;
+const CREDITS_ROLL_PER_PERSON_SEC = 2.2;
+
+/** How long the rolling credits take to scroll past, in seconds. */
+const rollSeconds = (people: number) => Math.max(CREDITS_ROLL_MIN_SEC, people * CREDITS_ROLL_PER_PERSON_SEC);
 
 /** Bits of confetti: fixed positions so the render is stable. */
 const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
@@ -51,6 +60,8 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detec
       if (n > 0) out.push({ kind: "member", memberId: m.id, ms: MEMBER_BASE_MS + n * MEMBER_PER_TITLE_MS });
     }
     if (recap.topMoment && recap.topMoment.cheers > 0) out.push({ kind: "moment", ms: MOMENT_MS });
+    const people = recap.members.length;
+    if (people > 0) out.push({ kind: "credits", ms: people <= CREDITS_FIT_MAX ? CREDITS_FIT_MS : rollSeconds(people) * 1000 + 1500 });
     out.push({ kind: "finale", ms: FINALE_MS });
     return out;
   })();
@@ -85,6 +96,7 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detec
         {slide.kind === "intro" && <Intro recap={recap} t={t} />}
         {slide.kind === "member" && <MemberSlide recap={recap} memberId={slide.memberId} t={t} />}
         {slide.kind === "moment" && <Moment recap={recap} t={t} />}
+        {slide.kind === "credits" && <Credits recap={recap} t={t} speed={speed} />}
         {slide.kind === "finale" && <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} />}
       </div>
 
@@ -145,18 +157,73 @@ function Moment({ recap, t }: { recap: Recap; t: TFn }) {
   const moment = recap.topMoment;
   if (!moment) return null;
   const { title, artist } = songParts(moment.item.song);
-  const names = moment.item.singerIds.map((id) => recap.members.find((m) => m.id === id)?.nickname ?? t("singer.someone"));
-  const first = recap.members.find((m) => m.id === moment.item.singerIds[0]);
+  const singers = moment.item.everyone ? [] : moment.item.singerIds.map((id) => recap.members.find((m) => m.id === id));
+  const names = singers.map((m) => m?.nickname ?? t("singer.someone"));
+  const seeds = singers.length > 0 ? singers.map((m) => m?.avatarSeed ?? moment.item.id) : [moment.item.id];
   return (
     <div className="kt-tv-aw-member">
-      <img className="kt-tv-aw-avatar" src={avatarUri(first?.avatarSeed ?? moment.item.id)} alt="" />
+      <div className={seeds.length > 1 ? "kt-tv-aw-duo" : undefined}>
+        {seeds.slice(0, 2).map((seed) => (
+          <img key={seed} className="kt-tv-aw-avatar" src={avatarUri(seed)} alt="" />
+        ))}
+      </div>
       <div className="kt-tv-aw-text">
         <span className="kt-tv-aw-kicker">{t("tv.moment")}</span>
         <span className="kt-tv-aw-name">{title}</span>
         <span className="kt-tv-aw-sub">
-          {artist} · {names.join(` ${t("singer.and")} `)}
+          {artist}
+          {names.length > 0 && ` · ${names.join(` ${t("singer.and")} `)}`}
         </span>
         <span className="kt-tv-aw-cheers">🙌 {t("recap.cheersCount", { count: moment.cheers })}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * C5: everyone who came, like the end credits of a film. Few people: all on screen at once in a grid sized by their number.
+ * Many: one column that rolls up the screen at a steady pace.
+ */
+function Credits({ recap, t, speed }: { recap: Recap; t: TFn; speed: number }) {
+  const people = recap.members;
+  const n = people.length;
+  const roleOf = (id: string) =>
+    (recap.titles[id] ?? [])
+      .slice(0, 2)
+      .map((tid) => `${TITLE_INFO[tid].emoji} ${titleName(t, tid)}`)
+      .join("  ");
+
+  if (n > CREDITS_FIT_MAX) {
+    return (
+      <div className="kt-tv-aw-credits kt-tv-aw-roll" data-layout="roll">
+        <div className="kt-tv-aw-rolltrack" style={{ animationDuration: `${rollSeconds(n) / speed}s` }}>
+          <span className="kt-tv-aw-kicker">{t("tv.cast")}</span>
+          {people.map((m) => (
+            <div className="kt-tv-aw-rollrow" key={m.id}>
+              <img src={avatarUri(m.avatarSeed)} alt="" />
+              <span className="kt-tv-aw-rollname">{m.nickname}</span>
+              <span className="kt-tv-aw-rollrole">{roleOf(m.id)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Columns by count: 1-3 in a row, 4-6 as 3 columns, 7-8 as 4, up to 12 as 4 columns × 3 rows.
+  const cols = n <= 3 ? Math.max(1, n) : n <= 6 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  return (
+    <div className="kt-tv-aw-credits" data-layout="grid">
+      <span className="kt-tv-aw-kicker">{t("tv.cast")}</span>
+      <div className="kt-tv-aw-credgrid" style={{ ["--cols" as string]: cols, ["--rows" as string]: rows }}>
+        {people.map((m, i) => (
+          <div className="kt-tv-aw-credcell" key={m.id} style={{ animationDelay: `${i * 140}ms` }}>
+            <img src={avatarUri(m.avatarSeed)} alt="" />
+            <span className="kt-tv-aw-credname">{m.nickname}</span>
+            <span className="kt-tv-aw-credrole">{roleOf(m.id)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

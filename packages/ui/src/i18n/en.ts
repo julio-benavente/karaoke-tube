@@ -452,6 +452,7 @@ export const en = {
   "tv.came_one": "{count} person came to the party",
   "tv.came_other": "{count} people came to the party",
   "tv.moment": "Moment of the night",
+  "tv.cast": "The cast",
   "tv.thanks": "Thanks for singing",
   "tv.seeYou": "See you at the next one",
   "tv.yourRecap": "Your recap",

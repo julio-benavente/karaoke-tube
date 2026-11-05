@@ -455,6 +455,7 @@ export const es: Dict = {
   "tv.came_one": "Vino {count} persona a la fiesta",
   "tv.came_other": "Vinieron {count} personas a la fiesta",
   "tv.moment": "Momento de la noche",
+  "tv.cast": "El reparto",
   "tv.thanks": "Gracias por cantar",
   "tv.seeYou": "Nos vemos en la próxima",
   "tv.yourRecap": "Tu resumen",

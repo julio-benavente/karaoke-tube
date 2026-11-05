@@ -594,6 +594,135 @@
   transform: scale(1.5);
 }
 
+/* ── Credits (C5): everyone who came ──────────
+ * Grid: all on one screen, cell size from --cols / --rows. Roll: one column that scrolls up like film credits. */
+.kt-tv-aw-credits {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4cqw;
+}
+
+.kt-tv-aw-credgrid {
+  --av: min(calc(80cqw / var(--cols) * 0.55), calc(66cqh / var(--rows) * 0.5));
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2.6cqh 2cqw;
+}
+
+.kt-tv-aw-credcell {
+  box-sizing: border-box;
+  flex: none;
+  width: calc((100% - (var(--cols) - 1) * 2cqw) / var(--cols));
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5cqh;
+  text-align: center;
+  animation: kt-tv-pop 600ms var(--tv-ease) both;
+}
+
+.kt-tv-aw-credcell img {
+  width: var(--av);
+  height: var(--av);
+  border-radius: 50%;
+  background: #221d27;
+  box-shadow: 0 0 0 0.3cqw var(--tv-accent);
+}
+
+.kt-tv-aw-credname {
+  max-width: 100%;
+  font-size: calc(var(--av) * 0.3);
+  font-weight: 800;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-tv-aw-credrole {
+  max-width: 100%;
+  color: var(--tv-text-2);
+  font-size: calc(var(--av) * 0.18);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-tv-aw-roll {
+  height: 100cqh;
+  overflow: hidden;
+  display: block;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+
+.kt-tv-aw-rolltrack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3cqw;
+  padding-bottom: 8cqh;
+  animation: kt-tv-aw-roll linear both;
+}
+
+.kt-tv-aw-rollrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6cqw;
+  text-align: center;
+}
+
+.kt-tv-aw-rollrow img {
+  width: 9cqw;
+  height: 9cqw;
+  border-radius: 50%;
+  background: #221d27;
+  box-shadow: 0 0 0 0.3cqw var(--tv-accent);
+}
+
+.kt-tv-aw-rollname {
+  font-size: 4.4cqw;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.kt-tv-aw-rollrole {
+  color: var(--tv-text-2);
+  font-size: 1.9cqw;
+  font-weight: 700;
+}
+
+.kt-tv-aw-duo {
+  flex: none;
+  display: flex;
+}
+
+.kt-tv-aw-duo .kt-tv-aw-avatar {
+  width: 19cqw;
+  height: 19cqw;
+}
+
+.kt-tv-aw-duo .kt-tv-aw-avatar + .kt-tv-aw-avatar {
+  margin-left: -4cqw;
+}
+
+@keyframes kt-tv-aw-roll {
+  from {
+    transform: translateY(100cqh);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
 @keyframes kt-tv-aw-in {
   from {
     opacity: 0;
@@ -803,5 +932,13 @@
   .kt-tvbar {
     gap: calc(var(--u) * 0.3);
     padding: 0 calc(var(--u) * 0.3);
+  }
+}
+
+/* Reduced motion: the credits stay put (the first people) instead of rolling. */
+@media (prefers-reduced-motion: reduce) {
+  .kt-tv-awards .kt-tv-aw-rolltrack {
+    animation: none !important;
+    transform: none;
   }
 }
