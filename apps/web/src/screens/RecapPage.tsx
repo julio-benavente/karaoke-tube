@@ -2,7 +2,7 @@ import { Download, MicOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import type { ApiErrorResponse, Recap, RecapResponse } from "@karaoke-tube/shared";
-import { Button, EmptyState, Logo, Spinner, useT } from "@karaoke-tube/ui";
+import { Button, EmptyState, Logo, SessionLanguage, Spinner, useT } from "@karaoke-tube/ui";
 import { RecapView, ShareRecapButton } from "./RecapView";
 import { saveRecapImage } from "./recap-image";
 import css from "./RecapPage.module.css";
@@ -55,19 +55,29 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
         </EmptyState>
       )}
       {load.state === "ready" && (
-        <>
-          <RecapView recap={load.recap} />
-          <div className={css.actions}>
-            <ShareRecapButton recap={load.recap} />
-            <Button size="lg" variant="secondary" icon={<Download size={18} />} onClick={() => void saveRecapImage(load.recap, t)}>
-              {t("recap.save")}
-            </Button>
-          </div>
-          <p className={css.foot}>
-            {t("recap.madeWith")} <Link to="/join">{t("recap.joinParty")}</Link>
-          </p>
-        </>
+        // The recap is in the language the night was held in.
+        <SessionLanguage lang={load.recap.language}>
+          <RecapBody recap={load.recap} />
+        </SessionLanguage>
       )}
     </div>
+  );
+}
+
+function RecapBody({ recap }: { recap: Recap }) {
+  const t = useT();
+  return (
+    <>
+      <RecapView recap={recap} />
+      <div className={css.actions}>
+        <ShareRecapButton recap={recap} />
+        <Button size="lg" variant="secondary" icon={<Download size={18} />} onClick={() => void saveRecapImage(recap, t)}>
+          {t("recap.save")}
+        </Button>
+      </div>
+      <p className={css.foot}>
+        {t("recap.madeWith")} <Link to="/join">{t("recap.joinParty")}</Link>
+      </p>
+    </>
   );
 }

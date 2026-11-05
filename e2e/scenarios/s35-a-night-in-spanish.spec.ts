@@ -1,7 +1,9 @@
 import { test, expect } from "../lib/night";
 import { englishLeftovers } from "../lib/english";
 import { es } from "../../packages/ui/src/i18n/es";
+import { newContext, PHONE, Phone } from "../lib/people";
 import { song } from "../lib/songs";
+import { ADJECTIVES_ES, NOUNS_ES } from "../../apps/api/src/words-es";
 
 test("S35 · A night in Spanish @i18n", async ({ night }) => {
   const { host, tv } = await night.setup({ lang: "es", countdown: 2, songSec: 8, settings: { tvLayout: "bar" } });
@@ -25,15 +27,32 @@ test("S35 · A night in Spanish @i18n", async ({ night }) => {
   for (const p of [ana, ben, cleo, host]) expect(englishLeftovers(await p.bodyText()), `${p.name} shows English`).toEqual([]);
   expect(englishLeftovers(await tv!.deepText()), "TV shows English").toEqual([]);
 
-  // Ben switches his own phone to English: only his phone changes.
+  // The party code is made of Spanish words (the host started the party in Spanish).
+  const words = night.code.split("-");
+  expect(ADJECTIVES_ES as readonly string[], "code adjectives").toEqual(expect.arrayContaining([words[0], words[1]]));
+  expect(NOUNS_ES as readonly string[], "code noun").toContain(words[2]);
+
+  // Ben's own phone prefers English, but the party is in Spanish: he still sees Spanish.
   await ben.page.evaluate(() => localStorage.setItem("kt:lang", "en"));
   await ben.reloadAndSettle();
-  ben.lang = "en"; // (the test helper looks for his tabs by their English names now)
   await ben.tab("Queue");
-  await expect(ben.page.getByText("You're up next!").first()).toBeVisible();
-  await cleo.tab("Queue");
-  expect(await cleo.bodyText()).toContain(es["queue.banner.soon_other"].replace("{count}", "2"));
+  await expect(ben.page.getByText(es["queue.banner.next"]).first()).toBeVisible();
+  expect(englishLeftovers(await ben.bodyText()), "Ben shows English").toEqual([]);
   expect(await tv!.deepText()).not.toContain("Now singing");
+
+  // A guest whose phone is in English opens the party link: the join page itself speaks the party's language.
+  const danCtx = await newContext(night.browser, PHONE);
+  await danCtx.addInitScript(() => localStorage.setItem("kt:lang", "en"));
+  const dan = night.adopt(new Phone("Dan", danCtx, await danCtx.newPage()));
+  dan.lang = "es";
+  await dan.page.goto(`/join/${night.code}`);
+  await expect(dan.page.getByLabel(es["join.nickname"])).toBeVisible();
+  expect(englishLeftovers(await dan.bodyText()), "Dan's join page shows English").toEqual([]);
+  await dan.page.getByLabel(es["join.nickname"]).fill("Dan");
+  await dan.page.getByRole("button", { name: es["join.submit"], exact: true }).click();
+  await dan.page.waitForURL(new RegExp(`/r/${night.code}`));
+  await expect.poll(() => dan.connected(), { message: "Dan connects" }).toBe(true);
+  expect(englishLeftovers(await dan.bodyText()), "Dan shows English").toEqual([]);
 
   // The recap and the end of the night are Spanish too.
   await host.send({ type: "skip" });

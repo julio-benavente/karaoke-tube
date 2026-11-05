@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Member } from "@karaoke-tube/shared";
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Avatar, LanguageSwitcher, useT } from "@karaoke-tube/ui";
+import { Avatar, useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "../host/client";
 import { useQr } from "./TvLayer";
 
@@ -15,9 +15,6 @@ export function Lobby({ code, members, action, hint }: { code: string; members: 
       data-testid="tv-lobby"
       style={{ position: "absolute", inset: 0, zIndex: 10, background: "radial-gradient(ellipse at top, #2a0f1d 0%, #070609 70%)", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2.5vh", textAlign: "center", padding: 24 }}
     >
-      <div style={{ position: "absolute", top: 16, right: 16 }}>
-        <LanguageSwitcher />
-      </div>
       <h1 style={{ fontSize: "5vh", margin: 0 }}>Karaoke Tube</h1>
       <div style={{ display: "flex", alignItems: "center", gap: "4vw" }}>
         <div style={{ background: "#fff", padding: "1.2vh", borderRadius: 16, width: "34vh", height: "34vh" }}>

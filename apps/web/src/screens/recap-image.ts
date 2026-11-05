@@ -15,7 +15,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 /** Draws the recap as a share-sized picture (1080 wide) and returns it as a PNG blob. */
-export async function recapImage(recap: Recap, t: TFn = makeT(detectLang())): Promise<Blob | null> {
+export async function recapImage(recap: Recap, t: TFn = makeT(recap.language ?? detectLang())): Promise<Blob | null> {
   const people = recap.members.filter((m) => (recap.titles[m.id]?.length ?? 0) > 0).slice(0, 8);
   const rowH = 120;
   const moment = recap.topMoment && recap.topMoment.cheers > 0 ? recap.topMoment : null;
@@ -103,7 +103,7 @@ export async function recapImage(recap: Recap, t: TFn = makeT(detectLang())): Pr
 }
 
 /** Downloads the recap picture (or opens the share sheet with it where files can be shared). */
-export async function saveRecapImage(recap: Recap, t: TFn = makeT(detectLang())): Promise<void> {
+export async function saveRecapImage(recap: Recap, t: TFn = makeT(recap.language ?? detectLang())): Promise<void> {
   const blob = await recapImage(recap, t);
   if (!blob) return;
   const file = new File([blob], "karaoke-night.png", { type: "image/png" });

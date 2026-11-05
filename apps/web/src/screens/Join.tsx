@@ -1,5 +1,5 @@
-import { LanguageSwitcher, useT } from "@karaoke-tube/ui";
-import { ROOM_CODE_EXAMPLE, isRoomCode } from "@karaoke-tube/shared";
+import { LanguageSwitcher, SessionLanguage, useLang, useT } from "@karaoke-tube/ui";
+import { ROOM_CODE_EXAMPLE, isRoomCode, type RoomLanguage } from "@karaoke-tube/shared";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import type { ErrorCode } from "@karaoke-tube/shared";
@@ -30,8 +30,19 @@ export function JoinScreen() {
   return <JoinForm />;
 }
 
+/** A room has one language: once the code is known the form speaks it, whatever the device prefers. */
 function JoinForm() {
+  const [roomLang, setRoomLang] = useState<RoomLanguage | undefined>();
+  return (
+    <SessionLanguage lang={roomLang}>
+      <JoinFormBody roomLang={roomLang} onRoomLanguage={setRoomLang} />
+    </SessionLanguage>
+  );
+}
+
+function JoinFormBody({ roomLang, onRoomLanguage }: { roomLang: RoomLanguage | undefined; onRoomLanguage: (l: RoomLanguage | undefined) => void }) {
   const t = useT();
+  const [lang] = useLang();
   const params = useParams();
   const navigate = useNavigate();
   const { account } = useAccount();
@@ -63,6 +74,21 @@ function JoinForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account?.id]);
 
+  // Once the code is complete, ask the room which language it speaks.
+  const completeCode = isRoomCode(code.replace(/-+$/, "")) ? code.replace(/-+$/, "") : null;
+  useEffect(() => {
+    if (!completeCode) return onRoomLanguage(undefined);
+    let alive = true;
+    getSearchApi()
+      .roomInfo(completeCode)
+      .then((info) => alive && onRoomLanguage(info.exists ? info.language : undefined))
+      .catch(() => alive && onRoomLanguage(undefined));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completeCode]);
+
   useEffect(() => {
     if (params.code) nickRef.current?.focus();
     return () => cleanup.current();
@@ -70,7 +96,7 @@ function JoinForm() {
 
   const fail = (c: ErrorCode, text?: string) => {
     setBusy(false);
-    setError({ field: c === "room_not_found" ? "code" : "form", text: text ?? errorText(c) });
+    setError({ field: c === "room_not_found" ? "code" : "form", text: text ?? errorText(c, lang) });
   };
 
   const submit = async (e: FormEvent) => {
@@ -177,7 +203,7 @@ function JoinForm() {
       <p className={css.hint}>
         <Link to="/account">{account ? t("acct.linkIn", { name: account.displayName }) : t("acct.link")}</Link>
       </p>
-      <LanguageSwitcher />
+      {!roomLang && <LanguageSwitcher />}
     </div>
   );
 }

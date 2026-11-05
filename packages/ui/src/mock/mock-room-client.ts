@@ -1,4 +1,4 @@
-import { detectLang, translate } from "../i18n/core";
+import { detectLang, translate, type Lang } from "../i18n/core";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import {
   DEFAULT_SETTINGS,
@@ -570,8 +570,9 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
   return client;
 }
 
-export function errorText(code: ErrorCode): string {
-  return translate(detectLang(), `error.${code}`);
+/** The text for an error code, in the session's language when you know it (else the device's). */
+export function errorText(code: ErrorCode, lang: Lang = detectLang()): string {
+  return translate(lang, `error.${code}`);
 }
 
 function shuffle<T>(xs: readonly T[]): T[] {

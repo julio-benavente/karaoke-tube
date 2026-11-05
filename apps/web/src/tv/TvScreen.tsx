@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Maximize } from "lucide-react";
 import { createRoomClient, screenCredentials } from "@karaoke-tube/client";
-import { TV_BAR_PERCENT, serverNow, type QueueItem, type RoomClient, type ServerMessage } from "@karaoke-tube/shared";
+import { TV_BAR_PERCENT, serverNow, type QueueItem, type RoomClient, type RoomLanguage, type ServerMessage } from "@karaoke-tube/shared";
 import { normalizeRoomCode } from "@karaoke-tube/shared";
 import { useParams } from "react-router";
-import { useT } from "@karaoke-tube/ui";
+import { SessionLanguage, useT } from "@karaoke-tube/ui";
 import { adoptHostLink, hasCredentials } from "../host/client";
 import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
@@ -60,7 +60,17 @@ export function TvScreen() {
   return <Tv code={code} screenKey={screenKey} />;
 }
 
+/** The TV speaks the session's language (known once the room's first state arrives), not the TV browser's. */
 function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
+  const [lang, setLang] = useState<RoomLanguage | undefined>();
+  return (
+    <SessionLanguage lang={lang}>
+      <TvBody code={code} screenKey={screenKey} onLanguage={setLang} />
+    </SessionLanguage>
+  );
+}
+
+function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: string | null; onLanguage: (l: RoomLanguage | undefined) => void }) {
   const t = useT();
   const [started, setStarted] = useState(false);
   const clientRef = useRef<RoomClient | null>(null);
@@ -121,6 +131,10 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
   const state = useSyncExternalStore(subscribe, () => client?.state ?? null);
   const status = useSyncExternalStore(subscribe, () => client?.status ?? "connecting");
   const closeReason = useSyncExternalStore(subscribe, () => client?.closeReason ?? null);
+  const roomLanguage = state?.settings.language;
+  useEffect(() => {
+    if (roomLanguage) onLanguage(roomLanguage);
+  }, [roomLanguage, onLanguage]);
 
   // Create the YouTube player after the Start click.
   const [playerReady, setPlayerReady] = useState(false);

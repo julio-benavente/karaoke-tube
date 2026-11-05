@@ -8,12 +8,14 @@ import {
   EmptyState,
   Logo,
   MiniPlayer,
+  RoomLanguage,
   RoomProvider,
   SingWithProvider,
   Spinner,
   ToastProvider,
   errorText,
   useRoom,
+  useLang,
   useRoomErrors,
   useToast,
   useT,
@@ -48,23 +50,26 @@ export function RoomShell() {
   if (!client) return <Navigate to={`/join/${code}`} replace />;
   return (
     <RoomProvider client={client} search={getSearchApi()}>
-      <ToastProvider offset={148}>
-        <SingWithProvider>
-          <Shell
-            code={code}
-            retry={() => {
-              dropRoomClient(code);
-              setAttempt((n) => n + 1);
-            }}
-          />
-        </SingWithProvider>
-      </ToastProvider>
+      <RoomLanguage>
+        <ToastProvider offset={148}>
+          <SingWithProvider>
+            <Shell
+              code={code}
+              retry={() => {
+                dropRoomClient(code);
+                setAttempt((n) => n + 1);
+              }}
+            />
+          </SingWithProvider>
+        </ToastProvider>
+      </RoomLanguage>
     </RoomProvider>
   );
 }
 
 function Shell({ code, retry }: { code: string; retry: () => void }) {
   const t = useT();
+  const [lang] = useLang();
   const { state, me, status, closeReason, isHost, send } = useRoom();
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,7 +87,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
       const n = state?.settings.maxWaitingPerMember ?? 2;
       toast.show(t("search.limitToast", { count: n }), { tone: "error" });
     } else {
-      toast.show(errorText(e.code), { tone: "error" });
+      toast.show(errorText(e.code, lang), { tone: "error" });
     }
   });
 
@@ -171,7 +176,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
       <div className={css.splash}>
         <Logo size={40} />
         <Spinner />
-        <p className={css.splashText}>Joining party {code}…</p>
+        <p className={css.splashText}>{t("shell.joining", { code })}</p>
       </div>
     );
   }
@@ -191,7 +196,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
         {status === "reconnecting" && (
           <div className={css.reconnecting}>
             <Banner tone="warning" icon={<WifiOff />}>
-              Reconnecting… your spot in the queue is safe.
+              {t("shell.reconnecting")}
             </Banner>
           </div>
         )}

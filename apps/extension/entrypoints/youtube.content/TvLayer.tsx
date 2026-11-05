@@ -20,7 +20,8 @@ export function TvLayer({ state, onReaction }: { state: RoomState; onReaction: R
     browser.storage.onChanged.addListener(onChange);
     return () => browser.storage.onChanged.removeListener(onChange);
   }, []);
-  const t = makeT(lang);
+  // A session has one language: the room's, not the one picked in the popup.
+  const t = makeT(state.settings.language ?? lang);
   const [qr, setQr] = useState<string>();
   const [reactions, setReactions] = useState<TvReaction[]>([]);
   const seq = useRef(0);

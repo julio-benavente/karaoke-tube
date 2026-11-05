@@ -15,6 +15,7 @@ import {
   MiniPlayer,
   PlayerBar,
   PlayerBarDivider,
+  RoomLanguage,
   RoomProvider,
   Sheet,
   SingWithProvider,
@@ -23,6 +24,7 @@ import {
   errorText,
   songParts,
   useCountdown,
+  useLang,
   useReactions,
   useRoom,
   useRoomErrors,
@@ -93,11 +95,13 @@ export function HostApp() {
   if (!clients) return <NoParty code={code} />;
   return (
     <RoomProvider client={clients.room} search={clients.search}>
-      <ToastProvider offset={96}>
-        <SingWithProvider>
-          <Host />
-        </SingWithProvider>
-      </ToastProvider>
+      <RoomLanguage>
+        <ToastProvider offset={96}>
+          <SingWithProvider>
+            <Host />
+          </SingWithProvider>
+        </ToastProvider>
+      </RoomLanguage>
     </RoomProvider>
   );
 }
@@ -121,6 +125,7 @@ function Host() {
   useLogParty(state?.code ?? "", !!me && !!state, state?.status === "ended");
   const toast = useToast();
   const t = useT();
+  const [lang] = useLang();
   // The tab is part of the address (/host/<code>/search…), so refresh, Back and shared links keep it.
   const navigate = useNavigate();
   const segment = useParams()["*"] ?? "";
@@ -131,7 +136,7 @@ function Host() {
   const mobile = useIsMobile();
 
   useRoomErrors((e) =>
-    toast.show(e.code === "song_unplayable" ? t("error.song_unplayable", { title: e.message }) : errorText(e.code), { tone: "error" }),
+    toast.show(e.code === "song_unplayable" ? t("error.song_unplayable", { title: e.message }) : errorText(e.code, lang), { tone: "error" }),
   );
   useRoleToast();
 

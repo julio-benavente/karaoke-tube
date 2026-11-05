@@ -15,7 +15,7 @@ export const singerCount = (recap: Recap) => new Set(recap.performances.flatMap(
 export type ShareResult = "shared" | "copied" | "failed";
 
 /** The Web Share sheet when the device has one, otherwise the link goes to the clipboard. */
-export async function shareRecap(recap: Recap, t: TFn = makeT(detectLang())): Promise<ShareResult> {
+export async function shareRecap(recap: Recap, t: TFn = makeT(recap.language ?? detectLang())): Promise<ShareResult> {
   const url = recapUrl(recap.id);
   const data = { title: t("share.title"), text: t("share.text"), url };
   try {
