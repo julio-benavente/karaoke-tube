@@ -296,7 +296,9 @@ export type ErrorCode =
   | "queue_limit"
   | "invalid_message"
   /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
-  | "song_unplayable";
+  | "song_unplayable"
+  /** To a member who sent a second reaction ("cheer") during the same performance. One per person per song. */
+  | "already_cheered";
 
 // ── Room codes ───────────────────────────────────────────────────────────
 
