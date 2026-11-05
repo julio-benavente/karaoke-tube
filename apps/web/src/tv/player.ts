@@ -255,6 +255,12 @@ export class TvPlayer {
       }
       return;
     }
+    // The phone paused the video when the tab was hidden: pick it up again as soon as the tab is back, and tell the
+    // room right away where we are (it kept counting while we were away).
+    if (this.lastState === PAUSED && !this.wantPaused && document.visibilityState === "visible") {
+      this.yt.playVideo();
+      this.lastProgress = 0;
+    }
     if (this.lastState !== BUFFERING && Date.now() - this.lastProgress >= PROGRESS_EVERY_MS) {
       this.lastProgress = Date.now();
       const d = this.yt.getDuration();

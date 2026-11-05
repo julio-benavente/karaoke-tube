@@ -20,7 +20,17 @@ const page = { position: "fixed", inset: 0, height: "100dvh", background: "#000"
 const center = { ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", padding: 24 } as const;
 const bigBtn = { font: "inherit", fontWeight: 800, fontSize: 24, padding: "16px 32px", borderRadius: 999, border: 0, background: "#ff4f8b", color: "#1f0711", cursor: "pointer" } as const;
 
+/** The TV page inside the host panel's frame (a phone that is both host and TV): fullscreen would cover the whole panel. */
+const embedded = (() => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+})();
+
 function fullscreen() {
+  if (embedded) return;
   const d = document;
   if (d.fullscreenElement) void d.exitFullscreen().catch(() => {});
   else void d.documentElement.requestFullscreen?.().catch(() => {});
@@ -315,7 +325,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
           🔊 {t("tv.tapForSound")}
         </button>
       )}
-      {started && (
+      {started && !embedded && (
         <button
           onClick={fullscreen}
           title={t("tv.fullscreen")}

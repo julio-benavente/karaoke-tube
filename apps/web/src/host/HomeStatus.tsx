@@ -5,16 +5,16 @@ import { openTvScreen } from "./client";
 import css from "./host.module.css";
 
 /** Host Home, top: the party at a glance (code, TV, guests, lock) and what is playing / coming up. */
-export function HomeStatus() {
+export function HomeStatus({ onOpenTv }: { onOpenTv?: () => void }) {
   return (
     <div className={css.homeStatus}>
-      <PartyCard />
+      <PartyCard onOpenTv={onOpenTv} />
       <NowNext />
     </div>
   );
 }
 
-function PartyCard() {
+function PartyCard({ onOpenTv }: { onOpenTv?: () => void }) {
   const { state, send } = useRoom();
   const t = useT();
   const toast = useToast();
@@ -49,7 +49,7 @@ function PartyCard() {
             {t("host.showCode")}
           </Button>
         ) : (
-          <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => !openTvScreen(state.code) && toast.show(t("host.tvPopup"), { tone: "error" })}>
+          <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => (onOpenTv ? onOpenTv() : !openTvScreen(state.code) && toast.show(t("host.tvPopup"), { tone: "error" }))}>
             {t("host.openTv")}
           </Button>
         )}
