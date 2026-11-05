@@ -1043,3 +1043,120 @@
     height: 44px;
   }
 }
+
+
+/* ── Host Home: party card + now / next ── */
+.homeStatus {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--kt-space-3);
+}
+
+.partyCard,
+.nowNext {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-3);
+  min-width: 0;
+  padding: var(--kt-space-4);
+  border-radius: var(--kt-radius-md);
+  background: var(--kt-hover);
+}
+
+.partyCodeLabel,
+.kicker {
+  display: block;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  font-weight: var(--kt-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.partyCode b {
+  display: block;
+  font-size: clamp(32px, 9vw, 44px);
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.partyFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-2) var(--kt-space-4);
+  font-size: var(--kt-text-sm);
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dotOn {
+  background: var(--kt-success, #4ade80);
+}
+
+.dotOff {
+  background: var(--kt-danger);
+}
+
+.partyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-2);
+}
+
+.nowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-3);
+}
+
+.nowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nowTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--kt-text-lg, 18px);
+}
+
+.nowSub {
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+}
+
+.nextList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-1);
+  margin: 0;
+  padding: var(--kt-space-3) 0 0;
+  border-top: 1px solid var(--kt-hover);
+  list-style: none;
+  font-size: var(--kt-text-sm);
+}
+
+.nextList li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nextEmpty {
+  color: var(--kt-text-2);
+}
