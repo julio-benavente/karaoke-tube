@@ -19,13 +19,13 @@ export function Lobby({ code, members, action, hint }: { code: string; members: 
         <LanguageSwitcher />
       </div>
       <h1 style={{ fontSize: "5vh", margin: 0 }}>Karaoke Tube</h1>
-      <div style={{ display: "flex", alignItems: "center", gap: "4vw" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "2vh 4vw" }}>
         <div style={{ background: "#fff", padding: "1.2vh", borderRadius: 16, width: "34vh", height: "34vh" }}>
           {qr && <img src={qr} alt={t("tv.qrAlt")} style={{ width: "100%", height: "100%", imageRendering: "pixelated" }} />}
         </div>
         <div style={{ textAlign: "left" }}>
           <div style={{ fontSize: "2.4vh", letterSpacing: "0.1em", textTransform: "uppercase", color: "#b0a8b8", fontWeight: 700 }}>{t("tv.scan", { url: `${new URL(WEB_URL).host}/join` })}</div>
-          <div data-testid="tv-lobby-code" style={{ fontSize: "9vh", fontWeight: 800, lineHeight: 1.1 }}>{formatRoomCode(code)}</div>
+          <div data-testid="tv-lobby-code" style={{ fontSize: "min(9vh, 9vw)", fontWeight: 800, lineHeight: 1.1 }}>{formatRoomCode(code)}</div>
         </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "2vh", minHeight: "12vh", maxWidth: "80vw" }}>

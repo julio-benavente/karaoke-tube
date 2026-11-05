@@ -10,6 +10,7 @@ import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
 import { Lobby } from "./Lobby";
 import { clearScreen, loadScreen } from "./screenStore";
+import { useWakeLock } from "./useWakeLock";
 
 const AWARDS_SHOW_MS = 60_000;
 const JOIN_FLASH_MS = 15_000;
@@ -113,6 +114,16 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
 
   // Create the YouTube player after the Start click.
   const [playerReady, setPlayerReady] = useState(false);
+  // A phone or tablet used as the TV (cast / mirrored to a real one) must not dim and sleep while the party runs.
+  useWakeLock(started);
+  const touch = useMemo(() => window.matchMedia("(pointer: coarse)").matches, []);
+  const [portrait, setPortrait] = useState(() => window.matchMedia("(orientation: portrait)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: portrait)");
+    const on = () => setPortrait(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   useEffect(() => {
     if (!started || !wrapRef.current || !targetRef.current) return;
     const report = (event: "started" | "progress" | "ended" | "error", itemId: string, positionSec?: number, durationSec?: number) =>
@@ -233,7 +244,13 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
             )
           }
           hint={
-            !started && <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
+            !started && (
+              <>
+                <p style={{ opacity: 0.6, margin: 0 }}>{status === "open" ? t("tv.connected") : t("tv.connecting")}</p>
+                {touch && <p style={{ opacity: 0.6, margin: 0, maxWidth: "80vw" }}>{t("tv.castHint")}</p>}
+                {touch && portrait && <p style={{ color: "#ff4f8b", fontWeight: 700, margin: 0 }}>{t("tv.rotate")}</p>}
+              </>
+            )
           }
         />
       )}
