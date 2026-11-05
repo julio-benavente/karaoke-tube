@@ -1,3 +1,4 @@
+import { isPhoneLayout } from "./phone";
 import { useState, type FormEvent } from "react";
 import { MonitorUp, Tv } from "lucide-react";
 import { localStorageCredentials } from "@karaoke-tube/client";
@@ -152,15 +153,17 @@ export function TvScreenSettings() {
           </div>
         </div>
       )}
-      <div className={`${css.settingRow} ${css.settingStack}`}>
-        <div className={css.settingText}>
-          <span className={css.settingLabel}>{t("tvscreen.thisComputer")}</span>
-          <span className={css.settingDesc}>{t("tvscreen.thisComputerDesc")}</span>
+      {!isPhoneLayout() && (
+        <div className={`${css.settingRow} ${css.settingStack}`}>
+          <div className={css.settingText}>
+            <span className={css.settingLabel}>{t("tvscreen.thisComputer")}</span>
+            <span className={css.settingDesc}>{t("tvscreen.thisComputerDesc")}</span>
+          </div>
+          <Button size="sm" variant="secondary" icon={<MonitorUp size={16} />} onClick={() => openTvScreen(state.code)}>
+            {t("host.openTv")}
+          </Button>
         </div>
-        <Button size="sm" variant="secondary" icon={<MonitorUp size={16} />} onClick={() => openTvScreen(state.code)}>
-          {t("host.openTv")}
-        </Button>
-      </div>
+      )}
       <PhoneAsTvHelp />
     </section>
   );

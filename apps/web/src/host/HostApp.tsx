@@ -41,6 +41,7 @@ import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
+import { PHONE_QUERY as MOBILE_QUERY } from "./phone";
 import { NextSongFor } from "./NextSongFor";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
@@ -51,7 +52,7 @@ export type View = "home" | "search" | "settings" | "queue" | "party";
 const VIEWS = ["search", "settings", "queue", "party"] as const;
 
 /** Phones and narrow windows get the phone layout: one column, tabs at the bottom. */
-const MOBILE_QUERY = "(max-width: 820px)";
+
 /** True once `on` has been true for `ms` without a break; false again as soon as it stops. */
 function useAfter(on: boolean, ms: number): boolean {
   const [v, setV] = useState(false);
@@ -261,9 +262,6 @@ function Host() {
               only="party"
               actions={
                 <div className={css.mobileActions}>
-                  <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
-                    {t("host.openTv")}
-                  </Button>
                   {state.playerConnected && (
                     <Button
                       size="sm"

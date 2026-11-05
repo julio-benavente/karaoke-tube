@@ -29,9 +29,12 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
           <b className={css.title}>{state.screenPaired ? t("host.tvOffline") : t("host.noTv")}</b>
           {!compact && <span className={css.hint}>{state.screenPaired ? t("host.tvOfflineHint") : t("host.noTvHint")}</span>}
         </div>
-        <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={onOpenTv}>
-          {t("host.openTv")}
-        </Button>
+        {/* On a phone the TV goes on another device (see phone.ts), so there is no "open the TV here" button. */}
+        {!compact && (
+          <Button size="sm" variant="light" icon={<Tv size={16} />} onClick={onOpenTv}>
+            {t("host.openTv")}
+          </Button>
+        )}
       </div>
       {compact && (
         <button type="button" className={css.more} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
