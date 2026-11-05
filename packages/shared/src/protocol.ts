@@ -257,6 +257,8 @@ export type ClientMessage =
   /** Hosts: add a guest who has no phone, so they get turns in the rotation. Hosts then add songs for them with `add_song` + `singerIds`. */
   | { type: "add_guest"; nickname: string; avatarSeed: string }
   | { type: "react"; reaction: Reaction }
+  /** Change your own avatar while in the room (guests included). Everyone sees it right away, TV too. */
+  | { type: "update_avatar"; avatarSeed: string }
   /** Sent only by the extension's player: whether its YouTube window (the TV) is open. */
   | { type: "player_status"; tabOpen: boolean }
   /** Sent only by the extension's YouTube player (authenticated as the host). */
