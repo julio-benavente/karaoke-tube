@@ -65,13 +65,10 @@ export type RoomSettings = {
   tvLayout: TvLayout;
   /** How tall the TV's bar is: small (laptop or monitor up close), medium (living-room TV), large (projector, big room). */
   tvBarSize: TvBarSize;
-<<<<<<< HEAD
   /** The session language, chosen when the party is created: every screen in the room (host, guests, TV, recap) uses it. Missing = "en". */
   language?: RoomLanguage;
-=======
   /** Take the bottom bar off the TV: the video fills the screen (same as `tvLayout: "clean"`). Missing = false. */
   tvHideBar?: boolean;
->>>>>>> worktree-agent-a4a7723d2415314d1
 };
 
 /** Languages a session can run in. Spanish rooms also get Spanish-word room codes. */
