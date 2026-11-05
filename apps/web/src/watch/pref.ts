@@ -1,6 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const KEY = "kt:watch";
+/** A second tap this soon after a change is a double tap (the button moves and turns into "hide"): ignore it. */
+const LOCKOUT_MS = 800;
 
 /** Whether this device shows the karaoke video itself ("Watch here"). Remembered per device. */
 export function useWatchPref(): [boolean, (on: boolean) => void] {
@@ -11,7 +13,11 @@ export function useWatchPref(): [boolean, (on: boolean) => void] {
       return false;
     }
   });
+  const last = useRef(0);
   const set = useCallback((v: boolean) => {
+    const now = Date.now();
+    if (now - last.current < LOCKOUT_MS) return;
+    last.current = now;
     setOn(v);
     try {
       localStorage.setItem(KEY, v ? "1" : "0");

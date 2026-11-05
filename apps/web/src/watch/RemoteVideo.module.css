@@ -15,9 +15,15 @@
   height: 100%;
 }
 
+/* The video itself never takes a tap: only "Sound on/off" and "Tap to play" do, and hiding it is the page's own button. */
+.frame {
+  pointer-events: none;
+}
+
 .shield {
   position: absolute;
   inset: 0;
+  touch-action: none;
 }
 
 .tap {
