@@ -12,7 +12,7 @@ const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", d
 const button = { font: "inherit", fontWeight: 800, fontSize: "2.6dvh", padding: "1.4dvh 3.6dvh", minHeight: 44, borderRadius: 999, border: "0.3dvh solid #ff4f8b", background: "transparent", color: "#fff", cursor: "pointer" } as const;
 
 /** The TV swaps its code for a fresh one this many seconds before the old one would expire. */
-const REFRESH_BEFORE_SEC = 45;
+const REFRESH_BEFORE_SEC = 30;
 
 type Pair = PairStartResponse & { expiresAt: number };
 

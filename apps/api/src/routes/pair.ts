@@ -14,7 +14,7 @@ const limit = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();
 };
 
-/** Entering a code is the one guessable step: 20 tries a minute per IP (the codes are 5 digits and live 3 minutes). */
+/** Entering a code is the one guessable step: 20 tries a minute per IP (the codes are 5 digits and live 2 minutes). */
 const claimLimit = async (c: Context<{ Bindings: Env }>, next: Next) => {
   const ip = c.req.header("CF-Connecting-IP");
   if (ip) {
