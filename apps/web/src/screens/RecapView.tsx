@@ -36,7 +36,7 @@ export function RecapView({ recap, meId }: { recap: Recap; meId?: string }) {
         <section className={css.moment}>
           <span className={css.sectionLabel}>{t("recap.moment")}</span>
           <div className={css.momentRow}>
-            <Artwork src={moment.item.song.thumbnailUrl} label={moment.item.song.videoId} size={72} radius="sm" shadow />
+            <Artwork src={moment.item.song.thumbnailUrl} label={moment.item.song.videoId} size={72} radius="sm" shadow explicit={moment.item.song.explicit} />
             <div className={css.momentText}>
               <b>{songParts(moment.item.song).title}</b>
               <span>

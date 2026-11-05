@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { Mic } from "lucide-react";
 import { useState } from "react";
+import { useT } from "../i18n/context";
 import css from "./Artwork.module.css";
 
 /**
@@ -28,11 +29,19 @@ export type ArtworkProps = {
   shape?: "square" | "wide" | "round";
   radius?: "xs" | "sm" | "md" | "none";
   shadow?: boolean;
+  /**
+   * Marks the artwork with a small "E" in its corner. Use it where nothing next to the artwork already shows the
+   * explicit badge (a title with its own E, like the search rows, doesn't need it twice).
+   */
+  explicit?: boolean;
+  /** The image has no black bars (an album cover, not a YouTube thumbnail): don't zoom past them. */
+  flat?: boolean;
   className?: string;
 };
 
 /** Song artwork from a YouTube thumbnail, cropped square; gradient + mic when it fails. */
-export function Artwork({ src, label, size, shape = "square", radius = "xs", shadow, className }: ArtworkProps) {
+export function Artwork({ src, label, size, shape = "square", radius = "xs", shadow, explicit, flat, className }: ArtworkProps) {
+  const t = useT();
   const [failed, setFailed] = useState(false);
   const hue = hueOf(label);
   const hue2 = (hue + (hue < 80 ? 330 : 30)) % 360; // second stop, also never green
@@ -46,9 +55,14 @@ export function Artwork({ src, label, size, shape = "square", radius = "xs", sha
       }}
     >
       {src && !failed ? (
-        <img src={src} alt="" className={css.img} loading="lazy" draggable={false} onError={() => setFailed(true)} />
+        <img src={src} alt="" className={clsx(css.img, flat && css.flat)} loading="lazy" draggable={false} onError={() => setFailed(true)} />
       ) : (
         <Mic className={css.icon} aria-hidden />
+      )}
+      {explicit && (
+        <span className={css.explicitMark} title={t("song.explicit")} aria-label={t("song.explicit")} data-testid="explicit-mark">
+          E
+        </span>
       )}
     </span>
   );

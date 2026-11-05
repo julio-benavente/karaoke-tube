@@ -24,7 +24,7 @@ export { Chip, ChipRow, Pill } from "./components/Chip";
 export { Tile, ShortcutTile } from "./components/Tile";
 export { Card, Shelf } from "./components/Card";
 export { SongRow } from "./components/SongRow";
-export { SongCard } from "./components/SongCard";
+export { SongCard, SongTile } from "./components/SongCard";
 export { ExplicitBadge } from "./components/ExplicitBadge";
 export { QueueRow, Equalizer, singerNames } from "./components/QueueRow";
 export { ProgressBar } from "./components/ProgressBar";

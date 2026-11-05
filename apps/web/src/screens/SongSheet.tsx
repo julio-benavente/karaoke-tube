@@ -16,7 +16,7 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
       {song && parts && (
         <>
           <div className={css.head}>
-            <Artwork src={song.thumbnailUrl} label={song.title} size={56} />
+            <Artwork src={song.thumbnailUrl} label={song.title} size={56} explicit={song.explicit} />
             <div className={css.text}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>

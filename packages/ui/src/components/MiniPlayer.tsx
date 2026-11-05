@@ -27,7 +27,7 @@ export function MiniPlayer({ item, playback, members, onOpen, onToggle }: MiniPl
   return (
     <div className={css.mini} style={{ background: tintOf(item.song.videoId) }}>
       <button type="button" className={css.hit} onClick={onOpen} aria-label={t("player.openNow")} />
-      <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={40} className={css.art} />
+      <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={40} explicit={item.song.explicit} className={css.art} />
       <div className={css.text}>
         <div className={css.title}>{title}</div>
         <div className={css.sub} data-countdown={playback.state === "get_ready" && !isWaitingForTv(playback) ? countdown : undefined}>

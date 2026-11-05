@@ -55,7 +55,7 @@ function AddFlowSheet({ asking, onClose }: { asking: Ask | null; onClose: () => 
       {shown && parts && (
         <div className={css.sheet} data-testid="add-flow">
           <div className={css.head}>
-            <Artwork src={shown.song.thumbnailUrl} label={shown.song.title} size={56} />
+            <Artwork src={shown.song.thumbnailUrl} label={shown.song.title} size={56} explicit={shown.song.explicit} />
             <div className={css.text}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>{parts.artist}</div>
