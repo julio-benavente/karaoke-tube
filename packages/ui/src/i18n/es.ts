@@ -572,6 +572,7 @@ export const es: Dict = {
   "home.guestCount": "Invitados: {n}",
   "home.moreInQueue": "+{n} más en la cola",
   "host.phoneNotTv": "Un celular no puede ser el anfitrión y la TV a la vez. Abre la TV en otro dispositivo.",
+  "tv.samePhoneTitle": "Este celular está dirigiendo la fiesta",
   "tv.keepOpen": "Deja esta pantalla abierta: si cambias de pestaña o de app, el celular pausa la TV. Usa el panel del anfitrión en otro dispositivo.",
   "tv.fullscreen": "Pantalla completa (F)",
   "tv.fullscreenLabel": "Pantalla completa",

@@ -6,3 +6,6 @@ export const PHONE_QUERY = "(max-width: 820px)";
  * songs stop advancing. On a phone the host panel does not offer to open the TV on that same phone; the TV goes on another device.
  */
 export const isPhoneLayout = () => window.matchMedia(PHONE_QUERY).matches;
+
+/** The device is a phone (a touch screen with a small side under 820 px), whatever the window size or orientation. */
+export const isPhoneDevice = () => window.matchMedia("(pointer: coarse)").matches && Math.min(window.screen.width, window.screen.height) <= 820;
