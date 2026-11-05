@@ -841,14 +841,18 @@
 .mobileMain {
   min-height: 100dvh;
   box-sizing: border-box;
-  /* Room for the mini player + tabs dock. */
-  padding: env(safe-area-inset-top) 0 calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-12) + env(safe-area-inset-bottom));
+  /* Room for the tabs dock; the mini player's height is added only while a song is on (.hasMini). */
+  padding: env(safe-area-inset-top) 0 calc(var(--kt-tabs-height) + var(--kt-space-4) + env(safe-area-inset-bottom));
   background: var(--kt-panel);
+}
+
+.mobileMain.hasMini {
+  padding-bottom: calc(var(--kt-tabs-height) + var(--kt-mini-height) + var(--kt-space-4) + env(safe-area-inset-bottom));
 }
 
 .mobileMain .view {
   gap: var(--kt-space-6);
-  padding: 0 var(--kt-space-4) var(--kt-space-8);
+  padding: 0 var(--kt-space-4); /* no bottom padding: the page already reserves room for the dock */
 }
 
 .mobileMain .viewTop {
@@ -1159,4 +1163,11 @@
 
 .nextEmpty {
   color: var(--kt-text-2);
+}
+
+/* Phone Home: the search row scrolls away with the page instead of floating, see-through, over the songs (and under the status bar). */
+@media (max-width: 820px) {
+  .mobileMain .viewTop.viewTopFlow {
+    position: static;
+  }
 }

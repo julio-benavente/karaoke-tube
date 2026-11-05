@@ -244,7 +244,7 @@ function Host() {
       <div className={css.mobileFrame}>
         {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
         {tvGone && <TvOfflineBanner compact onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
-        <main className={`${css.mobileMain} ${tvGone ? css.hasBanner : ""}`}>
+        <main className={`${css.mobileMain} ${tvGone ? css.hasBanner : ""} ${state.nowPlaying ? css.hasMini : ""}`}>
           <NextSongFor />
           {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}

@@ -42,7 +42,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
   return (
     <div className={css.view} style={{ ["--tint" as string]: tint }}>
       <div className={css.wash} />
-      <header className={css.viewTop}>
+      <header className={`${css.viewTop} ${css.viewTopFlow}`}>
         <button type="button" className={css.fakeSearch} onClick={onSearch}>
           {t("search.placeholder")}
         </button>
