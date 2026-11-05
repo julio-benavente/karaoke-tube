@@ -299,6 +299,7 @@ function Host() {
               members={state.members}
               onOpen={() => setView("queue")}
               onToggle={() => send({ type: playing ? "pause" : "resume" })}
+              onSkip={() => send({ type: "skip" })}
             />
           )}
         </BottomTabs>

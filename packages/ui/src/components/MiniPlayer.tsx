@@ -1,5 +1,5 @@
 import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, SkipForward } from "lucide-react";
 import { songParts } from "../format";
 import { useT } from "../i18n/context";
 import { isWaitingForTv, useCountdown, usePlaybackPosition } from "../hooks/room";
@@ -16,10 +16,12 @@ export type MiniPlayerProps = {
   onOpen: () => void;
   /** Host only: pause/resume button on the right. */
   onToggle?: () => void;
+  /** Host only: skip to the next song (the desktop play bar has the same button). */
+  onSkip?: () => void;
 };
 
 /** Phone mini player above the tabs, tinted by the song. Tap opens the now-singing sheet. */
-export function MiniPlayer({ item, playback, members, onOpen, onToggle }: MiniPlayerProps) {
+export function MiniPlayer({ item, playback, members, onOpen, onToggle, onSkip }: MiniPlayerProps) {
   const t = useT();
   const position = usePlaybackPosition(playback, item.song.durationSec);
   const countdown = useCountdown(playback.state === "get_ready" ? playback.countdownEndsAt : null);
@@ -46,6 +48,11 @@ export function MiniPlayer({ item, playback, members, onOpen, onToggle }: MiniPl
       {onToggle && (
         <button type="button" className={css.toggle} onClick={onToggle} aria-label={playing ? t("player.pause") : t("player.resume")}>
           {playing ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
+        </button>
+      )}
+      {onSkip && (
+        <button type="button" className={css.toggle} onClick={onSkip} aria-label={t("player.skip")} data-testid="mini-skip">
+          <SkipForward fill="currentColor" />
         </button>
       )}
       <ProgressBar value={position} max={item.song.durationSec} variant="thin" className={css.progress} />

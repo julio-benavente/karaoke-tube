@@ -93,9 +93,16 @@ export function RemoteVideo({ item, playback, className }: { item: QueueItem; pl
     }
   }
 
-  // Every room change: follow it right away.
+  // Every room change: follow it right away. Only a new song or a play / pause change forces a seek; the TV's progress
+  // reports (every few seconds) just refresh the position, and the drift check below corrects real drift. Seeking on every
+  // report made the video stall and rebuffer every few seconds, most of all on phones.
+  const lastKey = useRef<string | null>(null);
   useEffect(() => {
-    if (ready) sync(true);
+    if (!ready) return;
+    const key = `${item.id}|${item.song.videoId}|${playback.state}`;
+    const changed = key !== lastKey.current;
+    lastKey.current = key;
+    sync(changed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, item.id, item.song.videoId, playback.state, playback.positionSec, playback.updatedAt]);
 
