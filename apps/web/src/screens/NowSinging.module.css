@@ -187,6 +187,11 @@
   gap: var(--kt-space-2);
   margin-top: auto;
   padding-top: var(--kt-space-4);
+  /* Stays on screen when the sheet has to scroll (short windows, phones on their side). */
+  position: sticky;
+  bottom: 0;
+  padding-bottom: var(--kt-space-2);
+  background: linear-gradient(to top, var(--kt-base) 60%, transparent);
 }
 
 .reaction {

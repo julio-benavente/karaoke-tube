@@ -83,3 +83,9 @@
   line-height: 16px;
   text-align: center;
 }
+
+@media (max-height: 500px) and (pointer: coarse) {
+  .dock {
+    padding-top: var(--kt-space-2);
+  }
+}

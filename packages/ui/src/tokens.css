@@ -121,3 +121,11 @@
     --kt-control-md: 44px;
   }
 }
+
+/* Phones on their side: a slimmer dock leaves room for the page. */
+@media (max-height: 500px) and (pointer: coarse) {
+  :root {
+    --kt-tabs-height: 44px;
+    --kt-mini-height: 48px;
+  }
+}
