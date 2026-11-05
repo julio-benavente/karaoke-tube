@@ -915,7 +915,7 @@
 
 .kt-tvbar-url {
   color: var(--tv-text-2);
-  font-size: calc(var(--u) * 0.17);
+  font-size: calc(var(--u) * 0.2);
   white-space: nowrap;
 }
 

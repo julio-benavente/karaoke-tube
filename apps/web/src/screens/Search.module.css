@@ -96,6 +96,21 @@
   }
 }
 
+@media (pointer: coarse) {
+  .clear {
+    right: 2px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (pointer: coarse) and (min-width: 768px) {
+  .clear {
+    left: calc(480px - 48px);
+    right: auto;
+  }
+}
+
 .clear svg {
   width: 22px;
   height: 22px;
