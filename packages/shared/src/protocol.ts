@@ -65,6 +65,8 @@ export type RoomSettings = {
   tvLayout: TvLayout;
   /** How tall the TV's bar is: small (laptop or monitor up close), medium (living-room TV), large (projector, big room). */
   tvBarSize: TvBarSize;
+  /** Take the bottom bar off the TV: the video fills the screen (same as `tvLayout: "clean"`). Missing = false. */
+  tvHideBar?: boolean;
 };
 
 export type JoinInfoMode = "between" | "always" | "start";

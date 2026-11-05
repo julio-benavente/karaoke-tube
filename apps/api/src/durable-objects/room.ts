@@ -1225,7 +1225,7 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   if (input.joinInfo === "between" || input.joinInfo === "always" || input.joinInfo === "start") out.joinInfo = input.joinInfo;
   if (input.tvLayout === "bar" || input.tvLayout === "clean") out.tvLayout = input.tvLayout;
   if (input.tvBarSize === "small" || input.tvBarSize === "medium" || input.tvBarSize === "large") out.tvBarSize = input.tvBarSize;
-  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles"] as const) {
+  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles", "tvHideBar"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }
   return out;
