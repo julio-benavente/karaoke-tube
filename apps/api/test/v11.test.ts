@@ -204,3 +204,30 @@ describe("phoneless guests", () => {
     expect(after.members.some((m) => m.id === tio.id)).toBe(false);
   });
 });
+
+describe("E1 one cheer per song", () => {
+  it("a second reaction during the same performance is refused; the next song gets a fresh cheer", async () => {
+    const { code, host } = await party();
+    const ana = await guest(code, "Ana");
+    const ben = await guest(code, "Ben");
+    await ana.client.act({ type: "add_song", song: song("one") });
+    await ana.client.act({ type: "add_song", song: song("two") });
+    const first = await host.next("play");
+    await host.act({ type: "player_event", event: "started", itemId: first.item.id });
+
+    ben.client.send({ type: "react", reaction: "fire" });
+    await host.next("reaction");
+    await new Promise((resolve) => setTimeout(resolve, 600)); // past the 500 ms rate limit
+    expect(await ben.client.expectError({ type: "react", reaction: "clap" })).toBe("already_cheered");
+    // Someone else can still cheer the same song.
+    ana.client.send({ type: "react", reaction: "heart" });
+    await host.next("reaction");
+
+    await host.act({ type: "player_event", event: "ended", itemId: first.item.id });
+    const second = await host.next("play");
+    await host.act({ type: "player_event", event: "started", itemId: second.item.id });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    ben.client.send({ type: "react", reaction: "clap" });
+    expect((await host.next("reaction")).memberId).toBe(ben.id);
+  });
+});

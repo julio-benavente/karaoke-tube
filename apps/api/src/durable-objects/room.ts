@@ -656,10 +656,13 @@ export class Room extends DurableObject<Env> {
         if (!this.settings().reactions) throw new RoomError("not_allowed", "Reactions are off.");
         const now = Date.now();
         if (now - (this.lastReaction.get(me.id) ?? 0) < REACTION_INTERVAL_MS) return; // dropped
+        // A person cheers once per song: the first reaction during a performance counts, later ones are refused.
+        const current = this.nowPlayingItem();
+        const performing = current && current.performedAt !== null ? current : null;
+        if (performing && this.hasCheered(performing.id, me.id)) throw new RoomError("already_cheered", "You already cheered this song.");
         this.lastReaction.set(me.id, now);
         // Count it toward the performance on screen (for the end-of-night titles).
-        const current = this.nowPlayingItem();
-        if (current && current.performedAt !== null) this.countCheer(current.id, me.id);
+        if (performing) this.countCheer(performing.id, me.id);
         this.broadcast({ type: "reaction", memberId: me.id, reaction: msg.reaction });
         return;
       }
@@ -901,6 +904,10 @@ export class Room extends DurableObject<Env> {
     const given = this.sql.exec("SELECT 1 FROM awards WHERE item_id = ? AND member_id = ?", itemId, me.id).toArray().length > 0;
     if (given) throw new RoomError("not_allowed", "You already gave this performance an award.");
     this.sql.exec("INSERT INTO awards (item_id, member_id, award, at) VALUES (?, ?, ?, ?)", itemId, me.id, award, Date.now());
+  }
+
+  private hasCheered(itemId: string, memberId: string): boolean {
+    return this.sql.exec("SELECT 1 FROM cheers WHERE item_id = ? AND member_id = ?", itemId, memberId).toArray().length > 0;
   }
 
   /** One reaction from `memberId` during the performance of `itemId`. */
