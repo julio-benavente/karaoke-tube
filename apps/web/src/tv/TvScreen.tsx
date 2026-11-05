@@ -30,14 +30,14 @@ export function TvScreen() {
   const code = normalizeRoomCode(useParams().code ?? "");
   // Before creating the client: it rejoins with the credentials the host app's link carries (#m=..&k=..).
   // A paired screen (its own key) comes first; the host app's link (the host's login) still works too.
+  // Opened from the host app ("Open TV"): the link's login wins over a saved screen key, which may be stale
+  // (the screen was removed or replaced while this window was closed) and would send the TV back to the code page.
+  const hostLink = useMemo(() => adoptHostLink(code), [code]);
   const screenKey = useMemo(() => {
     const s = loadScreen();
-    return s && s.code === code ? s.key : null;
-  }, [code]);
-  const allowed = useMemo(() => {
-    adoptHostLink(code);
-    return screenKey !== null || hasCredentials(code);
-  }, [code, screenKey]);
+    return !hostLink && s && s.code === code ? s.key : null;
+  }, [code, hostLink]);
+  const allowed = screenKey !== null || hasCredentials(code);
   if (!allowed) {
     return (
       <div style={center}>
@@ -151,7 +151,7 @@ function Tv({ code, screenKey }: { code: string; screenKey: string | null }) {
   }, [screenKey, closeReason]);
 
   // Bar layout: the video gets a box of its own above the bar. Full-screen ("clean") keeps the overlay look.
-  const barPct = (state?.settings.tvLayout ?? "bar") === "bar" ? TV_BAR_PERCENT[state?.settings.tvBarSize ?? "medium"] : 0;
+  const barPct = !state?.settings.tvHideBar && (state?.settings.tvLayout ?? "bar") === "bar" ? TV_BAR_PERCENT[state?.settings.tvBarSize ?? "medium"] : 0;
 
   const ended = state?.status === "ended" || closeReason === "ended";
   const [showFinal, setShowFinal] = useState(false);

@@ -10,12 +10,17 @@ export const WEB_URL: string = location.origin;
  * The host app opens `/tv/<CODE>#m=<memberId>&k=<key>` for the TV screen. Save the host's credentials like any
  * member's (localStorage `kt:room:<CODE>`) and wipe the fragment from the address bar.
  */
-export function adoptHostLink(code: string) {
+const linked = new Set<string>();
+export function adoptHostLink(code: string): boolean {
   const hash = new URLSearchParams(location.hash.slice(1));
   const memberId = hash.get("m");
   const key = hash.get("k");
-  if (memberId && key) localStorageCredentials().save(code, { memberId, key });
+  if (memberId && key) {
+    localStorageCredentials().save(code, { memberId, key });
+    linked.add(code); // remembered: React may render twice and the fragment is gone after the first time
+  }
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  return linked.has(code);
 }
 
 /** Opens the TV screen (`/tv/<code>`) in its own window, with the host's credentials in the fragment. */
