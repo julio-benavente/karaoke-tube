@@ -10,6 +10,7 @@ interface __BaseEnv_Env {
 	ROOM_CREATE_LIMITER: RateLimit;
 	CLIENT_ERROR_LIMITER: RateLimit;
 	EVENTS: AnalyticsEngineDataset;
+	EVENT_MAX_TIER: string;
 	ROOM: DurableObjectNamespace<import("./src/index").Room>;
 	PAIRING: DurableObjectNamespace<import("./src/index").Pairing>;
 }

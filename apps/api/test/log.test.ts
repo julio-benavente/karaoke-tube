@@ -35,6 +35,26 @@ describe("logEvent -> Analytics Engine", () => {
     expect(log).toHaveBeenCalledWith('{"event":"login_failed"}');
   });
 
+  it("EVENT_MAX_TIER drops the lower-priority events from both the log and the dataset, never tier 1", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { points, env } = fake();
+    const send = (max: string) => {
+      points.length = 0;
+      log.mockClear();
+      const e = { ...env, EVENT_MAX_TIER: max };
+      logEvent(e, "song_added", { room: "r" }); // tier 3
+      logEvent(e, "song_unplayable", { room: "r" }); // tier 2
+      logEvent(e, "room_ended", { room: "r" }); // tier 1
+      return points.map((p) => p.indexes![0]);
+    };
+    expect(send("3")).toEqual(["song_added", "song_unplayable", "room_ended"]);
+    expect(send("2")).toEqual(["song_unplayable", "room_ended"]);
+    expect(log).toHaveBeenCalledTimes(2);
+    expect(send("1")).toEqual(["room_ended"]);
+    expect(send("")).toHaveLength(3); // unset or unreadable means everything
+    expect(send("nonsense")).toHaveLength(3);
+  });
+
   it("keeps every schema within Analytics Engine's limits (20 blobs, 20 doubles)", () => {
     for (const [name, s] of Object.entries(EVENTS)) {
       expect(s.strings.length + 1, name).toBeLessThanOrEqual(20);

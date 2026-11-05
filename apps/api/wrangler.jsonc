@@ -50,6 +50,10 @@
     { "name": "CLIENT_ERROR_LIMITER", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
   ],
 
+  // Highest event tier recorded (see src/log.ts): 3 = everything, 2 = drop the busiest, 1 = only the vital ones.
+  // Lower it and deploy if the logs or Analytics Engine ever near a free limit.
+  "vars": { "EVENT_MAX_TIER": "3" },
+
   // Long-lived event data (3 months, SQL-queryable). See src/log.ts for the columns.
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "karaoke_tube_events" }],
 
