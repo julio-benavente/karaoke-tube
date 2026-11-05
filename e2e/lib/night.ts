@@ -30,10 +30,10 @@ export class Night {
   }
 
   /** The host makes a party the way a person does: /host/new, a name, "Start the party". */
-  async startParty(name = "Hana", o: { lang?: "en" | "es"; ctx?: BrowserContext; /** The host is on a phone (the mobile layout). */ phone?: boolean } = {}) {
+  async startParty(name = "Hana", o: { lang?: "en" | "es"; ctx?: BrowserContext } = {}) {
     this.lang = o.lang ?? "en";
     const d = o.lang === "es" ? es : en;
-    const ctx = o.ctx ?? (await newContext(this.browser, { ...(o.phone ? PHONE : DESKTOP), ...(o.lang === "es" ? { locale: "es-ES" } : {}) }));
+    const ctx = o.ctx ?? (await newContext(this.browser, { ...DESKTOP, ...(o.lang === "es" ? { locale: "es-ES" } : {}) }));
     const page = await ctx.newPage();
     this.host = new Host(name, ctx, page);
     await page.goto("/host/new");

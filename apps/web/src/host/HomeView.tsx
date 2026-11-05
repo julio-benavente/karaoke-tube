@@ -19,7 +19,7 @@ import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
 
 /** Host Home: greeting, the party at a glance, party classics. The classics follow the session language and keep a fixed order. */
-export function HomeView({ onSearch, onOpenTv }: { onSearch: () => void; onOpenTv?: () => void }) {
+export function HomeView({ onSearch }: { onSearch: () => void }) {
   const { state, me } = useRoom();
   const t = useT();
   const [lang] = useLang();
@@ -49,7 +49,7 @@ export function HomeView({ onSearch, onOpenTv }: { onSearch: () => void; onOpenT
         <SingWithButton />
       </header>
       <h1 className={css.greeting}>{greeting(undefined, t)}</h1>
-      <HomeStatus onOpenTv={onOpenTv} />
+      <HomeStatus />
       {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
     </div>
   );

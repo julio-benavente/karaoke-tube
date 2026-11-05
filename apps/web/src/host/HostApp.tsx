@@ -41,7 +41,6 @@ import { adoptHostLink, createHostClients, hasCredentials, openTvScreen } from "
 import { Sidebar } from "./Sidebar";
 import { QueuePanel } from "./QueuePanel";
 import { HomeView } from "./HomeView";
-import { PhoneTvDock, loadPhoneTv, savePhoneTv } from "./PhoneTvDock";
 import { NextSongFor } from "./NextSongFor";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
@@ -154,16 +153,6 @@ function Host() {
   const [queueOpen, setQueueOpen] = useState(true);
   const mobile = useIsMobile();
   // A phone shows the "no TV" strip only once the TV has been gone a moment: a brief reconnect used to make it pop in and out and shove the page down and up.
-  // On a phone the TV runs inside this page (a TV in another tab is frozen as soon as you leave it).
-  const [phoneTv, setPhoneTv] = useState(() => loadPhoneTv(routeCode));
-  const openPhoneTv = () => {
-    savePhoneTv(routeCode, true);
-    setPhoneTv(true);
-  };
-  const closePhoneTv = () => {
-    savePhoneTv(routeCode, false);
-    setPhoneTv(false);
-  };
   const tvGone = useAfter(status === "open" && state?.playerConnected === false, 2500);
 
   useRoomErrors((e) =>
@@ -254,10 +243,10 @@ function Host() {
     return (
       <div className={css.mobileFrame}>
         {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
-        {tvGone && <TvOfflineBanner compact onOpenTv={openPhoneTv} />}
+        {tvGone && <TvOfflineBanner compact onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
         <main className={`${css.mobileMain} ${tvGone ? css.hasBanner : ""} ${state.nowPlaying ? css.hasMini : ""}`}>
           <NextSongFor />
-          {view === "home" && <HomeView onSearch={() => setView("search")} onOpenTv={openPhoneTv} />}
+          {view === "home" && <HomeView onSearch={() => setView("search")} />}
           {view === "search" && <SearchView />}
           {view === "queue" && (
             <>
@@ -272,7 +261,7 @@ function Host() {
               only="party"
               actions={
                 <div className={css.mobileActions}>
-                  <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={openPhoneTv}>
+                  <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
                     {t("host.openTv")}
                   </Button>
                   {state.playerConnected && (
@@ -330,7 +319,6 @@ function Host() {
             />
           )}
         </BottomTabs>
-        {phoneTv && <PhoneTvDock code={state.code} aboveMini={!!state.nowPlaying} onClose={closePhoneTv} />}
         {endSheet}
         <TurnAlertBanner dock="mobile" />
       </div>
