@@ -6,6 +6,7 @@ import MiniSearch from "minisearch";
 import type { RoomInfoResponse, SearchApi, SearchResponse, Song, VideoResponse } from "@karaoke-tube/shared";
 import { isExplicitText } from "./explicit";
 import { explicitTest, filterSongs, normalizeName, songMatcher, type SongFilter } from "./filter";
+import { loadCovers, type Covers } from "./covers";
 import { isCatalog, type AnyCatalog } from "./types";
 
 /** Messages between the page and the catalog worker. */
@@ -20,6 +21,8 @@ export type WorkerReply = { id: number; ok: true; result: unknown } | { id: numb
 
 export const CATALOG_URL = "/catalog/catalog.json";
 export const RESULTS = 15;
+/** Poster size asked from the cover CDN. The UI can ask smaller for small thumbnails (see posterAt in the UI package). */
+const POSTER_PX = 300;
 /** With fewer local hits than this, the live YouTube search is asked as well. */
 const MIN_LOCAL = 3;
 
@@ -78,20 +81,26 @@ function docsOf(catalog: AnyCatalog): Doc[] {
 }
 
 /** Builds the search index in one go. Quick for tests and scripts; in a browser use `createCatalogIndexAsync`. */
-export function createCatalogIndex(catalog: AnyCatalog): CatalogIndex {
+export function createCatalogIndex(catalog: AnyCatalog, covers: Covers | null = null): CatalogIndex {
   const mini = newMini(catalog);
   mini.addAll(docsOf(catalog));
-  return indexOf(catalog, mini);
+  return indexOf(catalog, mini, covers);
+}
+
+/** The covers that belong to this catalog (covers.json next to catalog.json), or null: songs then show the generated look. */
+export function loadCoversFor(catalog: AnyCatalog, catalogUrl: string): Promise<Covers | null> {
+  const url = catalogUrl.replace(/[^/]*$/, "covers.json");
+  return loadCovers({ built: catalog.built, songCount: catalog.songs.t.length }, { url });
 }
 
 /**
  * Builds the index in small chunks, giving the browser a turn between them, so a phone never freezes while the
  * catalog of tens of thousands of songs is being indexed.
  */
-export async function createCatalogIndexAsync(catalog: AnyCatalog, chunkSize = 250): Promise<CatalogIndex> {
+export async function createCatalogIndexAsync(catalog: AnyCatalog, chunkSize = 250, covers: Covers | null = null): Promise<CatalogIndex> {
   const mini = newMini(catalog);
   await mini.addAllAsync(docsOf(catalog), { chunkSize });
-  return indexOf(catalog, mini);
+  return indexOf(catalog, mini, covers);
 }
 
 type ArtistRow = { name: string; norm: string; tokens: string[]; songs: number };
@@ -102,7 +111,7 @@ function buildArtistTable(catalog: AnyCatalog): ArtistRow[] {
   return catalog.artists.map((name, i) => ({ name, norm: tokenize(name).join(" "), tokens: tokenize(name), songs: songs[i]! }));
 }
 
-function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
+function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>, covers: Covers | null = null): CatalogIndex {
   let artistTable: ArtistRow[] | null = null;
   const { songs, artists, channels, alts } = catalog;
   const artistOf = (i: number) => (songs.a[i]! >= 0 ? artists[songs.a[i]!]! : "");
@@ -113,7 +122,9 @@ function indexOf(catalog: AnyCatalog, mini: MiniSearch<Doc>): CatalogIndex {
 
   const toSong = (i: number, videoId = songs.id[i]!, channel = songs.c[i]!, durationSec = songs.d[i]!): Song => {
     const artist = artistOf(i);
+    const poster = covers?.url(i, POSTER_PX);
     return {
+      ...(poster ? { posterUrl: poster } : {}),
       ...(isExplicit(i) ? { explicit: true } : {}),
       ...(isDuet(i) ? { duet: true } : {}),
       videoId,
@@ -227,7 +238,7 @@ function inThreadEngine(url: string, load: (url: string) => Promise<AnyCatalog>)
   return {
     load: () =>
       load(url)
-        .then((catalog) => createCatalogIndexAsync(catalog))
+        .then(async (catalog) => createCatalogIndexAsync(catalog, 250, await loadCoversFor(catalog, url)))
         .then((built) => ((index = built), true))
         .catch(() => false),
     search: async (q, limit, offset, filter) => index?.search(q, limit, offset, filter) ?? [],

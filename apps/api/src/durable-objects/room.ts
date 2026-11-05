@@ -23,6 +23,7 @@ import {
   SCREEN_MEMBER_ID,
 } from "@karaoke-tube/shared";
 import { logEvent } from "../log";
+import { cleanPosterUrl } from "../poster";
 import { orderUpNext, shiftPins, turnHolders, type StoredItem } from "../queue";
 import { computeTitles } from "../titles";
 
@@ -531,6 +532,7 @@ export class Room extends DurableObject<Env> {
           channel: s.channel,
           durationSec: s.durationSec,
           thumbnailUrl: s.thumbnailUrl,
+          ...(cleanPosterUrl(s.posterUrl) ? { posterUrl: cleanPosterUrl(s.posterUrl) } : {}),
           ...(s.explicit === true ? { explicit: true } : {}),
           ...(s.duet === true ? { duet: true } : {}),
         };

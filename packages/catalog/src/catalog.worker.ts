@@ -1,7 +1,7 @@
 // Runs the song catalog off the page's thread: download, parse, index and every search happen here, so the
 // page never stalls on a 4 MB catalog. Talks to `createCatalogSearchApi` (search.ts) with the messages below.
 
-import { createCatalogIndexAsync, fetchCatalog, type CatalogIndex, type WorkerReply, type WorkerRequest } from "./search";
+import { createCatalogIndexAsync, fetchCatalog, loadCoversFor, type CatalogIndex, type WorkerReply, type WorkerRequest } from "./search";
 
 const scope = self as unknown as {
   onmessage: ((e: MessageEvent<WorkerRequest>) => void) | null;
@@ -16,7 +16,10 @@ scope.onmessage = async (e) => {
     switch (m.op) {
       case "load":
         // Nothing here competes with the page, so index in big chunks.
-        index = await createCatalogIndexAsync(await fetchCatalog(m.url), 8000);
+        {
+          const catalog = await fetchCatalog(m.url);
+          index = await createCatalogIndexAsync(catalog, 8000, await loadCoversFor(catalog, m.url));
+        }
         scope.postMessage({ id: m.id, ok: true, result: true });
         break;
       case "search":

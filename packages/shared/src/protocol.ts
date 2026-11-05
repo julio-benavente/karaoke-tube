@@ -26,6 +26,8 @@ export type Song = {
   channel: string;
   durationSec: number;
   thumbnailUrl: string;
+  /** Album cover (https, from Apple's or Deezer's CDN) when the catalog found one. Absent = show the generated cover. */
+  posterUrl?: string;
   /** Best-effort: the title or catalog labels say the song has explicit lyrics. Absent = not known to be explicit. */
   explicit?: boolean;
   /** The catalog tags the song as a duet: the UI offers to pick a partner. */

@@ -1,4 +1,5 @@
 import { logEvent } from "../log";
+import { cleanPosterUrl } from "../poster";
 import { Hono, type Context, type Next } from "hono";
 import {
   MIN_PASSWORD,
@@ -79,6 +80,7 @@ function cleanSong(v: unknown): Song | null {
     channel: s.channel.slice(0, 200),
     durationSec: typeof s.durationSec === "number" && Number.isFinite(s.durationSec) ? s.durationSec : 0,
     thumbnailUrl: s.thumbnailUrl.slice(0, 500),
+    ...(cleanPosterUrl(s.posterUrl) ? { posterUrl: cleanPosterUrl(s.posterUrl) } : {}),
   };
 }
 
