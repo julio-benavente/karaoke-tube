@@ -3,11 +3,10 @@
   "private": true,
   "packageManager": "pnpm@11.28.6",
   "scripts": {
-    "dev": "pnpm -r --parallel --filter \"./apps/*\" --filter \"!@karaoke-tube/extension\" dev",
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" dev",
     "dev:api": "pnpm --filter @karaoke-tube/api dev",
     "deploy:api": "pnpm --filter @karaoke-tube/api run deploy",
     "dev:web": "pnpm --filter @karaoke-tube/web dev",
-    "dev:extension": "pnpm --filter @karaoke-tube/extension dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "e2e": "pnpm --filter @karaoke-tube/e2e test"
