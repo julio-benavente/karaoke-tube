@@ -8,6 +8,7 @@ interface __BaseEnv_Env {
 	AUTH_LIMITER: RateLimit;
 	ROOM_LOOKUP_LIMITER: RateLimit;
 	ROOM_CREATE_LIMITER: RateLimit;
+	CLIENT_ERROR_LIMITER: RateLimit;
 	ROOM: DurableObjectNamespace<import("./src/index").Room>;
 	PAIRING: DurableObjectNamespace<import("./src/index").Pairing>;
 }

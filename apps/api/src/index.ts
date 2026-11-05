@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { accountRoutes } from "./routes/account";
+import { clientErrorRoutes } from "./routes/client-errors";
 import { healthRoutes } from "./routes/health";
 import { pairRoutes } from "./routes/pair";
 import { recapRoutes } from "./routes/recaps";
@@ -23,6 +24,7 @@ const routes = app
   .route("/rooms", roomRoutes)
   .route("/pair", pairRoutes)
   .route("/recaps", recapRoutes)
+  .route("/client-errors", clientErrorRoutes)
   .route("/", searchRoutes);
 
 // Exported so the React apps can get a typed client via `hc<AppType>()`.

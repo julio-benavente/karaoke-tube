@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import "@karaoke-tube/ui/styles";
 import { I18nProvider } from "@karaoke-tube/ui";
 import { App } from "./App";
+import { installErrorReporting } from "./reportErrors";
+
+installErrorReporting();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
