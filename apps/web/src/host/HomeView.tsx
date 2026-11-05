@@ -11,29 +11,29 @@ import {
   greeting,
   hueOf,
   songParts,
+  useLang,
   useRoom,
-  useRoomSongs,
   useSearch,
   useT,
 } from "@karaoke-tube/ui";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
 
-/** Host Home: greeting, 6 shortcut tiles, popular in this room, party classics. */
+/** Host Home: greeting, 6 shortcut tiles, party classics. Suggestions follow the session language. */
 export function HomeView({ onSearch }: { onSearch: () => void }) {
   const { state, me } = useRoom();
   const t = useT();
-  const roomSongs = useRoomSongs(state);
+  const [lang] = useLang();
   const add = useHostAdd();
   const classics = useSearch();
   const popular = useSearch();
   // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
     const party = BROWSE_PRESETS.find((p) => p.id === "classics")!;
-    classics.browse(party.filter, { limit: 24, shuffle: true, fallbackQuery: party.query });
-    popular.browse({}, { limit: 150, shuffle: true });
+    classics.browse({ ...party.filter, language: lang }, { limit: 24, shuffle: true, fallbackQuery: party.query });
+    popular.browse({ language: lang }, { limit: 150, shuffle: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
   const shortcuts = useMemo(() => (popular.results.length ? popular.results : SAMPLE_SONGS).slice(0, 6), [popular.results]);
 
   if (!state || !me) return null;
@@ -58,7 +58,6 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
           <ShortcutTile key={s.videoId} title={songParts(s).title} label={s.title} art={<SongArt song={s} radius="none" explicit={s.explicit} />} onPlay={() => add(s)} />
         ))}
       </div>
-      {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
       {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
     </div>
   );

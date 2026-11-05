@@ -1,4 +1,4 @@
-import { presetName, useT } from "@karaoke-tube/ui";
+import { presetName, useLang, useT } from "@karaoke-tube/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { Song } from "@karaoke-tube/shared";
@@ -32,6 +32,7 @@ const GENRES = BROWSE_PRESETS.filter((p) => p.chip);
 /** G2: greeting, genre chips, 6 shortcut tiles, "Popular in this room". */
 export function HomeScreen() {
   const t = useT();
+  const [lang] = useLang();
   const { state, me } = useRoom();
   const navigate = useNavigate();
   const { code } = useShell();
@@ -51,10 +52,10 @@ export function HomeScreen() {
   // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
     const party = BROWSE_PRESETS.find((p) => p.id === "classics")!;
-    classics.browse(party.filter, { limit: 24, shuffle: true, fallbackQuery: party.query });
-    popular.browse({}, { limit: 150, shuffle: true });
+    classics.browse({ ...party.filter, language: lang }, { limit: 24, shuffle: true, fallbackQuery: party.query });
+    popular.browse({ language: lang }, { limit: 150, shuffle: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
 
   // Shortcut tiles: quick picks that aren't already in this room (those go in "Popular in this room").
   // Picked when the catalog answers, so the tiles don't reshuffle while the queue changes.
@@ -156,7 +157,6 @@ export function HomeScreen() {
               </div>
             ))}
           </Shelf>
-          {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}
           {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
         </section>
       )}
