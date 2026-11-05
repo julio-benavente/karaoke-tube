@@ -32,7 +32,7 @@ export function HomeScreen() {
   const navigate = useNavigate();
   const { code } = useShell();
   const roomSongs = useRoomSongs(state);
-  const { add, pending } = useAddWithToast();
+  const { add, addNow, pending } = useAddWithToast();
   const [sheetSong, setSheetSong] = useState<Song | null>(null);
   const [genre, setGenre] = useState<string | null>(null);
   const genreSearch = useSearch();
@@ -144,7 +144,7 @@ export function HomeScreen() {
         </section>
       )}
 
-      <SongSheet song={sheetSong} onClose={() => setSheetSong(null)} onAdd={add} />
+      <SongSheet song={sheetSong} onClose={() => setSheetSong(null)} onAdd={addNow} />
     </div>
   );
 }

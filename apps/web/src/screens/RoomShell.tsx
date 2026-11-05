@@ -9,6 +9,7 @@ import {
   Logo,
   MiniPlayer,
   RoomProvider,
+  AddFlowProvider,
   SingWithProvider,
   Spinner,
   ToastProvider,
@@ -50,13 +51,15 @@ export function RoomShell() {
     <RoomProvider client={client} search={getSearchApi()}>
       <ToastProvider offset={148}>
         <SingWithProvider>
-          <Shell
-            code={code}
-            retry={() => {
-              dropRoomClient(code);
-              setAttempt((n) => n + 1);
-            }}
-          />
+          <AddFlowProvider>
+            <Shell
+              code={code}
+              retry={() => {
+                dropRoomClient(code);
+                setAttempt((n) => n + 1);
+              }}
+            />
+          </AddFlowProvider>
         </SingWithProvider>
       </ToastProvider>
     </RoomProvider>

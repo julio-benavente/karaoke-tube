@@ -17,6 +17,7 @@ import {
   PlayerBarDivider,
   RoomProvider,
   Sheet,
+  AddFlowProvider,
   SingWithProvider,
   Spinner,
   ToastProvider,
@@ -95,7 +96,9 @@ export function HostApp() {
     <RoomProvider client={clients.room} search={clients.search}>
       <ToastProvider offset={96}>
         <SingWithProvider>
-          <Host />
+          <AddFlowProvider>
+            <Host />
+          </AddFlowProvider>
         </SingWithProvider>
       </ToastProvider>
     </RoomProvider>
