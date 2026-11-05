@@ -33,6 +33,8 @@ export type PlayerReport = (event: "started" | "progress" | "ended" | "error", i
 /** No sign of the video playing after this long → `error`. */
 const START_TIMEOUT_MS = 15_000;
 const PROGRESS_EVERY_MS = 5_000;
+/** A phone that has not started a song with sound after this long retries it muted (iOS may refuse sound without a fresh tap). */
+const SOUND_FALLBACK_MS = 4_000;
 const TICK_MS = 500;
 /** Resume only when the song was this far in. */
 const RESUME_MIN_SEC = 3;
@@ -76,6 +78,8 @@ export class TvPlayer {
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastState = -1;
   private muted: boolean;
+  /** A phone or tablet: autoplay with sound is not guaranteed. */
+  private readonly phone: boolean;
 
   /**
    * `target` is an element the player replaces with its iframe; `wrap` is shown/hidden around it.
@@ -93,6 +97,7 @@ export class TvPlayer {
     private readonly onProblem: (why: string) => void = () => {},
   ) {
     this.muted = startMuted;
+    this.phone = startMuted;
     if (startMuted) onMutedChange(true);
     this.show(false);
     loadApi()
@@ -231,6 +236,19 @@ export class TvPlayer {
       if (this.lastState === PAUSED && !this.wantPaused) this.yt.playVideo();
       // Ads play with state PLAYING and count as started; only buffering/unstarted time is waited out here.
       if (this.lastState !== PAUSED || !this.wantPaused) this.waitedMs += TICK_MS;
+      // Safety net: sound was refused, so start the song muted and ask for a tap, instead of skipping it.
+      if (this.phone && !this.muted && !this.wantPaused && this.waitedMs >= SOUND_FALLBACK_MS) {
+        this.muted = true;
+        try {
+          this.yt.mute();
+          this.yt.playVideo();
+        } catch {
+          // ignore
+        }
+        this.onMutedChange(true);
+        this.waitedMs = 0;
+        return;
+      }
       if (this.waitedMs >= START_TIMEOUT_MS) {
         this.onProblem(`Video did not start (player state ${this.lastState}${this.muted ? ", muted" : ""})`);
         this.finish("error");
