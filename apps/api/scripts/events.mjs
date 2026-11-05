@@ -2,7 +2,7 @@
 // Asks the Analytics Engine dataset `karaoke_tube_events` a question (SQL over HTTP). Columns: see apps/api/src/log.ts.
 //
 //   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... node apps/api/scripts/events.mjs <preset> [days]
-//   presets: summary | parties | unplayable | misses | errors | client | endings | "<any SQL>"
+//   presets: summary | dropped | parties | unplayable | misses | errors | client | endings | "<any SQL>"
 //
 // The token needs only "Account Analytics: Read" (dash.cloudflare.com/profile/api-tokens). It is read from the
 // environment and never printed. Counts use SUM(_sample_interval), which stays right if Cloudflare ever samples.
@@ -22,6 +22,8 @@ const since = `timestamp > NOW() - INTERVAL '${days}' DAY`;
 const PRESETS = {
   // How much of everything happened.
   summary: `SELECT index1 AS event, SUM(_sample_interval) AS n FROM ${T} WHERE ${since} GROUP BY event ORDER BY n DESC`,
+  // Which sources got trimmed by the automatic budget, and how much.
+  dropped: `SELECT blob2 AS source, blob3 AS tier, SUM(double1) AS dropped FROM ${T} WHERE index1 = 'events_dropped' AND ${since} GROUP BY source, tier ORDER BY dropped DESC LIMIT 30`,
   // Parties per day, in the two languages.
   parties: `SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day, blob2 AS lang, SUM(_sample_interval) AS parties FROM ${T} WHERE index1 = 'room_created' AND ${since} GROUP BY day, lang ORDER BY day`,
   // Songs the player could not play: candidates to drop from the catalog.
