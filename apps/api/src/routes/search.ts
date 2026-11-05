@@ -5,10 +5,10 @@ import {
   SearchUnavailableError,
   VIDEO_TTL_SEC,
   normaliseQuery,
-  oembedSong,
+  oembedLookup,
   parseVideoId,
   searchYouTube,
-  videoDetails,
+  videoLookup,
 } from "../youtube";
 
 type Ctx = Context<{ Bindings: Env }>;
@@ -57,17 +57,21 @@ export const searchRoutes = new Hono<{ Bindings: Env }>()
     const cached = await c.env.SEARCH_CACHE.get<Song>(cacheKey, "json");
     if (cached) return c.json({ song: cached } satisfies VideoResponse);
 
-    let song: Song | null;
+    let found: { song: Song } | { reason: "not_found" | "not_embeddable" };
+    let viaApi = true;
     try {
-      song = await videoDetails(c.env.YOUTUBE_API_KEY, videoId);
+      found = await videoLookup(c.env.YOUTUBE_API_KEY, videoId);
     } catch (e) {
       if (!(e instanceof SearchUnavailableError)) throw e;
       // No key or no quota: pasted links still work through oEmbed (duration comes from the player later).
-      song = await oembedSong(videoId);
-      if (!song) return apiError(c, 404, "not_found", "That video isn't available to play here");
-      return c.json({ song } satisfies VideoResponse);
+      found = await oembedLookup(videoId);
+      viaApi = false;
     }
-    if (!song) return apiError(c, 404, "not_found", "That video isn't available to play here");
-    await c.env.SEARCH_CACHE.put(cacheKey, JSON.stringify(song), { expirationTtl: VIDEO_TTL_SEC });
-    return c.json({ song } satisfies VideoResponse);
+    if ("reason" in found) {
+      return found.reason === "not_embeddable"
+        ? apiError(c, 404, "not_embeddable", "That video can't be played outside YouTube")
+        : apiError(c, 404, "not_found", "We couldn't find that video");
+    }
+    if (viaApi) await c.env.SEARCH_CACHE.put(cacheKey, JSON.stringify(found.song), { expirationTtl: VIDEO_TTL_SEC });
+    return c.json({ song: found.song } satisfies VideoResponse);
   });
