@@ -568,6 +568,7 @@ export const en = {
   "home.tvOff": "No TV connected",
   "home.guestCount": "Guests: {n}",
   "home.moreInQueue": "+{n} more in the queue",
+  "host.phoneNotTv": "A phone can't be the host and the TV at the same time. Open the TV on a different device.",
   "tv.keepOpen": "Keep this screen open: if you switch tabs or apps, the phone pauses the TV. Run the host panel on another device.",
   "tv.fullscreen": "Full screen (F)",
   "tv.fullscreenLabel": "Full screen",

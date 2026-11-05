@@ -28,6 +28,7 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
         <div className={css.text}>
           <b className={css.title}>{state.screenPaired ? t("host.tvOffline") : t("host.noTv")}</b>
           {!compact && <span className={css.hint}>{state.screenPaired ? t("host.tvOfflineHint") : t("host.noTvHint")}</span>}
+          {compact && <span className={css.hint}>{t("host.phoneNotTv")}</span>}
         </div>
         {/* On a phone the TV goes on another device (see phone.ts), so there is no "open the TV here" button. */}
         {!compact && (
