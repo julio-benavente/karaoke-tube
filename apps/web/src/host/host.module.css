@@ -1171,3 +1171,18 @@
     position: static;
   }
 }
+
+/* Desktop: the "no TV" banner sits above the whole app and pushes it down; the app fills what is left. */
+.desktopRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--kt-base);
+}
+
+.desktopRoot > .frame {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+}

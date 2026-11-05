@@ -1,33 +1,17 @@
-/* "TV not connected": big and impossible to miss. Floats over the top of the host app; on a phone it is a strip. */
+/* "TV not connected": a full-width bar on top of the whole app. It is in the page flow, so it pushes the app down and nobody misses it. */
 .banner {
-  position: fixed;
-  top: var(--kt-space-3);
-  left: 50%;
+  position: relative;
   z-index: var(--kt-z-toast);
-  width: min(680px, calc(100vw - 2 * var(--kt-space-3)));
+  flex: none;
   box-sizing: border-box;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--kt-space-3);
-  padding: var(--kt-space-4) var(--kt-space-5);
-  border-radius: 16px;
+  padding: var(--kt-space-3) var(--kt-space-5);
   background: var(--kt-danger);
   color: var(--kt-base);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 12px 40px rgba(0, 0, 0, 0.55);
-  transform: translateX(-50%);
-  animation: tvPulse 2.4s ease-in-out infinite;
-}
-
-@keyframes tvPulse {
-  50% {
-    box-shadow: 0 0 0 7px rgba(255, 92, 92, 0.45), 0 12px 40px rgba(0, 0, 0, 0.55);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .banner {
-    animation: none;
-  }
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
 }
 
 .top {
@@ -82,6 +66,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--kt-space-2);
+  max-width: 420px;
 }
 
 .pair > :first-child {
@@ -123,4 +108,24 @@
 
 .compact .title {
   font-size: 16px;
+}
+
+/* The code box sits on the red banner: its text must be light on the dark field, and the Pair button a solid yellow. */
+.pair input {
+  color: var(--kt-text);
+}
+
+.pair input::placeholder {
+  color: var(--kt-text-3);
+}
+
+.pair .pairButton {
+  background: #ffd60a;
+  color: #1f1700;
+  font-weight: var(--kt-weight-bold);
+  box-shadow: none;
+}
+
+.pair .pairButton:disabled {
+  opacity: 0.55;
 }

@@ -7,6 +7,8 @@ import { useParams } from "react-router";
 import { SessionLanguage, useT } from "@karaoke-tube/ui";
 import { adoptHostLink, hasCredentials } from "../host/client";
 import { isPhoneDevice } from "../host/phone";
+import { resumableHostRoom } from "../session";
+import { SamePhoneWarning } from "./SamePhoneWarning";
 import { TvPlayer } from "./player";
 import { TvLayer } from "./TvLayer";
 import { Lobby } from "./Lobby";
@@ -55,19 +57,10 @@ export function TvScreen() {
       </div>
     );
   }
-  // Opened with the host's own login on a phone: the host's phone. It would freeze this tab the moment the host went back to the
-  // host panel, so the TV does not start here. A phone paired with a code (its own key) is another device and is fine.
-  if (screenKey === null && isPhoneDevice()) {
-    return (
-      <div style={center} data-testid="tv-same-phone">
-        <h1>{t("tv.samePhoneTitle")}</h1>
-        <p style={{ maxWidth: "32em", opacity: 0.85 }}>{t("host.phoneNotTv")}</p>
-        <a style={{ color: "#ff4f8b" }} href={`/host/${code}`}>
-          {t("tv.goHost")}
-        </a>
-      </div>
-    );
-  }
+  // The host's own phone (this browser holds the host's login for this party, or the page was opened with it): a phone freezes this tab the
+  // moment the host goes back to the host panel, so the TV does not start here, even if this phone was paired as a screen earlier.
+  // A different phone or tablet paired with a code is fine.
+  if (isPhoneDevice() && (screenKey === null || resumableHostRoom() === code)) return <SamePhoneWarning code={code} />;
   return <Tv code={code} screenKey={screenKey} />;
 }
 

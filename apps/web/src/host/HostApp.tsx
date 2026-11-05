@@ -324,9 +324,11 @@ function Host() {
   }
 
   return (
+    <div className={css.desktopRoot}>
+      {/* On top of the whole app, in the page flow: it pushes the app down so nobody misses it. */}
+      {status === "open" && state.playerConnected === false && <TvOfflineBanner onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
     <div className={`${css.frame} ${queueOpen ? "" : css.noQueue}`}>
       {status === "reconnecting" && <div className={css.reconnecting}>{t("host.reconnecting")}</div>}
-      {status === "open" && state.playerConnected === false && <TvOfflineBanner onOpenTv={() => showOnTv(toast.show, state.code, t)} />}
       <Sidebar view={view} onView={setView} />
       <main className={css.main}>
         <NextSongFor />
@@ -378,6 +380,7 @@ function Host() {
 
       {endSheet}
       <TurnAlertBanner dock="desktop" />
+    </div>
     </div>
   );
 }

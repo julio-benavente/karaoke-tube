@@ -4,6 +4,9 @@ import type { PairStartResponse, PairStatusResponse } from "@karaoke-tube/shared
 import { Logo, useT } from "@karaoke-tube/ui";
 import { loadScreen, saveScreen } from "./screenStore";
 import { useWakeLock } from "./useWakeLock";
+import { isPhoneDevice } from "../host/phone";
+import { resumableHostRoom } from "../session";
+import { SamePhoneWarning } from "./SamePhoneWarning";
 
 const page = { position: "fixed", inset: 0, background: "#000", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3dvh", textAlign: "center", padding: 24, fontFamily: '"Figtree", system-ui, sans-serif' } as const;
 const button = { font: "inherit", fontWeight: 800, fontSize: "2.6dvh", padding: "1.4dvh 3.6dvh", minHeight: 44, borderRadius: 999, border: "0.3dvh solid #ff4f8b", background: "transparent", color: "#fff", cursor: "pointer" } as const;
@@ -19,6 +22,8 @@ type Pair = PairStartResponse & { expiresAt: number };
  * The code renews itself every few minutes while it waits, and "New code" (OK on a remote) gets one right away.
  */
 export function TvPair() {
+  const hosting = resumableHostRoom();
+  if (isPhoneDevice() && hosting) return <SamePhoneWarning code={hosting} />;
   const paired = loadScreen();
   if (paired) return <Navigate to={`/tv/${paired.code}`} replace />;
   return <Waiting />;

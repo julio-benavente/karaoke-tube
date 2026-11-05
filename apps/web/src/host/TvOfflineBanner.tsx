@@ -46,9 +46,15 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
         <div className={css.other} data-testid="tv-other-device">
           <p>{t("host.tvOtherDeviceHint")}</p>
           <p>
-            <a href="/tv" target="_blank" rel="noreferrer" className={css.link} data-testid="tv-link">
-              {link}
-            </a>
+            {compact ? (
+              <b className={css.link} data-testid="tv-link">
+                {link}
+              </b>
+            ) : (
+              <a href="/tv" target="_blank" rel="noreferrer" className={css.link} data-testid="tv-link">
+                {link}
+              </a>
+            )}
           </p>
           {isHost && (
             <form className={css.pair} onSubmit={pair.submit}>
@@ -65,7 +71,7 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
                 error={pair.error}
                 data-testid="tv-banner-code"
               />
-              <Button size="sm" variant="light" type="submit" disabled={pair.busy || !pair.ready}>
+              <Button size="sm" variant="secondary" type="submit" className={css.pairButton} disabled={pair.busy || !pair.ready}>
                 {t("tvscreen.pairButton")}
               </Button>
             </form>
