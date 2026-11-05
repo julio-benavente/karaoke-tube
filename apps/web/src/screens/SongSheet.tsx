@@ -1,6 +1,6 @@
 import { CirclePlus, Heart } from "lucide-react";
 import type { Song } from "@karaoke-tube/shared";
-import { ActionList, Artwork, Sheet, SingWithPicker, formatTime, songParts, useSingWith, useT } from "@karaoke-tube/ui";
+import { ActionList, Sheet, SongArt, SingWithPicker, formatTime, songParts, useSingWith, useT } from "@karaoke-tube/ui";
 import { useFavorites } from "../account/AccountContext";
 import css from "./SongSheet.module.css";
 
@@ -16,7 +16,7 @@ export function SongSheet({ song, onClose, onAdd }: { song: Song | null; onClose
       {song && parts && (
         <>
           <div className={css.head}>
-            <Artwork src={song.thumbnailUrl} label={song.title} size={56} explicit={song.explicit} />
+            <SongArt song={song} size={56} explicit={song.explicit} />
             <div className={css.text}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>

@@ -5,7 +5,7 @@ import type { Member, QueueItem } from "@karaoke-tube/shared";
 import { singerLabel, songParts } from "../format";
 import { useT } from "../i18n/context";
 import type { TFn } from "../i18n/core";
-import { Artwork } from "./Artwork";
+import { SongArt } from "./SongCard";
 import { AvatarStack } from "./Avatar";
 import { ExplicitBadge } from "./ExplicitBadge";
 import css from "./Rows.module.css";
@@ -67,7 +67,7 @@ export function QueueRow({
       )}
       {position !== undefined && !dragHandle && <span className={css.index}>{position}</span>}
       <div className={css.artBox}>
-        <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={compact ? 40 : 48} className={css.art} />
+        <SongArt song={item.song} size={compact ? 40 : 48} className={css.art} />
         {playing && (
           <span className={css.eqOverlay} aria-hidden>
             <Equalizer />

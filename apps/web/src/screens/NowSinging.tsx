@@ -3,7 +3,7 @@ import { ChevronDown, MonitorPlay, RotateCcw, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REACTIONS, REACTION_EMOJI, type Reaction } from "@karaoke-tube/shared";
 import {
-  Artwork,
+  SongArt,
   AvatarStack,
   IconButton,
   PlayButton,
@@ -103,7 +103,7 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
         {watching ? (
           <RemoteVideo item={item} playback={playback} />
         ) : (
-          <Artwork src={item.song.thumbnailUrl} label={item.song.title} radius="md" shadow className={css.art} />
+          <SongArt song={item.song} radius="md" shadow className={css.art} />
         )}
         {playback.state === "get_ready" && (
           <div className={css.getReady}>

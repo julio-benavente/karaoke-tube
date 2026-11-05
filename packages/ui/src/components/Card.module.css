@@ -34,6 +34,14 @@
   width: 100%;
 }
 
+.artSlot {
+  width: 100%;
+}
+
+.artSlot > * {
+  width: 100%;
+}
+
 .play {
   position: absolute;
   right: var(--kt-space-2);

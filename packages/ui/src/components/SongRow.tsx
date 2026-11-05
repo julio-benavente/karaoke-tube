@@ -5,7 +5,7 @@ import type { Song } from "@karaoke-tube/shared";
 import { formatTime, songParts } from "../format";
 import { useT } from "../i18n/context";
 import { ExplicitBadge } from "./ExplicitBadge";
-import { Artwork } from "./Artwork";
+import { SongArt } from "./SongCard";
 import css from "./Rows.module.css";
 
 export type SongRowProps = {
@@ -29,7 +29,7 @@ export function SongRow({ song, onAdd, added, adding, onClick, showDuration = tr
     <div className={css.row}>
       <button type="button" className={css.hit} onClick={onClick ?? onAdd} aria-label={t("song.by", { title, artist })} />
       {index !== undefined && <span className={css.index}>{index}</span>}
-      <Artwork src={song.thumbnailUrl} label={song.title} size={48} className={css.art} />
+      <SongArt song={song} size={48} className={css.art} />
       <div className={css.text}>
         <div className={css.title}>{title}</div>
         <div className={css.sub}>

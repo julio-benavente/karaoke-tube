@@ -5,7 +5,7 @@ import type { Member, Playback, QueueItem } from "@karaoke-tube/shared";
 import { singerSeeds, songParts } from "../format";
 import { usePlaybackPosition, useCountdown, isWaitingForTv } from "../hooks/room";
 import { ExplicitBadge } from "./ExplicitBadge";
-import { Artwork } from "./Artwork";
+import { SongArt } from "./SongCard";
 import { AvatarStack } from "./Avatar";
 import { IconButton, PlayButton } from "./Button";
 import { ProgressBar } from "./ProgressBar";
@@ -43,7 +43,7 @@ export function PlayerBar({ item, playback, members, onPause, onResume, onSkip, 
         {item && parts ? (
           <>
             <button type="button" className={css.artBtn} onClick={onOpen} aria-label={t("player.openNow")}>
-              <Artwork src={item.song.thumbnailUrl} label={item.song.title} size={56} />
+              <SongArt song={item.song} size={56} />
             </button>
             <div className={css.meta}>
               <div className={css.title}>{parts.title}</div>

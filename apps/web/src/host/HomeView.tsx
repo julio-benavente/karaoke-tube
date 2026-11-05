@@ -7,6 +7,7 @@ import {
   Shelf,
   ShortcutTile,
   SingWithButton,
+  SongArt,
   greeting,
   hueOf,
   songParts,
@@ -39,7 +40,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
   const tint = state.nowPlaying ? `hsl(${hueOf(state.nowPlaying.song.videoId)} 45% 30%)` : "var(--kt-hover)";
   const card = (s: Song) => {
     const p = songParts(s);
-    return <Card key={s.videoId} title={p.title} subtitle={p.artist} image={s.thumbnailUrl} onPlay={() => add(s)} />;
+    return <Card key={s.videoId} title={p.title} subtitle={p.artist} art={<SongArt song={s} radius="sm" shadow explicit={s.explicit} />} onPlay={() => add(s)} />;
   };
 
   return (
@@ -54,7 +55,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
       <h1 className={css.greeting}>{greeting(undefined, t)}</h1>
       <div className={css.shortcuts}>
         {shortcuts.map((s) => (
-          <ShortcutTile key={s.videoId} title={songParts(s).title} label={s.title} image={s.thumbnailUrl} onPlay={() => add(s)} />
+          <ShortcutTile key={s.videoId} title={songParts(s).title} label={s.title} art={<SongArt song={s} radius="none" explicit={s.explicit} />} onPlay={() => add(s)} />
         ))}
       </div>
       {roomSongs.length > 0 && <Shelf title={t("home.popular")}>{roomSongs.slice(0, 12).map(card)}</Shelf>}

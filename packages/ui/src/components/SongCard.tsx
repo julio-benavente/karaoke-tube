@@ -146,31 +146,68 @@ export function SongCard({ song, variant = "b", onClick, className }: { song: So
   );
 }
 
+/** A poster address at another size: both cover CDNs (Apple, Deezer) serve any square size. */
+export function posterAt(url: string, px: number): string {
+  return url.replace(/\/(\d+)x\1(?=[-b])/, `/${px}x${px}`);
+}
+
 /**
- * One song in a grid, always the same shape: a square cover with the title and artist under it. The cover is the song's
- * poster when it has one (`posterUrl`), otherwise the generated art, so posters and fallbacks sit side by side evenly.
- * The corner "E" marks explicit songs on either kind of cover (the text under it carries no badge).
+ * A song's picture: its album poster when the catalog has one, otherwise the generated cover (colour and pattern from
+ * the song, its initials on top). This replaces the YouTube video frame everywhere a song is shown, so a list never
+ * mixes lyrics-on-video thumbnails with covers. Give it a `size` (px) or let the parent's width decide.
  */
-export function SongTile({ song, posterUrl, onClick, className }: { song: Song; posterUrl?: string | null; onClick?: () => void; className?: string }) {
+export function SongArt({
+  song,
+  size,
+  radius = "xs",
+  shadow,
+  explicit,
+  className,
+}: {
+  song: Song;
+  size?: number | string;
+  radius?: "xs" | "sm" | "md" | "none";
+  shadow?: boolean;
+  /** Corner "E" for explicit songs: pass it where nothing next to the picture already shows the badge. */
+  explicit?: boolean;
+  className?: string;
+}) {
   const t = useT();
+  if (song.posterUrl) {
+    // Ask the CDN for about twice the display size on small pictures; bigger ones keep the 300px the catalog gave.
+    const src = typeof size === "number" && size <= 150 ? posterAt(song.posterUrl, Math.max(100, size * 2)) : song.posterUrl;
+    return <Artwork src={src} label={song.title} size={size} radius={radius} shadow={shadow} flat explicit={explicit} className={className} />;
+  }
   const { title, artist } = songParts(song);
   const color = `var(--kt-tile-${((hash(`${title}|${artist}`) >>> 5) % 12) + 1})`;
   const initials = title.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
   return (
-    <button type="button" className={clsx(css.tile, className)} onClick={onClick} data-testid="song-tile">
-      {posterUrl ? (
-        <Artwork src={posterUrl} label={song.title} radius="md" shadow flat explicit={song.explicit} className={css.tileCover} />
-      ) : (
-        <span className={clsx(css.cover, css.tileCover)} style={{ background: color }}>
-          <Pattern seed={song.videoId} />
-          <span className={css.tileInitials}>{initials}</span>
-          {song.explicit && (
-            <span className={css.tileE} title={t("song.explicit")} aria-label={t("song.explicit")} data-testid="explicit-mark">
-              E
-            </span>
-          )}
+    <span
+      className={clsx(css.art, className)}
+      style={{ width: size, height: size, background: color, borderRadius: radius === "none" ? 0 : `var(--kt-radius-${radius})`, boxShadow: shadow ? "var(--kt-shadow-card)" : undefined }}
+      aria-hidden
+    >
+      <Pattern seed={song.videoId} />
+      <span className={css.artInitials}>{initials}</span>
+      {explicit && (
+        <span className={css.tileE} title={t("song.explicit")} aria-label={t("song.explicit")} data-testid="explicit-mark">
+          E
         </span>
       )}
+    </span>
+  );
+}
+
+/**
+ * One song in a grid, always the same shape: a square cover with the title and artist under it. The cover is the song's
+ * poster when it has one, otherwise the generated art, so posters and fallbacks sit side by side evenly.
+ * The corner "E" marks explicit songs on either kind of cover (the text under it carries no badge).
+ */
+export function SongTile({ song, posterUrl, onClick, className }: { song: Song; posterUrl?: string | null; onClick?: () => void; className?: string }) {
+  const { title, artist } = songParts(song);
+  return (
+    <button type="button" className={clsx(css.tile, className)} onClick={onClick} data-testid="song-tile">
+      <SongArt song={posterUrl ? { ...song, posterUrl } : song} radius="md" shadow explicit={song.explicit} className={css.tileCover} />
       <span className={css.tileTitle}>{title}</span>
       <span className={css.tileArtist}>{artist}</span>
     </button>

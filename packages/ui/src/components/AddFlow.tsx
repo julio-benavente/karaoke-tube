@@ -3,7 +3,7 @@ import type { Song } from "@karaoke-tube/shared";
 import type { AddSingers } from "../hooks/add-song";
 import { songParts } from "../format";
 import { useT } from "../i18n/context";
-import { Artwork } from "./Artwork";
+import { SongArt } from "./SongCard";
 import { Button } from "./Button";
 import { Sheet } from "./Sheet";
 import { SingWithPicker, useSingWith } from "./SingWith";
@@ -55,7 +55,7 @@ function AddFlowSheet({ asking, onClose }: { asking: Ask | null; onClose: () => 
       {shown && parts && (
         <div className={css.sheet} data-testid="add-flow">
           <div className={css.head}>
-            <Artwork src={shown.song.thumbnailUrl} label={shown.song.title} size={56} explicit={shown.song.explicit} />
+            <SongArt song={shown.song} size={56} explicit={shown.song.explicit} />
             <div className={css.text}>
               <div className={css.title}>{parts.title}</div>
               <div className={css.sub}>{parts.artist}</div>

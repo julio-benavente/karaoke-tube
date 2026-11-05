@@ -39,7 +39,7 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5,
 
   return (
     <div className="kt-tv kt-tv-ready" role="status" aria-live="polite">
-      <div className="kt-tv-ready-bg" style={{ backgroundImage: `url("${item.song.thumbnailUrl}")` }} />
+      <div className="kt-tv-ready-bg" style={{ backgroundImage: `url("${item.song.posterUrl ?? item.song.thumbnailUrl}")` }} />
       <div className="kt-tv-ready-shade" />
       <div className="kt-tv-ready-body">
         <SingerAvatars item={item} members={members} wrap="kt-tv-avatars kt-tv-ready-avatars" className="kt-tv-ready-avatar" />

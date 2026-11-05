@@ -10,7 +10,7 @@ import {
   type QueueMode,
   type RoomSettings,
 } from "@karaoke-tube/shared";
-import { Avatar, AvatarPicker, Button, Chip, EmptyState, LanguageSwitcher, Logo, Spinner, TextField, Toggle, useT, type TKey } from "@karaoke-tube/ui";
+import { Avatar, AvatarPicker, Button, Chip, EmptyState, LanguageSwitcher, Logo, SongArt, Spinner, TextField, Toggle, useT, type TKey } from "@karaoke-tube/ui";
 import { useAccount } from "./AccountContext";
 import { useLiveParties } from "./useLiveParties";
 import { adoptLiveParty } from "../session";
@@ -315,7 +315,7 @@ function Favorites() {
     <section className={css.card}>
       {items.map(({ song }) => (
         <div key={song.videoId} className={css.row}>
-          <img className={css.thumb} src={song.thumbnailUrl} alt="" />
+          <SongArt song={song} size={48} explicit={song.explicit} />
           <div className={css.grow}>
             <div className={css.name}>{song.title}</div>
             <div className={css.sub}>{song.channel}</div>

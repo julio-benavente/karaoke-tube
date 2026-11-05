@@ -10,6 +10,7 @@ export function Card({
   title,
   subtitle,
   image,
+  art,
   round,
   onClick,
   onPlay,
@@ -19,6 +20,8 @@ export function Card({
   title: string;
   subtitle?: ReactNode;
   image?: string;
+  /** Replaces the image: any picture, e.g. a song's poster or generated cover. */
+  art?: ReactNode;
   round?: boolean;
   onClick?: () => void;
   onPlay?: () => void;
@@ -30,7 +33,7 @@ export function Card({
     <div className={clsx(css.card, className)}>
       <button type="button" className={css.hit} onClick={onClick ?? onPlay} aria-label={title} />
       <div className={css.artWrap}>
-        <Artwork src={image} label={title} shape={round ? "round" : "square"} radius="sm" shadow className={css.art} />
+        {art ? <div className={css.artSlot}>{art}</div> : <Artwork src={image} label={title} shape={round ? "round" : "square"} radius="sm" shadow className={css.art} />}
         {onPlay && (
           <span className={css.play}>
             <PlayButton playing={false} size={44} onClick={onPlay} label={playLabel ?? t("home.add")} />

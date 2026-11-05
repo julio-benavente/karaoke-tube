@@ -1,7 +1,7 @@
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
 import { TITLE_INFO, type QueueItem, type Recap } from "@karaoke-tube/shared";
-import { Artwork, Avatar, AvatarStack, Button, songParts, titleDesc, titleName, useLang, useT, type TFn } from "@karaoke-tube/ui";
+import { Avatar, SongArt, AvatarStack, Button, songParts, titleDesc, titleName, useLang, useT, type TFn } from "@karaoke-tube/ui";
 import { cheersOf, shareRecap, singerCount, songsOf, type ShareResult } from "./recap";
 import css from "./RecapView.module.css";
 
@@ -36,7 +36,7 @@ export function RecapView({ recap, meId }: { recap: Recap; meId?: string }) {
         <section className={css.moment}>
           <span className={css.sectionLabel}>{t("recap.moment")}</span>
           <div className={css.momentRow}>
-            <Artwork src={moment.item.song.thumbnailUrl} label={moment.item.song.videoId} size={72} radius="sm" shadow explicit={moment.item.song.explicit} />
+            <SongArt song={moment.item.song} size={72} radius="sm" shadow explicit={moment.item.song.explicit} />
             <div className={css.momentText}>
               <b>{songParts(moment.item.song).title}</b>
               <span>

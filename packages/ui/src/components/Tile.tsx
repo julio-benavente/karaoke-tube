@@ -131,6 +131,7 @@ export function Tile({
 export function ShortcutTile({
   title,
   image,
+  art,
   label,
   onClick,
   onPlay,
@@ -139,6 +140,8 @@ export function ShortcutTile({
 }: {
   title: string;
   image?: string;
+  /** Replaces the image: any picture, e.g. a song's poster or generated cover. */
+  art?: ReactNode;
   /** For the artwork fallback colour. */
   label?: string;
   onClick?: () => void;
@@ -150,7 +153,7 @@ export function ShortcutTile({
   return (
     <div className={css.shortcut}>
       <button type="button" className={css.shortcutHit} onClick={onClick} aria-label={title} />
-      <Artwork src={image} label={label ?? title} className={css.shortcutArt} radius="none" />
+      {art ? <span className={clsx(css.shortcutArt, css.shortcutArtSlot)}>{art}</span> : <Artwork src={image} label={label ?? title} className={css.shortcutArt} radius="none" />}
       <span className={css.shortcutTitle}>{title}</span>
       {trailing}
       {onPlay && (

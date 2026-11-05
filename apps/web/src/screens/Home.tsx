@@ -6,6 +6,7 @@ import {
   Avatar,
   BROWSE_PRESETS,
   Card,
+  SongArt,
   Chip,
   ChipRow,
   SAMPLE_SONGS,
@@ -74,7 +75,7 @@ export function HomeScreen() {
         key={s.videoId}
         title={p.title}
         subtitle={p.artist}
-        image={s.thumbnailUrl}
+        art={<SongArt song={s} radius="sm" shadow explicit={s.explicit} />}
         onClick={() => setSheetSong(s)}
         onPlay={() => add(s)}
       />
@@ -118,7 +119,7 @@ export function HomeScreen() {
                   key={s.videoId}
                   title={songParts(s).title}
                   label={s.title}
-                  image={s.thumbnailUrl}
+                  art={<SongArt song={s} radius="none" explicit={s.explicit} />}
                   onClick={() => setSheetSong(s)}
                   onPlay={() => add(s)}
                 />
@@ -135,7 +136,7 @@ export function HomeScreen() {
                 key={s.videoId}
                 title={songParts(s).title}
                 label={s.title}
-                image={s.thumbnailUrl}
+                art={<SongArt song={s} radius="none" explicit={s.explicit} />}
                 onClick={() => setSheetSong(s)}
                 onPlay={() => add(s)}
                 playLabel={pending.includes(s.videoId) ? t("home.adding") : t("home.add")}
