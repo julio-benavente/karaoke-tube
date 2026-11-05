@@ -10,6 +10,7 @@ import {
   type RoomSettings,
 } from "@karaoke-tube/shared";
 import type { Context, Next } from "hono";
+import { logEvent } from "../log";
 import { userFromRequest } from "./account";
 import { ADJECTIVES, NOUNS } from "../words";
 import { ADJECTIVES_ES, NOUNS_ES } from "../words-es";
@@ -75,7 +76,10 @@ export const roomRoutes = new Hono<{ Bindings: Env }>()
     for (let attempt = 0; attempt < 20; attempt++) {
       const code = randomCode(language);
       const created = await roomStub(c.env, code).init(code, nickname, avatarSeed, settings);
-      if (created) return c.json(created satisfies CreateRoomResponse, 201);
+      if (created) {
+        logEvent("room_created", { lang: language, signedIn: !!c.req.header("Authorization") });
+        return c.json(created satisfies CreateRoomResponse, 201);
+      }
     }
     return c.json({ error: "Couldn't find a free room code, try again" }, 503);
   })

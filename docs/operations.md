@@ -16,6 +16,7 @@ Run the export before risky changes (schema edits, big deploys). Room state live
 ## Monitoring
 
 - `observability` is enabled in `apps/api/wrangler.jsonc`: Workers Logs keep `console.log` / `console.error` (for example `[room] handler failed`). Read them in the Cloudflare dashboard → Workers → karaoke-tube → Logs, or live with `pnpm wrangler tail`.
+- The server prints one JSON line per key event (`apps/api/src/log.ts`), so logs can be filtered and counted by field in the dashboard: `room_created` (lang, signedIn), `member_joined`, `song_added` (status, duet, byHost, explicit, videoId), `song_ended`, `song_unplayable` (videoId, channel), `room_ended` (reason: host / host_left / abandoned, songsPlayed, songsSkipped, members), `room_error` (code, msg: a client did something the room refused) and `handler_failed` (a real bug). `room` is a short id that ties one party's lines together. Nothing personal is logged: no nicknames, emails, join codes or keys.
 - Add an alert in the dashboard (Notifications → Workers: "high error rate") so someone is told when requests start failing. This is account setup, not code.
 - Front-end errors are not collected. If you want them, add Sentry (or similar) to `apps/web`; it needs an account and a DSN, so it is not in the code yet.
 

@@ -22,6 +22,7 @@ import {
   type Song,
   SCREEN_MEMBER_ID,
 } from "@karaoke-tube/shared";
+import { logEvent } from "../log";
 import { orderUpNext, shiftPins, turnHolders, type StoredItem } from "../queue";
 import { computeTitles } from "../titles";
 
@@ -217,8 +218,10 @@ export class Room extends DurableObject<Env> {
       await this.handle(ws, msg);
     } catch (e) {
       if (e instanceof RoomError) {
+        logEvent("room_error", { room: this.roomTag(), code: e.code, msg: msg.type });
         this.send(ws, { type: "error", code: e.code, message: e.message });
       } else {
+        logEvent("handler_failed", { room: this.roomTag(), msg: msg.type });
         console.error("[room] handler failed", e);
         this.send(ws, { type: "error", code: "invalid_message", message: "Something went wrong" });
       }
@@ -293,7 +296,7 @@ export class Room extends DurableObject<Env> {
     const anyone = this.ctx.getWebSockets().some((s) => attachment(s).memberId && attachment(s).memberId !== SCREEN_MEMBER_ID);
     if (idleSince && !anyone && now >= idleSince + IDLE_TTL_MS) {
       console.log("[room] ending an abandoned party");
-      await this.endRoom();
+      await this.endRoom("abandoned");
       return;
     }
     await this.scheduleAlarm();
@@ -441,8 +444,13 @@ export class Room extends DurableObject<Env> {
     else await this.ctx.storage.deleteAlarm();
   }
 
+  /** A short id for log lines: the same for every line of one party, and not the join code. */
+  private roomTag(): string {
+    return this.ctx.id.toString().slice(0, 8);
+  }
+
   /** End the party: status ended, tell everyone, delete storage after ENDED_TTL_MS. */
-  private async endRoom() {
+  private async endRoom(reason: "host" | "abandoned" | "host_left" = "host") {
     const now = Date.now();
     // The song on screen when the party ends still counts as sung if it started.
     const current = this.nowPlayingItem();
@@ -454,6 +462,15 @@ export class Room extends DurableObject<Env> {
     this.setMeta("awardWindow", null);
     this.setPlayback(idlePlayback(now));
     await this.saveRecap(now);
+    const items = this.itemRows();
+    logEvent("room_ended", {
+      room: this.roomTag(),
+      reason,
+      songsPlayed: items.filter((i) => i.status === "played").length,
+      songsSkipped: items.filter((i) => i.status === "skipped").length,
+      members: this.memberRows().length,
+      lang: this.settings().language,
+    });
     await this.scheduleAlarm();
     this.broadcastState();
     this.broadcast({ type: "ended" });
@@ -527,6 +544,14 @@ export class Room extends DurableObject<Env> {
           this.nextAddedAt(),
           everyone ? 1 : 0,
         );
+        logEvent("song_added", {
+          room: this.roomTag(),
+          status,
+          duet: singerIds.length > 1 || everyone,
+          byHost: isHost,
+          explicit: song.explicit === true,
+          videoId: song.videoId,
+        });
         await this.afterQueueChange();
         break;
       }
@@ -608,7 +633,7 @@ export class Room extends DurableObject<Env> {
           this.sql.exec("UPDATE members SET role = 'host' WHERE id = ?", succession.originalId);
           this.setMeta("succession", null);
         } else if (me.role === "host") {
-          await this.endRoom();
+          await this.endRoom("host_left");
           return;
         }
         await this.removeMemberSongs(me.id);
@@ -759,11 +784,13 @@ export class Room extends DurableObject<Env> {
         else this.setPlayback({ ...pb, positionSec, updatedAt: now });
         break;
       case "ended":
+        logEvent("song_ended", { room: this.roomTag(), videoId: item.song.videoId, durationSec: item.song.durationSec });
         this.setItem(item.id, { status: "played" });
         this.openAwardWindow(item);
         await this.advance();
         break;
       case "error":
+        logEvent("song_unplayable", { room: this.roomTag(), videoId: item.song.videoId, channel: item.song.channel });
         this.setItem(item.id, { status: "skipped" });
         this.notifyUnplayable(item);
         this.openAwardWindow(item);
@@ -835,6 +862,7 @@ export class Room extends DurableObject<Env> {
     this.attach(ws, memberId);
     this.send(ws, { type: "welcome", memberId, key, state: this.state() });
     this.broadcastState(undefined, ws);
+    logEvent("member_joined", { room: this.roomTag(), members: this.memberRows().length });
     await this.markActive();
   }
 
