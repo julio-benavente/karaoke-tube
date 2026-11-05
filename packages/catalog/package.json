@@ -16,7 +16,8 @@
     "build-catalog": "node scripts/build.ts",
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "label": "node scripts/label.ts"
+    "label": "node scripts/label.ts",
+    "covers": "node scripts/covers.ts"
   },
   "dependencies": {
     "@karaoke-tube/shared": "workspace:*",

@@ -10,7 +10,8 @@ dist/
 !.env.example
 *.log
 
-# Raw YouTube data pulled by packages/catalog/scripts/collect.mjs (hundreds of MB; re-creatable).
+# Raw YouTube data pulled by packages/catalog/scripts/collect.mjs, plus the poster lookup cache in raw/covers (hundreds
+# of MB). Re-creatable, but it costs YouTube quota and hours of lookups: keep it on disk, never commit it.
 data/catalog/raw
 .DS_Store
 

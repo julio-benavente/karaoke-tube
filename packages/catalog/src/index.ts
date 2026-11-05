@@ -7,3 +7,5 @@ export type { CatalogIndex, CatalogSearchApi, CatalogSearchOptions } from "./sea
 export { filterSongs } from "./filter";
 export type { SongFilter } from "./filter";
 export { DECADE_START, decadeOfYear } from "./taxonomy";
+export { COVERS_URL, artworkUrl, createCovers, loadCovers } from "./covers";
+export type { CatalogStamp, Covers, CoversFile, LoadCoversOptions } from "./covers";
