@@ -205,6 +205,17 @@ describe("phoneless guests", () => {
   });
 });
 
+describe("E2 change avatar in the room", () => {
+  it("a guest changes their own avatar and the host sees it live", async () => {
+    const { code, host } = await party();
+    const ana = await guest(code, "Ana");
+    const state = await ana.client.act({ type: "update_avatar", avatarSeed: "v2:girl:new" });
+    expect(state.members.find((m) => m.id === ana.id)?.avatarSeed).toBe("v2:girl:new");
+    const seen = await host.waitForState((s) => s.members.find((m) => m.id === ana.id)?.avatarSeed === "v2:girl:new");
+    expect(seen.members.length).toBe(2);
+  });
+});
+
 describe("E1 one cheer per song", () => {
   it("a second reaction during the same performance is refused; the next song gets a fresh cheer", async () => {
     const { code, host } = await party();

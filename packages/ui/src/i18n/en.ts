@@ -139,6 +139,8 @@ export const en = {
   "avatar.skinGroup": "Skin tone",
   "avatar.skin": "Skin tone {n}",
   "avatar.shuffle": "Shuffle",
+  "avatar.change": "Change your avatar",
+  "avatar.save": "Save",
   "song.by": "{title} by {artist}",
   "song.addAgain": "Add {title} again",
   "song.addNamed": "Add {title} to queue",

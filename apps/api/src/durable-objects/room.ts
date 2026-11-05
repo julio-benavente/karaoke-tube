@@ -637,6 +637,11 @@ export class Room extends DurableObject<Env> {
         await this.addMember(msg.nickname, msg.avatarSeed, "guest", true);
         break;
       }
+      case "update_avatar": {
+        if (me.phoneless) throw new RoomError("not_allowed", "A guest without a phone can't do that.");
+        this.sql.exec("UPDATE members SET avatar_seed = ? WHERE id = ?", msg.avatarSeed.slice(0, 64), me.id);
+        break;
+      }
       case "show_join": {
         requireHost();
         this.broadcast({ type: "join_flash" });
@@ -1314,6 +1319,9 @@ export function parseClientMessage(text: string): ClientMessage {
       break;
     case "add_guest":
       ok(isStr(m.nickname, 100) && typeof m.avatarSeed === "string");
+      break;
+    case "update_avatar":
+      ok(isStr(m.avatarSeed, 100));
       break;
     case "update_settings":
       ok(!!m.settings && typeof m.settings === "object");

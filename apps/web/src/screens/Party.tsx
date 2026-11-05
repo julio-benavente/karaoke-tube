@@ -1,10 +1,11 @@
 import { useT } from "@karaoke-tube/ui";
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, Copy, Crown, ListPlus, LogOut, MoreHorizontal, Share2, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { Check, Copy, Crown, ListPlus, LogOut, MoreHorizontal, Pencil, Share2, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { ActionList, AddGuestSheet, Avatar, Button, Pill, Sheet, useRoom, useSingWith } from "@karaoke-tube/ui";
+import { ActionList, AddGuestSheet, Avatar, Button, ChangeAvatarSheet, Pill, Sheet, useRoom, useSingWith } from "@karaoke-tube/ui";
+import { loadIdentity, saveIdentity } from "../session";
 import { useShell } from "./RoomShell";
 import css from "./Party.module.css";
 
@@ -17,6 +18,7 @@ export function PartyScreen() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [menu, setMenu] = useState<Member | null>(null);
   const [addGuest, setAddGuest] = useState(false);
+  const [changeAvatar, setChangeAvatar] = useState(false);
   const sing = useSingWith();
   const navigate = useNavigate();
   if (!state || !me) return null;
@@ -84,6 +86,11 @@ export function PartyScreen() {
                 </Pill>
               )}
               {m.role === "cohost" && <Pill>{t("party.cohost")}</Pill>}
+              {m.id === me.id && (
+                <button type="button" className={css.more} onClick={() => setChangeAvatar(true)} aria-label={t("avatar.change")} data-testid="change-avatar">
+                  <Pencil size={18} />
+                </button>
+              )}
               {isHost && m.id !== me.id && m.role !== "host" && (
                 <button type="button" className={css.more} onClick={() => setMenu(m)} aria-label={`Options for ${m.nickname}`}>
                   <MoreHorizontal />
@@ -112,6 +119,11 @@ export function PartyScreen() {
       </Sheet>
 
       <AddGuestSheet open={addGuest} onClose={() => setAddGuest(false)} />
+      <ChangeAvatarSheet
+        open={changeAvatar}
+        onClose={() => setChangeAvatar(false)}
+        onChanged={(avatarSeed) => saveIdentity({ ...loadIdentity(), avatarSeed })}
+      />
 
       <Sheet open={!!menu} onClose={() => setMenu(null)} label={t("party.guestOptions")}>
         {menu && (

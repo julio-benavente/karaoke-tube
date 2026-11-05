@@ -142,6 +142,8 @@ export const es: Dict = {
   "avatar.skinGroup": "Tono de piel",
   "avatar.skin": "Tono de piel {n}",
   "avatar.shuffle": "Mezclar",
+  "avatar.change": "Cambia tu avatar",
+  "avatar.save": "Guardar",
   "song.by": "{title} de {artist}",
   "song.addAgain": "Agregar {title} otra vez",
   "song.addNamed": "Agregar {title} a la cola",
