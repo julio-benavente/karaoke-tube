@@ -47,6 +47,19 @@ describe("C1 duets & group songs", () => {
   });
 });
 
+describe("hide explicit songs", () => {
+  it("keeps the explicit and duet flags, and refuses explicit songs once the host hides them", async () => {
+    const { host } = await party();
+    await host.act({ type: "add_song", song: song("now") });
+    const flagged = await host.act({ type: "add_song", song: { ...song("spicy"), explicit: true, duet: true } });
+    expect(flagged.upNext.at(-1)?.song).toMatchObject({ explicit: true, duet: true });
+    const state = await host.act({ type: "update_settings", settings: { hideExplicit: true } });
+    expect(state.settings.hideExplicit).toBe(true);
+    expect(await host.expectError({ type: "add_song", song: { ...song("spicy 2"), explicit: true } })).toBe("explicit_hidden");
+    await host.act({ type: "add_song", song: song("clean") });
+  });
+});
+
 describe("C6 host picks", () => {
   it("guests' songs wait for approval; hosts approve or decline", async () => {
     const { code, host } = await party();

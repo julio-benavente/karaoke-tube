@@ -249,3 +249,18 @@ describe("createCatalogSearchApi", () => {
     expect(remote.search).not.toHaveBeenCalled();
   });
 });
+
+describe("explicit songs", () => {
+  const explicitVideos: RawVideo[] = [
+    { id: "cleansong01", channelKey: "sk", title: "Queen - Bohemian Rhapsody (Karaoke Version)", durationSec: 240, views: 100, live: false, isPublic: true },
+    { id: "spicysong01", channelKey: "sk", title: "Some Artist - Bad Bitch Anthem (Karaoke Version)", durationSec: 240, views: 100, live: false, isPublic: true },
+  ];
+  const index = createCatalogIndex(buildCatalog(explicitVideos, channels, new Date("2026-01-01")).catalog);
+
+  it("flags songs whose title looks explicit and can filter to them", () => {
+    const all = index.search("anthem");
+    expect(all[0]?.explicit).toBe(true);
+    expect(index.search("bohemian")[0]?.explicit).toBeUndefined();
+    expect(titles(index.browse({ tag: "explicit" }))).toEqual(["Some Artist - Bad Bitch Anthem"]);
+  });
+});
