@@ -1,14 +1,13 @@
 import { DurableObject } from "cloudflare:workers";
 
 /** How long a code on a TV stays valid. The TV replaces it a bit before that, so the code on screen is always fresh. */
-const TTL_MS = 6 * 60_000;
-/** Unambiguous letters and digits (no 0/O, 1/I/L), easy to read off a TV and type on a phone. */
+const TTL_MS = 3 * 60_000;
 
 type Row = { id: string; code: string; created_at: number; room_code: string | null; screen_key: string | null };
 
 /**
  * One instance for the whole app (`idFromName("pairing")`): hands out short codes to TVs and passes the result
- * of a pairing back to the TV that is showing the code. Rows live at most 15 minutes.
+ * of a pairing back to the TV that is showing the code. Rows live at most 3 minutes.
  */
 export class Pairing extends DurableObject<Env> {
   private sql = this.ctx.storage.sql;

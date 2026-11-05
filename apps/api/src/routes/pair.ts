@@ -14,6 +14,16 @@ const limit = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();
 };
 
+/** Entering a code is the one guessable step: 20 tries a minute per IP (the codes are 5 digits and live 3 minutes). */
+const claimLimit = async (c: Context<{ Bindings: Env }>, next: Next) => {
+  const ip = c.req.header("CF-Connecting-IP");
+  if (ip) {
+    const { success } = await c.env.PAIR_CLAIM_LIMITER.limit({ key: `pair-claim:${ip}` });
+    if (!success) return c.json({ error: "bad_request", message: "Too many tries, wait a minute and try again" } satisfies ApiErrorResponse, 429);
+  }
+  await next();
+};
+
 const fail = (c: Context, status: 400 | 403 | 404, message: string) =>
   c.json({ error: status === 404 ? "not_found" : "bad_request", message } satisfies ApiErrorResponse, status);
 
@@ -28,7 +38,7 @@ export const pairRoutes = new Hono<{ Bindings: Env }>()
   .get("/:id", limit, async (c) => c.json(await stub(c.env).status(c.req.param("id") ?? "")))
 
   // The host app pairs the TV that shows `code` with its party. Only a host (or temporary host) can.
-  .post("/claim", limit, async (c) => {
+  .post("/claim", limit, claimLimit, async (c) => {
     const body = await c.req.json<Partial<PairClaimRequest>>().catch(() => null);
     const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().replace(/[\s-]/g, "") : "";
     const roomCode = normalizeRoomCode(typeof body?.roomCode === "string" ? body.roomCode : "");

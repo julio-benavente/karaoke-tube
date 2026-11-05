@@ -47,7 +47,9 @@
     { "name": "ROOM_LOOKUP_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } },
     { "name": "ROOM_CREATE_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
     { "name": "AUTH_LIMITER", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-    { "name": "CLIENT_ERROR_LIMITER", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
+    { "name": "CLIENT_ERROR_LIMITER", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } },
+    // TV pairing codes have 5 digits: a person gets 20 tries a minute (per IP) to enter one.
+    { "name": "PAIR_CLAIM_LIMITER", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } }
   ],
 
   // Highest event tier recorded (see src/log.ts): 3 = everything, 2 = drop the busiest, 1 = only the vital ones.
