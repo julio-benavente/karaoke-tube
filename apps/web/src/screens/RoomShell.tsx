@@ -1,4 +1,4 @@
-import { CircleSlash, Home, ListMusic, PartyPopper, Search, WifiOff } from "lucide-react";
+import { CircleSlash, Home, ListMusic, PartyPopper, Search, Settings as SettingsIcon, WifiOff } from "lucide-react";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Navigate, Outlet, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import {
@@ -208,7 +208,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
         </main>
         <BottomTabs
           active={tab}
-          onSelect={(k) => navigate(k === "home" ? `/r/${code}` : `/r/${code}/${k}`)}
+          onSelect={(k) => navigate(k === "settings" ? `/host/${code}/settings` : k === "home" ? `/r/${code}` : `/r/${code}/${k}`)}
           tabs={[
             { key: "home", label: t("tab.home"), icon: <Home strokeWidth={tab === "home" ? 2.6 : 2} /> },
             { key: "search", label: t("tab.search"), icon: <Search strokeWidth={tab === "search" ? 2.8 : 2} /> },
@@ -219,6 +219,8 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
               badge: mine || undefined,
             },
             { key: "party", label: t("tab.party"), icon: <PartyPopper strokeWidth={tab === "party" ? 2.4 : 2} /> },
+            // Co-hosts change the party settings in the host app, which opens straight on that page.
+            ...(me?.role === "cohost" ? [{ key: "settings", label: t("nav.settings"), icon: <SettingsIcon strokeWidth={2} /> }] : []),
           ]}
         >
           {state.nowPlaying && (

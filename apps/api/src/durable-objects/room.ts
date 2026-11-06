@@ -638,7 +638,9 @@ export class Room extends DurableObject<Env> {
         break;
       }
       case "set_role": {
-        if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can change roles.");
+        // A co-host may step down on their own; every other change is the host's.
+        const steppingDown = me.role === "cohost" && msg.memberId === me.id && msg.role === "guest";
+        if (me.role !== "host" && !steppingDown) throw new RoomError("not_allowed", "Only the host can change roles.");
         const target = this.memberRow(msg.memberId);
         if (!target || target.role === "host") throw new RoomError("not_allowed", "Can't change that member's role.");
         if (target.phoneless) throw new RoomError("not_allowed", "A guest without a phone can't be a co-host.");

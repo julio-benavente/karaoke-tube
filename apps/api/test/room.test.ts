@@ -208,6 +208,11 @@ describe("permissions", () => {
     expect(await ben.client.expectError({ type: "add_song", song: song() })).toBe("not_allowed");
     expect(await ana.client.expectError({ type: "end_party" })).toBe("not_allowed");
     expect(await ana.client.expectError({ type: "set_role", memberId: ben.id, role: "cohost" })).toBe("not_allowed");
+
+    // She can step down herself, and then the host powers are gone.
+    const after = await ana.client.act({ type: "set_role", memberId: ana.id, role: "guest" });
+    expect(after.members.find((m) => m.id === ana.id)?.role).toBe("guest");
+    expect(await ana.client.expectError({ type: "update_settings", settings: { hostsOnlyAdd: false } })).toBe("not_allowed");
   });
 
   it("kick removes the member and their waiting songs", async () => {

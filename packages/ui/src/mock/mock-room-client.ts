@@ -398,7 +398,7 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
         if (!roomState.nowPlaying) return;
         return commit({ ...roomState, playback: { ...roomState.playback, positionSec: 0, updatedAt: Date.now() } });
       case "set_role":
-        if (sender?.role !== "host") return deny();
+        if (sender?.role !== "host" && !(sender?.role === "cohost" && msg.memberId === sender.id && msg.role === "guest")) return deny();
         return commit({
           ...roomState,
           members: roomState.members.map((m) => (m.id === msg.memberId ? { ...m, role: msg.role } : m)),
