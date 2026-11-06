@@ -48,7 +48,8 @@ export function SearchView() {
 
   return (
     <div className={css.view}>
-      <header className={css.viewTop}>
+      {phone && <h1 className={`${css.pageTitle} ${css.searchTitle}`}>{t("tab.search")}</h1>}
+      <header className={`${css.viewTop} ${css.searchHeader}`}>
         <label className={css.searchField}>
           <SearchIcon size={20} className={css.searchIcon} aria-hidden />
           <span className="kt-sr-only">{t("search.songs")}</span>

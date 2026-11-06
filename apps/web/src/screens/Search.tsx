@@ -10,7 +10,6 @@ import {
   ChipRow,
   EmptyState,
   Sheet,
-  SingWithButton,
   SongRow,
   TextField,
   Tile,
@@ -106,7 +105,6 @@ export function SearchScreen() {
           )}
         </label>
         <ChipRow className={css.chips}>
-          <SingWithButton />
           <Chip icon={<Link2 size={16} />} onClick={pasteFromClipboard}>
             {t("search.paste")}
           </Chip>

@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Search as SearchIcon } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
 import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
 import { useSearchPrime } from "../useSearchPrime";
@@ -26,7 +26,7 @@ export function SettingsView({ onSearch }: { onSearch: () => void }) {
       {searchPrime.proxy}
       <header className={`${css.viewTop} ${css.viewTopFlow}`}>
         <button type="button" className={css.fakeSearch} onClick={() => { searchPrime.prime(); onSearch(); }}>
-          {t("search.placeholder")}
+          <SearchIcon size={18} aria-hidden /> {t("search.placeholder")}
         </button>
       </header>
       <h1 className={css.pageTitle}>{t("nav.settings")}</h1>

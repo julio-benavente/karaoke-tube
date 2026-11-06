@@ -1,3 +1,4 @@
+import { Search as SearchIcon } from "lucide-react";
 import { useEffect } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import {
@@ -46,7 +47,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
       {searchPrime.proxy}
       <header className={`${css.viewTop} ${css.viewTopFlow}`}>
         <button type="button" className={css.fakeSearch} onClick={() => { searchPrime.prime(); onSearch(); }}>
-          {t("search.placeholder")}
+          <SearchIcon size={18} aria-hidden /> {t("search.placeholder")}
         </button>
       </header>
       <h1 className={css.greeting}>{greeting(undefined, t)}</h1>

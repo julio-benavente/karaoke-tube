@@ -410,15 +410,16 @@
 .searchField {
   display: flex;
   align-items: center;
+  gap: var(--kt-space-2);
   width: min(100%, 420px);
   height: var(--kt-control-lg);
   border-radius: var(--kt-radius-full);
-  /* The look it used to get only on hover, so the bar is easy to see all the time. */
-  background: var(--kt-hover);
-  box-shadow: inset 0 0 0 1px var(--kt-white-10);
-  color: var(--kt-text-2);
+  /* The one search bar of the app: white, dark text (same as the guest Search). */
+  background: var(--kt-text);
+  color: #4d4652;
   font-size: var(--kt-text-md);
-  transition: background-color var(--kt-fast) var(--kt-ease), box-shadow var(--kt-fast) var(--kt-ease);
+  font-weight: var(--kt-weight-medium);
+  transition: box-shadow var(--kt-fast) var(--kt-ease);
 }
 
 .fakeSearch {
@@ -426,9 +427,9 @@
   text-align: left;
 }
 
-.fakeSearch:hover,
-.searchField:hover {
-  background: var(--kt-white-20);
+.fakeSearch svg {
+  flex: none;
+  color: var(--kt-base);
 }
 
 .searchField {
@@ -436,13 +437,13 @@
 }
 
 .searchField:focus-within {
-  box-shadow: inset 0 0 0 2px var(--kt-text);
+  box-shadow: 0 0 0 3px var(--kt-white-30);
 }
 
 .searchIcon {
   position: absolute;
   left: 14px;
-  color: var(--kt-text-2);
+  color: var(--kt-base);
 }
 
 .searchField input {
@@ -451,7 +452,8 @@
   padding: 0 44px;
   border: 0;
   background: none;
-  color: var(--kt-text);
+  color: var(--kt-base);
+  font-weight: var(--kt-weight-medium);
   font-size: var(--kt-text-md);
   outline: none;
   -webkit-appearance: none;
@@ -463,7 +465,7 @@
 }
 
 .searchField input::placeholder {
-  color: var(--kt-text-2);
+  color: #4d4652;
 }
 
 .searchClear {
@@ -473,7 +475,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  color: var(--kt-text-2);
+  color: var(--kt-base);
 }
 
 @media (pointer: coarse) {
@@ -865,33 +867,25 @@
   width: 100%;
 }
 
-/* The real search field is white on a phone, like the guest Search screen. */
+/* Search on a phone, spaced like the guest Search: title, then the white bar with the chips 12px under it. */
+.mobileMain .searchTitle {
+  margin-top: var(--kt-space-5);
+}
+
+.mobileMain .searchHeader {
+  height: auto;
+  margin-bottom: 0;
+  padding-top: var(--kt-space-2);
+}
+
+.mobileMain .searchHeader + .filterRow {
+  margin-top: calc(-1 * var(--kt-space-3));
+}
+
+/* On a phone the bars are squarer, like the guest Search. */
+.mobileMain .fakeSearch,
 .mobileMain .searchField {
-  background: var(--kt-text);
-  box-shadow: none;
   border-radius: var(--kt-radius-xs);
-}
-
-.mobileMain .searchField:hover {
-  background: var(--kt-text);
-}
-
-.mobileMain .searchField:focus-within {
-  box-shadow: 0 0 0 3px var(--kt-white-30);
-}
-
-.mobileMain .searchField input {
-  color: var(--kt-base);
-  font-weight: var(--kt-weight-medium);
-}
-
-.mobileMain .searchField input::placeholder {
-  color: #4d4652;
-}
-
-.mobileMain .searchField .searchIcon,
-.mobileMain .searchField .searchClear {
-  color: var(--kt-base);
 }
 
 .mobileMain .greeting,
