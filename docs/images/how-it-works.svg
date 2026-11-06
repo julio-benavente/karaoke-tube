@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" role="img" aria-label="How a party works: 1. Open the TV, 2. Join by phone, 3. Take turns">
+  <rect width="960" height="300" rx="20" fill="#1c0d15"/>
+  <g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" text-anchor="middle">
+    <!-- step 1: TV -->
+    <circle cx="160" cy="62" r="18" fill="#ff4d82"/><text x="160" y="69" font-size="20" font-weight="700" fill="#1c0d15">1</text>
+    <rect x="95" y="100" width="130" height="86" rx="8" fill="#2b1520" stroke="#ff4d82" stroke-width="3"/>
+    <rect x="145" y="186" width="30" height="12" fill="#ff4d82"/><rect x="125" y="198" width="70" height="6" rx="3" fill="#ff4d82"/>
+    <text x="160" y="150" font-size="15" font-weight="700" fill="#ffffff">hip honest harbor</text>
+    <text x="160" y="240" font-size="20" font-weight="700" fill="#ffffff">Open the TV</text>
+    <text x="160" y="264" font-size="15" fill="#e8b9c8">One screen, one code</text>
+    <!-- arrow -->
+    <path d="M262 150 h46 m-10 -10 l10 10 l-10 10" fill="none" stroke="#ff4d82" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- step 2: phones -->
+    <circle cx="480" cy="62" r="18" fill="#ff4d82"/><text x="480" y="69" font-size="20" font-weight="700" fill="#1c0d15">2</text>
+    <rect x="410" y="96" width="44" height="86" rx="9" fill="#2b1520" stroke="#ff4d82" stroke-width="3"/><circle cx="432" cy="132" r="9" fill="#ff4d82"/>
+    <rect x="458" y="108" width="44" height="86" rx="9" fill="#2b1520" stroke="#ff4d82" stroke-width="3"/><circle cx="480" cy="144" r="9" fill="#ffd166"/>
+    <rect x="506" y="96" width="44" height="86" rx="9" fill="#2b1520" stroke="#ff4d82" stroke-width="3"/><circle cx="528" cy="132" r="9" fill="#7be0c3"/>
+    <text x="480" y="240" font-size="20" font-weight="700" fill="#ffffff">Join by phone</text>
+    <text x="480" y="264" font-size="15" fill="#e8b9c8">Scan the QR, pick a name, add songs</text>
+    <!-- arrow -->
+    <path d="M582 150 h46 m-10 -10 l10 10 l-10 10" fill="none" stroke="#ff4d82" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- step 3: queue -->
+    <circle cx="800" cy="62" r="18" fill="#ff4d82"/><text x="800" y="69" font-size="20" font-weight="700" fill="#1c0d15">3</text>
+    <rect x="730" y="98" width="140" height="26" rx="13" fill="#ff4d82"/><text x="800" y="116" font-size="14" font-weight="700" fill="#1c0d15">Ana · singing now</text>
+    <rect x="730" y="132" width="140" height="22" rx="11" fill="#3a1d2b"/><text x="800" y="148" font-size="13" fill="#ffffff">Ben · up next</text>
+    <rect x="730" y="160" width="140" height="22" rx="11" fill="#3a1d2b"/><text x="800" y="176" font-size="13" fill="#ffffff">Cleo</text>
+    <text x="800" y="240" font-size="20" font-weight="700" fill="#ffffff">Take turns, fairly</text>
+    <text x="800" y="264" font-size="15" fill="#e8b9c8">Songs start on their own</text>
+  </g>
+</svg>
