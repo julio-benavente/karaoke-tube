@@ -280,7 +280,7 @@ function Host() {
               }
             />
           )}
-          {view === "settings" && <SettingsView />}
+          {view === "settings" && <SettingsView onSearch={() => setView("search")} />}
         </main>
         <BottomTabs
           active={tab}
@@ -321,7 +321,7 @@ function Host() {
         <NextSongFor />
         {view === "home" && <HomeView onSearch={() => setView("search")} />}
         {view === "search" && <SearchView />}
-        {view === "settings" && <SettingsView />}
+        {view === "settings" && <SettingsView onSearch={() => setView("search")} />}
       </main>
       {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
       <div className={css.player}>

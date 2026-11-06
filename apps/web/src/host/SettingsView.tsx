@@ -1,6 +1,6 @@
 import { Minus, Plus, QrCode } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
-import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { Button, LanguageSwitcher, SingWithButton, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
 import { TvScreenSettings } from "./TvScreenSettings";
 import css from "./host.module.css";
 
@@ -11,7 +11,7 @@ const JOIN_OPTIONS: Array<[JoinInfoMode, TKey]> = [
 ];
 
 /** H2: every RoomSettings field, applied live. */
-export function SettingsView() {
+export function SettingsView({ onSearch }: { onSearch: () => void }) {
   const { state, send } = useRoom();
   const t = useT();
   if (!state) return null;
@@ -20,6 +20,12 @@ export function SettingsView() {
 
   return (
     <div className={css.view}>
+      <header className={`${css.viewTop} ${css.viewTopFlow}`}>
+        <button type="button" className={css.fakeSearch} onClick={onSearch}>
+          {t("search.placeholder")}
+        </button>
+        <SingWithButton />
+      </header>
       <h1 className={css.pageTitle}>{t("nav.settings")}</h1>
 
       <section className={css.settingsGroup}>
