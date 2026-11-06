@@ -21,6 +21,7 @@ import {
   useRoomSongs,
   useSearch,
 } from "@karaoke-tube/ui";
+import { HomeStatus } from "../host/HomeStatus";
 import { fromBrowseFilter, writeFilters } from "../catalogFilters";
 import { useShell } from "./RoomShell";
 import { SongSheet } from "./SongSheet";
@@ -33,7 +34,7 @@ const GENRES = BROWSE_PRESETS.filter((p) => p.chip);
 export function HomeScreen() {
   const t = useT();
   const [lang] = useLang();
-  const { state, me } = useRoom();
+  const { state, me, isHost } = useRoom();
   const navigate = useNavigate();
   const { code } = useShell();
   const roomSongs = useRoomSongs(state);
@@ -104,6 +105,8 @@ export function HomeScreen() {
       <h1 className={css.greeting}>
         {greeting(undefined, t)}, {me.nickname}
       </h1>
+
+      {isHost && <HomeStatus />}
 
       {preset ? (
         <section className={css.section}>

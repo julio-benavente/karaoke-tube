@@ -77,6 +77,8 @@ export type RoomSettings = {
   tvHideBar?: boolean;
   /** Hide explicit songs: they are left out of search and can't be added. Undefined = false. */
   hideExplicit?: boolean;
+  /** Hide cover art: songs show a plain initials tile on phones and the host screen, and the TV's get-ready card has no picture behind it. Missing = false. */
+  hideCovers?: boolean;
 };
 
 /** Languages a session can run in. Spanish rooms also get Spanish-word room codes. */
@@ -234,7 +236,7 @@ export type Recap = {
   language?: RoomLanguage;
 };
 
-export const REACTIONS = ["clap", "fire", "laugh", "heart", "party"] as const;
+export const REACTIONS = ["clap", "fire", "laugh", "heart", "party", "wow", "hundred", "rocket", "mic", "rock", "cry", "sparkles"] as const;
 export type Reaction = (typeof REACTIONS)[number];
 export const REACTION_EMOJI: Record<Reaction, string> = {
   clap: "👏",
@@ -242,6 +244,13 @@ export const REACTION_EMOJI: Record<Reaction, string> = {
   laugh: "😂",
   heart: "❤️",
   party: "🎉",
+  wow: "🤩",
+  hundred: "💯",
+  rocket: "🚀",
+  mic: "🎤",
+  rock: "🤘",
+  cry: "🥹",
+  sparkles: "✨",
 };
 
 // ── WebSocket messages: GET /api/rooms/:code/ws ──────────────────────────
@@ -322,8 +331,6 @@ export type ErrorCode =
   | "invalid_message"
   /** To a skipped song's singers and the hosts: the video couldn't be played (embedding off, removed, blocked). `message` is the song title. */
   | "song_unplayable"
-  /** To a member who sent a second reaction ("cheer") during the same performance. One per person per song. */
-  | "already_cheered"
   /** `add_song` of a song marked `explicit` while `settings.hideExplicit` is on. */
   | "explicit_hidden";
 

@@ -86,8 +86,6 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   useRoomErrors((e) => {
     if (e.code === "song_unplayable") {
       toast.show(t("error.song_unplayable", { title: e.message }), { tone: "error" });
-    } else if (e.code === "already_cheered") {
-      // The now-singing sheet shows it ("You already cheered this song"); no toast.
     } else if (e.code === "queue_limit") {
       const n = state?.settings.maxWaitingPerMember ?? 2;
       toast.show(t("search.limitToast", { count: n }), { tone: "error" });

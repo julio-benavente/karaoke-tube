@@ -42,8 +42,11 @@ toggle** in Settings (`duets`, `turnAlerts`, `awards`, `titles`, plus the new qu
 **Done when:** unit tests for the titles function (winners, ties, everyone ≥ 2, toggle off).
 
 ### C5. Awards show + recap (built; browser e2e not run)
-- TV: an awards show cycling through members and their titles after the party ends (presentational component in
-  `packages/ui/src/tv`, rendered by the content script when `recap` is present).
+- TV: an awards show after the party ends: an intro, then one screen with everyone and their titles (one per line) for
+  about a minute, then a split screen that stays until the TV is closed: the thank-you card with the recap link on the
+  left half, and everyone rolling like end credits on the right half. The credits roll slowly, rest 10 seconds when
+  they are done, and roll again, over and over (presentational component in `packages/ui/src/tv`, rendered by the
+  content script when `recap` is present).
 - Phones: a story of your titles (tap through), then everyone's titles and the recap link.
 - Recap saved in KV (`RECAPS`) for 30 days: `GET /api/recaps/:id` and the web page `/recap/:id` with share/copy.
 

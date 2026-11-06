@@ -18,7 +18,6 @@ import {
   usePlaybackPosition,
   useReactions,
   useRoom,
-  useRoomErrors,
   useT,
   reactionName,
   ExplicitBadge,
@@ -27,17 +26,12 @@ import { RemoteVideo } from "../watch/RemoteVideo";
 import { WATCH_HERE, useWatchPref } from "../watch/pref";
 import css from "./NowSinging.module.css";
 
-/** G6: full-screen now singing: big artwork, progress, five reactions, host controls. */
+/** G6: full-screen now singing: big artwork, progress, reactions, host controls. */
 export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useT();
   const { state } = useRoom();
   const item = state?.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
-  // A person cheers once per song. Kept here, not in the body, so closing the sheet doesn't forget it.
-  const [cheeredId, setCheeredId] = useState<string | null>(null);
-  useRoomErrors((e) => {
-    if (e.code === "already_cheered" && item) setCheeredId(item.id);
-  });
   return (
     <Sheet
       open={open}
@@ -46,12 +40,12 @@ export function NowSingingSheet({ open, onClose }: { open: boolean; onClose: () 
       size="full"
       style={{ background: `linear-gradient(180deg, hsl(${hue} 45% 32%) 0%, hsl(${hue} 40% 14%) 55%, var(--kt-base) 100%)` }}
     >
-      <NowSingingBody onClose={onClose} cheeredId={cheeredId} onCheered={setCheeredId} />
+      <NowSingingBody onClose={onClose} />
     </Sheet>
   );
 }
 
-function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void; cheeredId: string | null; onCheered: (id: string) => void }) {
+function NowSingingBody({ onClose }: { onClose: () => void }) {
   const { state, me, isHost, send } = useRoom();
   const t = useT();
   const { recent } = useReactions(2600);
@@ -75,16 +69,13 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
   const singer = state.members.find((m) => m.id === item.singerIds[0]);
   const playing = playback.state === "playing";
   const reactionsOn = state.settings.reactions;
-  const cheered = cheeredId === item.id;
 
   const react = (r: Reaction) => {
-    if (cooldown || cheered) return;
+    if (cooldown) return;
     send({ type: "react", reaction: r });
-    // The room only counts (and limits) cheers once the performance has started.
-    if (playback.state !== "get_ready") onCheered(item.id);
     setPopped(r);
     setCooldown(true);
-    setTimeout(() => setCooldown(false), 500); // the room limits 1 per 500 ms
+    setTimeout(() => setCooldown(false), 150); // the room drops reactions closer than 150 ms
   };
 
   return (
@@ -175,7 +166,7 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
             type="button"
             className={`${css.reaction} ${popped === r ? css.popped : ""}`}
             onClick={() => react(r)}
-            disabled={!reactionsOn || cheered}
+            disabled={!reactionsOn}
             aria-label={t("now.react", { name: reactionName(t, r) })}
           >
             {REACTION_EMOJI[r]}
@@ -183,11 +174,6 @@ function NowSingingBody({ onClose, cheeredId, onCheered }: { onClose: () => void
         ))}
       </div>
       {!reactionsOn && <p className={css.off}>{t("now.reactionsOff")}</p>}
-      {reactionsOn && cheered && (
-        <p className={css.off} role="status" data-testid="already-cheered">
-          {t("now.alreadyCheered")}
-        </p>
-      )}
     </div>
   );
 }

@@ -1,7 +1,10 @@
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, Check, ChevronsUp, ListMusic, MoreHorizontal, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 import { useNavigate } from "react-router";
-import type { QueueItem } from "@karaoke-tube/shared";
+import type { Member, QueueItem } from "@karaoke-tube/shared";
 import { ActionList, Banner, Button, EmptyState, QueueRow, Sheet, songParts, useRoom, useT } from "@karaoke-tube/ui";
 import { useShell } from "./RoomShell";
 import css from "./Queue.module.css";
@@ -18,9 +21,32 @@ export function QueueScreen() {
   useEffect(() => {
     if (menuGone) setMenuItem(null);
   }, [menuGone]);
+  // Hosts and co-hosts drag songs to reorder. Optimistic order while the room confirms the move.
+  const [order, setOrder] = useState<string[] | null>(null);
+  const roomUpNext = state?.upNext;
+  useEffect(() => setOrder(null), [roomUpNext]);
+  const sortedUpNext = useMemo(() => {
+    if (!order || !roomUpNext) return roomUpNext ?? [];
+    const byId = new Map(roomUpNext.map((q) => [q.id, q]));
+    return order.map((id) => byId.get(id)).filter((q): q is QueueItem => !!q);
+  }, [order, roomUpNext]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   if (!state || !me) return null;
 
-  const { nowPlaying, upNext, members } = state;
+  const { nowPlaying, members } = state;
+  const upNext = isHost ? sortedUpNext : state.upNext;
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const ids = upNext.map((q) => q.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    setOrder(arrayMove(ids, from, to));
+    send({ type: "move_song", itemId: String(active.id), toIndex: to });
+  };
   const myIndex = upNext.findIndex((q) => q.singerIds.includes(me.id));
   const singingNow = !!nowPlaying?.singerIds.includes(me.id);
   const pending = state.pending ?? [];
@@ -126,37 +152,45 @@ export function QueueScreen() {
             {t("queue.emptyHint")}
           </EmptyState>
         ) : (
-          <ol className={css.list}>
-            {upNext.map((q, i) => {
-              const mine = q.singerIds.includes(me.id) || q.addedBy === me.id;
-              return (
-                <li key={q.id} className={css.item}>
-                  <QueueRow
-                    item={q}
-                    members={members}
-                    position={i + 1}
-                    mine={q.singerIds.includes(me.id)}
-                    meId={me.id}
-                    onRemove={mine && !isHost ? () => send({ type: "remove_song", itemId: q.id }) : undefined}
-                    showOffline={isHost}
-                    onRemoveAllOf={isHost ? (m) => send({ type: "remove_member_songs", memberId: m.id }) : undefined}
-                    actions={
-                      isHost ? (
-                        <button
-                          type="button"
-                          className={css.more}
-                          onClick={() => setMenuItem(q)}
-                          aria-label={t("queue.moreOptions", { title: songParts(q.song).title })}
-                        >
-                          <MoreHorizontal />
-                        </button>
-                      ) : undefined
-                    }
-                  />
-                </li>
-              );
-            })}
-          </ol>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={upNext.map((q) => q.id)} strategy={verticalListSortingStrategy} disabled={!isHost}>
+              <ol className={css.list}>
+                {upNext.map((q, i) => {
+                  const mine = q.singerIds.includes(me.id) || q.addedBy === me.id;
+                  return (
+                    <SortableItem key={q.id} id={q.id} sortable={isHost}>
+                      {(dragProps) => (
+                        <QueueRow
+                          item={q}
+                          members={members}
+                          position={i + 1}
+                          mine={q.singerIds.includes(me.id)}
+                          meId={me.id}
+                          onRemove={mine && !isHost ? () => send({ type: "remove_song", itemId: q.id }) : undefined}
+                          showOffline={isHost}
+                          onRemoveAllOf={isHost ? (m: Member) => send({ type: "remove_member_songs", memberId: m.id }) : undefined}
+                          dragHandle={dragProps?.handle}
+                          dragging={dragProps?.dragging}
+                          actions={
+                            isHost ? (
+                              <button
+                                type="button"
+                                className={css.more}
+                                onClick={() => setMenuItem(q)}
+                                aria-label={t("queue.moreOptions", { title: songParts(q.song).title })}
+                              >
+                                <MoreHorizontal />
+                              </button>
+                            ) : undefined
+                          }
+                        />
+                      )}
+                    </SortableItem>
+                  );
+                })}
+              </ol>
+            </SortableContext>
+          </DndContext>
         )}
       </section>
 
@@ -211,5 +245,27 @@ export function QueueScreen() {
         )}
       </Sheet>
     </div>
+  );
+}
+
+/** A queue line that hosts can drag by its handle. Guests get a plain line. */
+function SortableItem({
+  id,
+  sortable,
+  children,
+}: {
+  id: string;
+  sortable: boolean;
+  children: (drag: { handle: HTMLAttributes<HTMLButtonElement>; dragging: boolean } | null) => ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !sortable });
+  return (
+    <li
+      ref={setNodeRef}
+      className={css.item}
+      style={{ transform: CSS.Transform.toString(transform), transition, position: "relative", zIndex: isDragging ? 2 : undefined }}
+    >
+      {children(sortable ? { handle: { ...attributes, ...listeners }, dragging: isDragging } : null)}
+    </li>
   );
 }

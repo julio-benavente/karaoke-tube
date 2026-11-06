@@ -241,29 +241,35 @@ describe("E2 change avatar in the room", () => {
   });
 });
 
-describe("E1 one cheer per song", () => {
-  it("a second reaction during the same performance is refused; the next song gets a fresh cheer", async () => {
+describe("E1 reactions have no per-song limit", () => {
+  it("a member can react again and again during one performance; every one is counted and broadcast", async () => {
     const { code, host } = await party();
     const ana = await guest(code, "Ana");
     const ben = await guest(code, "Ben");
     await ana.client.act({ type: "add_song", song: song("one") });
-    await ana.client.act({ type: "add_song", song: song("two") });
     const first = await host.next("play");
     await host.act({ type: "player_event", event: "started", itemId: first.item.id });
 
-    ben.client.send({ type: "react", reaction: "fire" });
-    await host.next("reaction");
-    await new Promise((resolve) => setTimeout(resolve, 600)); // past the 500 ms rate limit
-    expect(await ben.client.expectError({ type: "react", reaction: "clap" })).toBe("already_cheered");
-    // Someone else can still cheer the same song.
+    for (const reaction of ["fire", "clap", "rocket", "sparkles"] as const) {
+      ben.client.send({ type: "react", reaction });
+      const got = await host.next("reaction");
+      expect(got.memberId).toBe(ben.id);
+      expect(got.reaction).toBe(reaction);
+      await new Promise((resolve) => setTimeout(resolve, 200)); // past the 150 ms flood guard
+    }
     ana.client.send({ type: "react", reaction: "heart" });
-    await host.next("reaction");
+    expect((await host.next("reaction")).memberId).toBe(ana.id);
+  });
+});
 
-    await host.act({ type: "player_event", event: "ended", itemId: first.item.id });
-    const second = await host.next("play");
-    await host.act({ type: "player_event", event: "started", itemId: second.item.id });
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    ben.client.send({ type: "react", reaction: "clap" });
-    expect((await host.next("reaction")).memberId).toBe(ben.id);
+describe("hideCovers setting", () => {
+  it("the host can turn it on and off; other values are ignored", async () => {
+    const { host } = await party();
+    let state = await host.act({ type: "update_settings", settings: { hideCovers: true } });
+    expect(state.settings.hideCovers).toBe(true);
+    state = await host.act({ type: "update_settings", settings: { hideCovers: "yes" as unknown as boolean } });
+    expect(state.settings.hideCovers).toBe(true);
+    state = await host.act({ type: "update_settings", settings: { hideCovers: false } });
+    expect(state.settings.hideCovers).toBe(false);
   });
 });

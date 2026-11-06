@@ -149,6 +149,12 @@ export function SettingsView() {
           onChange={(v) => set({ hideExplicit: v })}
         />
         <Toggle
+          label={t("settings.hideCovers")}
+          description={t("settings.hideCoversDesc")}
+          checked={!!s.hideCovers}
+          onChange={(v) => set({ hideCovers: v })}
+        />
+        <Toggle
           label={t("settings.turnAlerts")}
           description={t("settings.turnAlertsDesc")}
           checked={s.turnAlerts}

@@ -1,6 +1,6 @@
 import { useT } from "@karaoke-tube/ui";
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, Copy, Crown, ListPlus, LogOut, MoreHorizontal, Pencil, Share2, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { Check, Copy, Crown, LayoutDashboard, ListPlus, LogOut, MoreHorizontal, Pencil, Share2, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import type { Member } from "@karaoke-tube/shared";
@@ -64,6 +64,15 @@ export function PartyScreen() {
           {copied ? t("party.copied") : t("party.invite")}
         </Button>
       </section>
+
+      {me.role === "cohost" && (
+        <section className={css.hostTools}>
+          <p className={css.muted}>{t("party.hostToolsHint")}</p>
+          <Button variant="secondary" size="sm" icon={<LayoutDashboard size={16} />} onClick={() => navigate(`/host/${code}`)}>
+            {t("party.hostTools")}
+          </Button>
+        </section>
+      )}
 
       <section>
         <h2 className={css.h2}>

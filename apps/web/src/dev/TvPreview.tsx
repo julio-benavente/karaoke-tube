@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { REACTIONS } from "@karaoke-tube/shared";
 import { Button, Chip, ChipRow, RoomProvider, createMockRoomClient, hueOf, sampleRecap, useRoom, useRoomClient } from "@karaoke-tube/ui";
-import { AwardsShow, GetReadyCard, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
+import { AwardsShow, GetReadyCard, awardsSlideCount, TvOverlay, TV_REACTION_MS, tvCss, type TvReaction } from "@karaoke-tube/ui/tv";
 import css from "./TvPreview.module.css";
 
 /**
@@ -35,13 +35,20 @@ function Preview() {
   const { state, send } = useRoom();
   const client = useRoomClient();
   const [qr, setQr] = useState<string>();
+  const [recapQr, setRecapQr] = useState<string>();
   const [size, setSize] = useState<"small" | "large">("large");
   const [awards, setAwards] = useState(false);
+  // Awards show controls: which slide, held on it, and speed.
+  const [slide, setSlide] = useState(0);
+  const [held, setHeld] = useState(false);
+  const [fast, setFast] = useState(false);
   const [reactions, setReactions] = useState<TvReaction[]>([]);
   const seq = useRef(0);
 
   useEffect(() => {
     QRCode.toDataURL(`${location.origin}/join/groovy-disco-party`, { margin: 1, width: 300 }).then(setQr);
+    // The preview has no saved recap, so its recap link goes to the sample recap page instead.
+    QRCode.toDataURL(`${location.origin}/dev/recap`, { margin: 1, width: 300 }).then(setRecapQr);
   }, []);
 
   // The content script will do the same: keep each reaction for TV_REACTION_MS.
@@ -60,6 +67,7 @@ function Preview() {
   const item = state.nowPlaying;
   const hue = item ? hueOf(item.song.videoId) : 330;
   const recap = state.recap ?? withPeople(sampleRecap(state.members), Number(new URLSearchParams(location.search).get("people")) || 0);
+  const slideCount = awardsSlideCount(recap);
   const mock = (client as unknown as { mock: { finishSong(): void; randomReaction(): void } }).mock;
 
   return (
@@ -75,16 +83,51 @@ function Preview() {
           </Chip>
         </ChipRow>
         <div className={css.actions}>
-          <Button size="sm" variant="secondary" onClick={() => mock.finishSong()}>
-            Finish song (get ready)
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => send({ type: "skip" })}>
-            Skip
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => REACTIONS.forEach((_, i) => setTimeout(() => mock.randomReaction(), i * 150))}>
-            Burst of reactions
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setAwards((a) => !a)}>
+          {awards ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => setSlide((i) => (i - 1 + slideCount) % slideCount)}>
+                Previous slide
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setSlide((i) => (i + 1) % slideCount)}>
+                Next slide
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setHeld((h) => !h)}>
+                {held ? "Play" : "Pause"}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setSlide(0)}>
+                Restart
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setFast((f) => !f)}>
+                {fast ? "Normal speed" : "Fast (3×)"}
+              </Button>
+              <span className={css.slideCount}>
+                Slide {slide % slideCount + 1} of {slideCount}
+              </span>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => mock.finishSong()}>
+                Finish song (get ready)
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => send({ type: "skip" })}>
+                Skip
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => REACTIONS.forEach((_, i) => setTimeout(() => mock.randomReaction(), i * 150))}>
+                Burst of reactions
+              </Button>
+            </>
+          )}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              if (!awards) {
+                setSlide(0);
+                setHeld(false);
+              }
+              setAwards((a) => !a);
+            }}
+          >
             {awards ? "Back to the overlay" : "Awards show"}
           </Button>
         </div>
@@ -100,7 +143,15 @@ function Preview() {
         </div>
         <ShadowMount>
           {awards ? (
-            <AwardsShow recap={recap} recapText={`${location.host}/recap/${recap.id}`} qrSrc={qr} />
+            <AwardsShow
+              recap={recap}
+              recapText={`${location.host}/dev/recap`}
+              qrSrc={recapQr}
+              slideIndex={slide}
+              onSlideChange={setSlide}
+              paused={held}
+              speed={fast ? 3 : 1}
+            />
           ) : state.playback.state === "get_ready" && item && state.playback.countdownEndsAt ? (
             <GetReadyCard
               item={item}

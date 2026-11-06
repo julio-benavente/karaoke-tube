@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import type { Song } from "@karaoke-tube/shared";
 import { formatTime, songParts } from "../format";
+import { useHideCovers } from "../hooks/room";
 import { useT } from "../i18n/context";
 import { Artwork } from "./Artwork";
 import { ExplicitBadge } from "./ExplicitBadge";
@@ -173,7 +174,8 @@ export function SongArt({
   className?: string;
 }) {
   const t = useT();
-  if (song.posterUrl) {
+  const hideCovers = useHideCovers();
+  if (song.posterUrl && !hideCovers) {
     // Ask the CDN for about twice the display size on small pictures; bigger ones keep the 300px the catalog gave.
     const src = typeof size === "number" && size <= 150 ? posterAt(song.posterUrl, Math.max(100, size * 2)) : song.posterUrl;
     return <Artwork src={src} label={song.title} size={size} radius={radius} shadow={shadow} flat explicit={explicit} className={className} />;

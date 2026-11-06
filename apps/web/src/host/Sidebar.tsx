@@ -176,6 +176,8 @@ function QuickSettings() {
       <Toggle label={t("settings.lock")} checked={s.locked} onChange={(v) => set({ locked: v })} />
       <Toggle label={t("settings.tvHideBar")} checked={!!s.tvHideBar} onChange={(v) => set({ tvHideBar: v })} />
       <Toggle label={t("settings.hideExplicit")} checked={!!s.hideExplicit} onChange={(v) => set({ hideExplicit: v })} />
+      <Toggle label={t("settings.reactions")} checked={s.reactions} onChange={(v) => set({ reactions: v })} />
+      <Toggle label={t("settings.hideCovers")} checked={!!s.hideCovers} onChange={(v) => set({ hideCovers: v })} />
       <div className={css.quickLang}>
         <span className={css.quickLabel}>{t("lang.label")}</span>
         <LanguageSwitcher />

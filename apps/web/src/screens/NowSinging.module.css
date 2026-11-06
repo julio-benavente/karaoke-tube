@@ -182,8 +182,9 @@
 }
 
 .reactions {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  justify-items: center;
   gap: var(--kt-space-2);
   margin-top: auto;
   padding-top: var(--kt-space-4);
@@ -197,11 +198,12 @@
 .reaction {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  max-width: 56px;
+  aspect-ratio: 1;
   border-radius: var(--kt-radius-full);
   background: var(--kt-white-10);
-  font-size: 28px;
+  font-size: 26px;
   transition:
     transform var(--kt-fast) var(--kt-ease),
     background-color var(--kt-fast) var(--kt-ease);

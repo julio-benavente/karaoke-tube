@@ -29,8 +29,8 @@ import { computeTitles } from "../titles";
 
 /** Storage is deleted this long after the party ends. */
 export const ENDED_TTL_MS = 60 * 60 * 1000;
-/** Each member may send one reaction per this many ms. */
-export const REACTION_INTERVAL_MS = 500;
+/** Flood guard: a member's reactions closer together than this are dropped. There is no cap per song. */
+export const REACTION_INTERVAL_MS = 150;
 /** Most guests without a phone a host can add. */
 const MAX_PHONELESS = 30;
 
@@ -735,10 +735,8 @@ export class Room extends DurableObject<Env> {
         if (!this.settings().reactions) throw new RoomError("not_allowed", "Reactions are off.");
         const now = Date.now();
         if (now - (this.lastReaction.get(me.id) ?? 0) < REACTION_INTERVAL_MS) return; // dropped
-        // A person cheers once per song: the first reaction during a performance counts, later ones are refused.
         const current = this.nowPlayingItem();
         const performing = current && current.performedAt !== null ? current : null;
-        if (performing && this.hasCheered(performing.id, me.id)) throw new RoomError("already_cheered", "You already cheered this song.");
         this.lastReaction.set(me.id, now);
         // Count it toward the performance on screen (for the end-of-night titles).
         if (performing) this.countCheer(performing.id, me.id);
@@ -997,10 +995,6 @@ export class Room extends DurableObject<Env> {
     this.sql.exec("INSERT INTO awards (item_id, member_id, award, at) VALUES (?, ?, ?, ?)", itemId, me.id, award, Date.now());
   }
 
-  private hasCheered(itemId: string, memberId: string): boolean {
-    return this.sql.exec("SELECT 1 FROM cheers WHERE item_id = ? AND member_id = ?", itemId, memberId).toArray().length > 0;
-  }
-
   /** One reaction from `memberId` during the performance of `itemId`. */
   private countCheer(itemId: string, memberId: string) {
     this.sql.exec(
@@ -1030,12 +1024,19 @@ export class Room extends DurableObject<Env> {
     const cheerRows = this.sql.exec<{ item_id: string; member_id: string; count: number }>("SELECT * FROM cheers").toArray();
     const awardRows = this.sql.exec<{ item_id: string; member_id: string; award: Award }>("SELECT item_id, member_id, award FROM awards").toArray();
 
+    // With "hide cover art" on, the recap (a public link, outside the room) leaves the pictures out too.
+    const hideCovers = !!this.settings().hideCovers;
     const performances: RecapPerformance[] = items.map((item) => {
       const awards: Partial<Record<Award, number>> = {};
       for (const a of awardRows) if (a.item_id === item.id) awards[a.award] = (awards[a.award] ?? 0) + 1;
       const reactions = cheerRows.filter((c) => c.item_id === item.id).reduce((n, c) => n + c.count, 0);
       const awardCount = Object.values(awards).reduce((n, c) => n + (c ?? 0), 0);
-      return { item: publicItem(item), cheers: reactions + awardCount, awards };
+      const pub = publicItem(item);
+      if (hideCovers) {
+        const { posterUrl: _cover, ...song } = pub.song;
+        pub.song = song;
+      }
+      return { item: pub, cheers: reactions + awardCount, awards };
     });
 
     const members = this.memberRows();
@@ -1327,7 +1328,7 @@ function sanitizeSettings(input: Partial<RoomSettings>): Partial<RoomSettings> {
   if (input.tvLayout === "bar" || input.tvLayout === "clean") out.tvLayout = input.tvLayout;
   if (input.tvBarSize === "small" || input.tvBarSize === "medium" || input.tvBarSize === "large") out.tvBarSize = input.tvBarSize;
   if (typeof input.hideExplicit === "boolean") out.hideExplicit = input.hideExplicit;
-  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles", "tvHideBar"] as const) {
+  for (const key of ["hostsOnlyAdd", "locked", "reactions", "getReadyCard", "duets", "turnAlerts", "awards", "titles", "tvHideBar", "hideCovers"] as const) {
     if (typeof input[key] === "boolean") out[key] = input[key];
   }
   return out;

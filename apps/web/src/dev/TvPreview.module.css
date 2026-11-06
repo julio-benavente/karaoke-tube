@@ -94,3 +94,10 @@
     background-position: 100% 100%;
   }
 }
+
+.slideCount {
+  align-self: center;
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-sm);
+  white-space: nowrap;
+}

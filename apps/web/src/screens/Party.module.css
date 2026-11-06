@@ -217,3 +217,10 @@
 .addGuest {
   margin-bottom: var(--kt-space-3);
 }
+
+.hostTools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--kt-space-2);
+}

@@ -73,6 +73,13 @@ export function useHideExplicit(): boolean {
   return useSyncExternalStore(subscribe, () => !!client?.state?.settings.hideExplicit);
 }
 
+/** True when the host turned on "hide cover art". False outside a room. */
+export function useHideCovers(): boolean {
+  const client = useContext(RoomContext)?.client;
+  const subscribe = useCallback((l: () => void) => client?.subscribe(l) ?? (() => {}), [client]);
+  return useSyncExternalStore(subscribe, () => !!client?.state?.settings.hideCovers);
+}
+
 export type FloatingReaction = { id: number; memberId: string; reaction: Reaction; at: number };
 
 /**

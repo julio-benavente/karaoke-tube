@@ -88,7 +88,7 @@ export function TvLayer({ state, onReaction, flash = false }: { state: RoomState
       {state.recap ? (
         <AwardsShow t={t} recap={state.recap} qrSrc={recapQr} recapText={recapUrl ? recapUrl.replace(/^https?:\/\//, "") : undefined} />
       ) : playback.state === "get_ready" && nowPlaying && playback.countdownEndsAt ? (
-        <GetReadyCard t={t} item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec}
+        <GetReadyCard t={t} item={nowPlaying} members={state.members} countdownEndsAt={playback.countdownEndsAt} countdownSec={state.settings.countdownSec} hideCover={!!state.settings.hideCovers}
           join={flash || joinInfo !== "start" ? { code: state.code, qrSrc: qr, joinText } : undefined}
         />
       ) : (

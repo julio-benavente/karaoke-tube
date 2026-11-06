@@ -16,7 +16,7 @@ export function HomeStatus() {
 }
 
 function PartyCard() {
-  const { state, send } = useRoom();
+  const { state, me, send } = useRoom();
   const t = useT();
   const toast = useToast();
   if (!state) return null;
@@ -49,7 +49,7 @@ function PartyCard() {
           >
             {t("host.showCode")}
           </Button>
-        ) : isPhoneLayout() ? null : (
+        ) : isPhoneLayout() || me?.role !== "host" ? null : ( // only the host can pair a TV
           <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => !openTvScreen(state.code) && toast.show(t("host.tvPopup"), { tone: "error" })}>
             {t("host.openTv")}
           </Button>

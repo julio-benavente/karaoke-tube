@@ -13,6 +13,8 @@ export type GetReadyCardProps = {
   countdownSec?: number;
   /** Small "join the party" block (QR + code) in a corner of the card. Hidden when missing. */
   join?: { code: string; qrSrc?: string; joinText?: string };
+  /** No picture behind the card (the host hid cover art). */
+  hideCover?: boolean;
   /** Translator (shadow-root safe). Default: the saved/browser language. */
   t?: TFn;
 };
@@ -21,7 +23,7 @@ export type GetReadyCardProps = {
  * T2: full-player card between songs: avatar, name, song, countdown.
  * Pure apart from a local clock for the countdown. Render inside the player (and a shadow root) with `tvCss`.
  */
-export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5, join, t = makeT(detectLang()) }: GetReadyCardProps) {
+export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5, join, hideCover, t = makeT(detectLang()) }: GetReadyCardProps) {
   const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
     const t = setInterval(() => setNow(serverNow()), 100);
@@ -39,7 +41,7 @@ export function GetReadyCard({ item, members, countdownEndsAt, countdownSec = 5,
 
   return (
     <div className="kt-tv kt-tv-ready" role="status" aria-live="polite">
-      <div className="kt-tv-ready-bg" style={{ backgroundImage: `url("${item.song.posterUrl ?? item.song.thumbnailUrl}")` }} />
+      <div className="kt-tv-ready-bg" style={hideCover ? undefined : { backgroundImage: `url("${item.song.posterUrl ?? item.song.thumbnailUrl}")` }} />
       <div className="kt-tv-ready-shade" />
       <div className="kt-tv-ready-body">
         <SingerAvatars item={item} members={members} wrap="kt-tv-avatars kt-tv-ready-avatars" className="kt-tv-ready-avatar" />

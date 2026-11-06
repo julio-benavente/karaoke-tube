@@ -399,7 +399,7 @@
   position: absolute;
   top: -4cqh;
   border-radius: 0.15cqw;
-  opacity: 0.85;
+  opacity: 0.4;
   animation: kt-tv-aw-fall linear infinite;
 }
 
@@ -432,98 +432,13 @@
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.05;
+  text-wrap: balance;
 }
 
 .kt-tv-aw-sub {
   color: var(--tv-text-2);
   font-size: 2.2cqw;
   font-weight: 700;
-}
-
-.kt-tv-aw-member {
-  display: flex;
-  align-items: center;
-  gap: 5cqw;
-  width: 100%;
-}
-
-.kt-tv-aw-avatar {
-  flex: none;
-  width: 24cqw;
-  height: 24cqw;
-  border-radius: 50%;
-  background: #221d27;
-  box-shadow: 0 0 0 0.7cqw var(--tv-accent), 0 0 6cqw rgba(255, 79, 139, 0.45), 0 2cqw 5cqw rgba(0, 0, 0, 0.5);
-  animation: kt-tv-pop 800ms var(--tv-ease) 150ms both;
-}
-
-.kt-tv-aw-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1.4cqw;
-  min-width: 0;
-  flex: 1;
-}
-
-.kt-tv-aw-name {
-  font-size: 6.2cqw;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  overflow-wrap: anywhere;
-}
-
-.kt-tv-aw-titles {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2cqw;
-  margin-top: 0.6cqw;
-}
-
-.kt-tv-aw-title {
-  display: flex;
-  align-items: center;
-  gap: 1.8cqw;
-  padding: 1.1cqw 2cqw 1.1cqw 1.4cqw;
-  border-radius: 2cqw;
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 0 0 0.12cqw rgba(255, 255, 255, 0.14);
-  animation: kt-tv-aw-title 700ms var(--tv-ease) both;
-}
-
-.kt-tv-aw-emoji {
-  flex: none;
-  font-size: 4.2cqw;
-  line-height: 1;
-}
-
-.kt-tv-aw-titletext {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.kt-tv-aw-titletext b {
-  font-size: 3cqw;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.kt-tv-aw-titletext span {
-  color: var(--tv-text-2);
-  font-size: 1.7cqw;
-  font-weight: 700;
-}
-
-.kt-tv-aw-cheers {
-  align-self: flex-start;
-  margin-top: 0.6cqw;
-  padding: 0.8cqw 2cqw;
-  border-radius: 99cqw;
-  background: var(--tv-accent);
-  color: var(--tv-ink);
-  font-size: 2.6cqw;
-  font-weight: 800;
 }
 
 .kt-tv-aw-faces {
@@ -596,6 +511,54 @@
 
 /* ── Credits (C5): everyone who came ──────────
  * Grid: all on one screen, cell size from --cols / --rows. Roll: one column that scrolls up like film credits. */
+.kt-tv-aw-title-line {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-tv-aw-split {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4cqw;
+}
+
+.kt-tv-aw-half {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* The thank-you half is half as wide, so it is set a bit smaller. */
+.kt-tv-aw-split .kt-tv-aw-big {
+  font-size: 4.2cqw;
+}
+
+/* Faces in even rows (8 people = 4 + 4, 7 = 4 + 3, 6 = 3 + 3), each row centered. */
+.kt-tv-aw-split .kt-tv-aw-faces {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(var(--cols, 4) * 6cqw);
+}
+
+.kt-tv-aw-split .kt-tv-aw-faces img {
+  width: 5cqw;
+  height: 5cqw;
+}
+
+.kt-tv-aw-split .kt-tv-aw-recap img {
+  width: 8cqw;
+  height: 8cqw;
+}
+
+.kt-tv-aw-split .kt-tv-aw-recap b {
+  font-size: 1.8cqw;
+  overflow-wrap: anywhere;
+}
+
 .kt-tv-aw-credits {
   width: 100%;
   display: flex;
@@ -605,7 +568,7 @@
 }
 
 .kt-tv-aw-credgrid {
-  --av: min(calc(80cqw / var(--cols) * 0.55), calc(66cqh / var(--rows) * 0.5));
+  --av: min(calc(80cqw / var(--cols) * 0.55), calc(66cqh / var(--rows) * 0.4));
   width: 100%;
   display: flex;
   flex-wrap: wrap;
@@ -646,12 +609,12 @@
 
 .kt-tv-aw-credrole {
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: var(--tv-text-2);
   font-size: calc(var(--av) * 0.18);
   font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .kt-tv-aw-roll {
@@ -695,23 +658,12 @@
 }
 
 .kt-tv-aw-rollrole {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: var(--tv-text-2);
   font-size: 1.9cqw;
   font-weight: 700;
-}
-
-.kt-tv-aw-duo {
-  flex: none;
-  display: flex;
-}
-
-.kt-tv-aw-duo .kt-tv-aw-avatar {
-  width: 19cqw;
-  height: 19cqw;
-}
-
-.kt-tv-aw-duo .kt-tv-aw-avatar + .kt-tv-aw-avatar {
-  margin-left: -4cqw;
 }
 
 @keyframes kt-tv-aw-roll {
@@ -727,13 +679,6 @@
   from {
     opacity: 0;
     transform: translateY(3cqh) scale(0.97);
-  }
-}
-
-@keyframes kt-tv-aw-title {
-  from {
-    opacity: 0;
-    transform: translateX(6cqw) scale(0.9);
   }
 }
 

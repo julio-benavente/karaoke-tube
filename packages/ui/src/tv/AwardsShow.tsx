@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TITLE_INFO, type Recap } from "@karaoke-tube/shared";
 import { detectLang, makeT, type TFn } from "../i18n/core";
-import { titleDesc, titleName } from "../i18n/labels";
+import { titleName } from "../i18n/labels";
 import { avatarUri } from "../avatar";
-import { songParts } from "../format";
 
 export type AwardsShowProps = {
   recap: Recap;
@@ -15,63 +14,78 @@ export type AwardsShowProps = {
   qrSrc?: string;
   /** Speeds the show up or slows it down; 1 = normal. */
   speed?: number;
+  /** Controls for previews: show this slide (0-based) instead of keeping count itself. */
+  slideIndex?: number;
+  /** Called with the new slide when the show moves on by itself. */
+  onSlideChange?: (index: number) => void;
+  /** Stay on the current slide. */
+  paused?: boolean;
 };
 
 type Slide =
   | { kind: "intro"; ms: number }
-  | { kind: "member"; memberId: string; ms: number }
-  | { kind: "moment"; ms: number }
   | { kind: "credits"; ms: number }
   | { kind: "finale"; ms: number };
 
 const INTRO_MS = 4500;
-const MEMBER_BASE_MS = 1600;
-const MEMBER_PER_TITLE_MS = 1700;
-const MOMENT_MS = 6000;
 const FINALE_MS = 7000;
-/** Up to this many people fit on one screen; more roll by like end credits. */
+/** Up to this many people fit on one screen, all at once; more roll by like end credits. */
 export const CREDITS_FIT_MAX = 12;
-const CREDITS_FIT_MS = 9000;
-const CREDITS_ROLL_MIN_SEC = 14;
-const CREDITS_ROLL_PER_PERSON_SEC = 2.2;
+/** How long the screen with everyone stays up before the last screen takes over. */
+const CREDITS_SHOW_MS = 60_000;
+/** On the last screen, the credits rest this long after they finish before they roll again. */
+const CREDITS_AGAIN_MS = 10_000;
+const CREDITS_ROLL_MIN_SEC = 30;
+const CREDITS_ROLL_PER_PERSON_SEC = 6;
 
 /** How long the rolling credits take to scroll past, in seconds. */
 const rollSeconds = (people: number) => Math.max(CREDITS_ROLL_MIN_SEC, people * CREDITS_ROLL_PER_PERSON_SEC);
 
 /** Bits of confetti: fixed positions so the render is stable. */
-const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
+const CONFETTI = Array.from({ length: 14 }, (_, i) => ({
   left: (i * 37) % 100,
-  delay: ((i * 53) % 40) / 10,
-  dur: 5 + ((i * 29) % 30) / 10,
+  delay: ((i * 53) % 60) / 10,
+  dur: 9 + ((i * 29) % 40) / 10,
   hue: (i * 47) % 360,
-  size: 0.7 + ((i * 13) % 8) / 10,
+  size: 0.45 + ((i * 13) % 6) / 10,
 }));
 
 /**
- * C5: the end-of-night awards show for the TV. Cycles through everyone's titles, then the moment of the night
- * and a thank-you card, and starts over until the content script takes it away. Presentational; shadow-root safe.
+ * C5: the end-of-night awards show for the TV. Shows an intro, everyone with their titles on one screen for about a minute, then a split screen (the thank-you card and recap link on the left, the credits rolling on the right) that stays until the TV is closed. Starts over until the content script takes it away. Presentational; shadow-root safe.
  */
-export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detectLang()) }: AwardsShowProps) {
-  // Not memoized on `recap`: the room sends a fresh copy with every state, and the timers must not restart.
-  const slides = ((): Slide[] => {
-    const out: Slide[] = [{ kind: "intro", ms: INTRO_MS }];
-    for (const m of recap.members) {
-      const n = recap.titles[m.id]?.length ?? 0;
-      if (n > 0) out.push({ kind: "member", memberId: m.id, ms: MEMBER_BASE_MS + n * MEMBER_PER_TITLE_MS });
-    }
-    if (recap.topMoment && recap.topMoment.cheers > 0) out.push({ kind: "moment", ms: MOMENT_MS });
-    const people = recap.members.length;
-    if (people > 0) out.push({ kind: "credits", ms: people <= CREDITS_FIT_MAX ? CREDITS_FIT_MS : rollSeconds(people) * 1000 + 1500 });
-    out.push({ kind: "finale", ms: FINALE_MS });
-    return out;
-  })();
+function buildSlides(recap: Recap): Slide[] {
+  const out: Slide[] = [{ kind: "intro", ms: INTRO_MS }];
+  const people = recap.members.length;
+  // Everyone on one screen for about a minute (a long list rolls by once instead).
+  if (people > 0) out.push({ kind: "credits", ms: people <= CREDITS_FIT_MAX ? CREDITS_SHOW_MS : rollSeconds(people) * 1000 + 1500 });
+  // The last screen is split: thank-you and recap on one half, the credits rolling on the other. It stays until the TV is closed.
+  out.push({ kind: "finale", ms: FINALE_MS });
+  return out;
+}
 
-  const [index, setIndex] = useState(0);
+/** How many slides the show has for this recap (for preview controls). */
+export function awardsSlideCount(recap: Recap): number {
+  return buildSlides(recap).length;
+}
+
+export function AwardsShow({ recap, recapText, qrSrc, speed = 1, slideIndex, onSlideChange, paused, t = makeT(detectLang()) }: AwardsShowProps) {
+  // Not memoized on `recap`: the room sends a fresh copy with every state, and the timers must not restart.
+  const slides = buildSlides(recap);
+
+  const [ownIndex, setOwnIndex] = useState(0);
+  const index = slideIndex ?? ownIndex;
   const slide = slides[index % slides.length]!;
   useEffect(() => {
-    const t = setTimeout(() => setIndex((i) => (i + 1) % slides.length), slide.ms / speed);
+    // The last screen stays up until the TV is closed.
+    if (paused || index % slides.length === slides.length - 1) return;
+    const t = setTimeout(() => {
+      const next = (index + 1) % slides.length;
+      setOwnIndex(next);
+      onSlideChange?.(next);
+    }, slide.ms / speed);
     return () => clearTimeout(t);
-  }, [index, slide.ms, slides.length, speed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, slide.ms, slides.length, speed, paused]);
 
   return (
     <div className="kt-tv kt-tv-awards" role="status" aria-live="polite">
@@ -84,7 +98,7 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detec
               left: `${c.left}%`,
               animationDelay: `${c.delay}s`,
               animationDuration: `${c.dur}s`,
-              background: `hsl(${c.hue} 90% 65%)`,
+              background: `hsl(${c.hue} 65% 70%)`,
               width: `${c.size}cqw`,
               height: `${c.size * 1.6}cqw`,
             }}
@@ -94,10 +108,8 @@ export function AwardsShow({ recap, recapText, qrSrc, speed = 1, t = makeT(detec
 
       <div className="kt-tv-aw-stage" key={`${index}-${slide.kind}`}>
         {slide.kind === "intro" && <Intro recap={recap} t={t} />}
-        {slide.kind === "member" && <MemberSlide recap={recap} memberId={slide.memberId} t={t} />}
-        {slide.kind === "moment" && <Moment recap={recap} t={t} />}
-        {slide.kind === "credits" && <Credits recap={recap} t={t} speed={speed} />}
-        {slide.kind === "finale" && <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} />}
+        {slide.kind === "credits" && <Credits recap={recap} t={t} speed={speed} paused={!!paused} />}
+        {slide.kind === "finale" && <Closing recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} speed={speed} paused={!!paused} />}
       </div>
 
       <div className="kt-tv-aw-dots" aria-hidden>
@@ -125,92 +137,68 @@ function Intro({ recap, t }: { recap: Recap; t: TFn }) {
   );
 }
 
-function MemberSlide({ recap, memberId, t }: { recap: Recap; memberId: string; t: TFn }) {
-  const member = recap.members.find((m) => m.id === memberId);
-  const titles = recap.titles[memberId] ?? [];
-  if (!member) return null;
+/** A person's titles, one per line. */
+function TitleLines({ recap, id, t }: { recap: Recap; id: string; t: TFn }) {
   return (
-    <div className="kt-tv-aw-member">
-      <img className="kt-tv-aw-avatar" src={avatarUri(member.avatarSeed)} alt="" />
-      <div className="kt-tv-aw-text">
-        <span className="kt-tv-aw-name">{member.nickname}</span>
-        <div className="kt-tv-aw-titles">
-          {titles.map((id, i) => {
-            const info = TITLE_INFO[id];
-            return (
-              <div className="kt-tv-aw-title" key={id} style={{ animationDelay: `${0.6 + i * 1.7}s` }}>
-                <span className="kt-tv-aw-emoji">{info.emoji}</span>
-                <span className="kt-tv-aw-titletext">
-                  <b>{titleName(t, id)}</b>
-                  <span>{titleDesc(t, id)}</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+    <>
+      {(recap.titles[id] ?? []).slice(0, 3).map((tid) => (
+        <span className="kt-tv-aw-title-line" key={tid}>
+          {TITLE_INFO[tid].emoji} {titleName(t, tid)}
+        </span>
+      ))}
+    </>
   );
 }
 
-function Moment({ recap, t }: { recap: Recap; t: TFn }) {
-  const moment = recap.topMoment;
-  if (!moment) return null;
-  const { title, artist } = songParts(moment.item.song);
-  const singers = moment.item.everyone ? [] : moment.item.singerIds.map((id) => recap.members.find((m) => m.id === id));
-  const names = singers.map((m) => m?.nickname ?? t("singer.someone"));
-  const seeds = singers.length > 0 ? singers.map((m) => m?.avatarSeed ?? moment.item.id) : [moment.item.id];
+/** One column of everyone that rolls up the screen at a steady pace, like the end credits of a film. */
+function CreditsRoll({ recap, t, speed, paused, loop }: { recap: Recap; t: TFn; speed: number; paused: boolean; loop?: boolean }) {
+  const people = recap.members;
+  // With `loop`: once the credits have rolled off, wait a few seconds and roll them again (a new key restarts the animation).
+  const [round, setRound] = useState(0);
+  const again = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(again.current), []);
   return (
-    <div className="kt-tv-aw-member">
-      <div className={seeds.length > 1 ? "kt-tv-aw-duo" : undefined}>
-        {seeds.slice(0, 2).map((seed) => (
-          <img key={seed} className="kt-tv-aw-avatar" src={avatarUri(seed)} alt="" />
+    <div className="kt-tv-aw-roll" data-layout="roll">
+      <div
+        key={round}
+        className="kt-tv-aw-rolltrack"
+        style={{ animationDuration: `${rollSeconds(people.length) / speed}s`, animationPlayState: paused ? "paused" : "running" }}
+        onAnimationEnd={(e) => {
+          if (!loop || e.target !== e.currentTarget) return;
+          clearTimeout(again.current);
+          again.current = setTimeout(() => setRound((r) => r + 1), CREDITS_AGAIN_MS / speed);
+        }}
+      >
+        <span className="kt-tv-aw-kicker">{t("tv.cast")}</span>
+        {people.map((m) => (
+          <div className="kt-tv-aw-rollrow" key={m.id}>
+            <img src={avatarUri(m.avatarSeed)} alt="" />
+            <span className="kt-tv-aw-rollname">{m.nickname}</span>
+            <span className="kt-tv-aw-rollrole">
+              <TitleLines recap={recap} id={m.id} t={t} />
+            </span>
+          </div>
         ))}
-      </div>
-      <div className="kt-tv-aw-text">
-        <span className="kt-tv-aw-kicker">{t("tv.moment")}</span>
-        <span className="kt-tv-aw-name">{title}</span>
-        <span className="kt-tv-aw-sub">
-          {artist}
-          {names.length > 0 && ` · ${names.join(` ${t("singer.and")} `)}`}
-        </span>
-        <span className="kt-tv-aw-cheers">🙌 {t("recap.cheersCount", { count: moment.cheers })}</span>
       </div>
     </div>
   );
 }
 
 /**
- * C5: everyone who came, like the end credits of a film. Few people: all on screen at once in a grid sized by their number.
- * Many: one column that rolls up the screen at a steady pace.
+ * Everyone who came. Few people: all on screen at once in a grid sized by their number.
+ * Many: one column that rolls up the screen once.
  */
-function Credits({ recap, t, speed }: { recap: Recap; t: TFn; speed: number }) {
+function Credits({ recap, t, speed, paused }: { recap: Recap; t: TFn; speed: number; paused: boolean }) {
   const people = recap.members;
   const n = people.length;
-  const roleOf = (id: string) =>
-    (recap.titles[id] ?? [])
-      .slice(0, 2)
-      .map((tid) => `${TITLE_INFO[tid].emoji} ${titleName(t, tid)}`)
-      .join("  ");
-
   if (n > CREDITS_FIT_MAX) {
     return (
-      <div className="kt-tv-aw-credits kt-tv-aw-roll" data-layout="roll">
-        <div className="kt-tv-aw-rolltrack" style={{ animationDuration: `${rollSeconds(n) / speed}s` }}>
-          <span className="kt-tv-aw-kicker">{t("tv.cast")}</span>
-          {people.map((m) => (
-            <div className="kt-tv-aw-rollrow" key={m.id}>
-              <img src={avatarUri(m.avatarSeed)} alt="" />
-              <span className="kt-tv-aw-rollname">{m.nickname}</span>
-              <span className="kt-tv-aw-rollrole">{roleOf(m.id)}</span>
-            </div>
-          ))}
-        </div>
+      <div className="kt-tv-aw-credits kt-tv-aw-roll-wide">
+        <CreditsRoll recap={recap} t={t} speed={speed} paused={paused} />
       </div>
     );
   }
-
-  // Columns by count: 1-3 in a row, 4-6 as 3 columns, 7-8 as 4, up to 12 as 4 columns × 3 rows.
+  // Columns by count: 1-3 in a row, 4-6 as 3 columns, 7-8 as 4, up to 12 as 4 columns x 3 rows.
   const cols = n <= 3 ? Math.max(1, n) : n <= 6 ? 3 : 4;
   const rows = Math.ceil(n / cols);
   return (
@@ -221,9 +209,26 @@ function Credits({ recap, t, speed }: { recap: Recap; t: TFn; speed: number }) {
           <div className="kt-tv-aw-credcell" key={m.id} style={{ animationDelay: `${i * 140}ms` }}>
             <img src={avatarUri(m.avatarSeed)} alt="" />
             <span className="kt-tv-aw-credname">{m.nickname}</span>
-            <span className="kt-tv-aw-credrole">{roleOf(m.id)}</span>
+            <span className="kt-tv-aw-credrole">
+              <TitleLines recap={recap} id={m.id} t={t} />
+            </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** The last screen, split in half: the thank-you and recap link on the left, the credits rolling on the right. */
+function Closing({ recap, recapText, qrSrc, t, speed, paused }: { recap: Recap; recapText?: string; qrSrc?: string; t: TFn; speed: number; paused: boolean }) {
+  if (recap.members.length === 0) return <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} />;
+  return (
+    <div className="kt-tv-aw-split">
+      <div className="kt-tv-aw-half">
+        <Finale recap={recap} recapText={recapText} qrSrc={qrSrc} t={t} />
+      </div>
+      <div className="kt-tv-aw-half">
+        <CreditsRoll recap={recap} t={t} speed={speed} paused={paused} loop />
       </div>
     </div>
   );
@@ -234,7 +239,7 @@ function Finale({ recap, recapText, qrSrc, t }: { recap: Recap; recapText?: stri
     <div className="kt-tv-aw-center">
       <span className="kt-tv-aw-kicker">{t("tv.thanks")}</span>
       <span className="kt-tv-aw-big">{t("tv.seeYou")}</span>
-      <div className="kt-tv-aw-faces" aria-hidden>
+      <div className="kt-tv-aw-faces" aria-hidden style={{ ["--cols" as string]: Math.min(recap.members.length, 8) <= 4 ? Math.min(recap.members.length, 8) : Math.ceil(Math.min(recap.members.length, 8) / 2) }}>
         {recap.members.slice(0, 8).map((m, i) => (
           <img key={m.id} src={avatarUri(m.avatarSeed)} alt="" style={{ animationDelay: `${i * 120}ms` }} />
         ))}
