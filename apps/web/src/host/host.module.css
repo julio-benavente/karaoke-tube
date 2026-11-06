@@ -865,6 +865,35 @@
   width: 100%;
 }
 
+/* The real search field is white on a phone, like the guest Search screen. */
+.mobileMain .searchField {
+  background: var(--kt-text);
+  box-shadow: none;
+  border-radius: var(--kt-radius-xs);
+}
+
+.mobileMain .searchField:hover {
+  background: var(--kt-text);
+}
+
+.mobileMain .searchField:focus-within {
+  box-shadow: 0 0 0 3px var(--kt-white-30);
+}
+
+.mobileMain .searchField input {
+  color: var(--kt-base);
+  font-weight: var(--kt-weight-medium);
+}
+
+.mobileMain .searchField input::placeholder {
+  color: #4d4652;
+}
+
+.mobileMain .searchField .searchIcon,
+.mobileMain .searchField .searchClear {
+  color: var(--kt-base);
+}
+
 .mobileMain .greeting,
 .mobileMain .pageTitle {
   margin-top: var(--kt-space-4);

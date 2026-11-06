@@ -1,8 +1,9 @@
-import { Search as SearchIcon, X } from "lucide-react";
+import { Link2, Search as SearchIcon, X } from "lucide-react";
 import { useRef, useState } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import {
   BROWSE_PRESETS,
+  Chip,
   EmptyState,
   SingWithButton,
   SongRow,
@@ -19,6 +20,8 @@ import { LINK_MESSAGE, useLinkLookup } from "../useLinkLookup";
 import { ArtistSuggestions, FilterCards, FilterChips } from "../FilterChips";
 import { hasFilters } from "../catalogFilters";
 import { LoadMore } from "../LoadMore";
+import { PasteSheet } from "../screens/Search";
+import { isPhoneLayout } from "./phone";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
 
@@ -29,11 +32,16 @@ export function SearchView() {
   const search = useSearch();
   const add = useHostAdd();
   const inputRef = useRef<HTMLInputElement>(null);
+  const phone = isPhoneLayout();
+  const [pasteOpen, setPasteOpen] = useState(false);
   const linkId = parseYouTubeId(search.query);
   const link = useLinkLookup(linkId);
 
   // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
   const cs = useCatalogSearch(search);
+
+  // Opens the paste box. (Reading the clipboard directly makes phones pop up their own "Paste" bubble.)
+  const pasteFromClipboard = () => setPasteOpen(true);
 
   if (!state) return null;
   const queued = new Set(state.upNext.map((q) => q.song.videoId));
@@ -64,9 +72,15 @@ export function SearchView() {
             </button>
           )}
         </label>
-        <SingWithButton />
+        {!phone && <SingWithButton />}
       </header>
       <div className={css.filterRow}>
+        {/* On a phone the row looks like the guest Search: "Paste a link", then the filters (no "Sing with"). */}
+        {phone && (
+          <Chip icon={<Link2 size={16} />} onClick={pasteFromClipboard}>
+            {t("search.paste")}
+          </Chip>
+        )}
         <FilterChips cs={cs} />
       </div>
 
@@ -131,6 +145,14 @@ export function SearchView() {
           )}
         </section>
       )}
+      <PasteSheet
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        onSubmit={(text) => {
+          setPasteOpen(false);
+          cs.onType(text);
+        }}
+      />
     </div>
   );
 }

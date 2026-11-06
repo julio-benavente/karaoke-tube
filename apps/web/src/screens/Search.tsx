@@ -64,15 +64,8 @@ export function SearchScreen() {
     inputRef.current?.focus();
   };
 
-  const pasteFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (parseYouTubeId(text)) return onType(text.trim());
-    } catch {
-      // Clipboard blocked: fall back to the paste sheet.
-    }
-    setPasteOpen(true);
-  };
+  // Opens the paste box. (Reading the clipboard directly makes phones pop up their own "Paste" bubble.)
+  const pasteFromClipboard = () => setPasteOpen(true);
 
   const row = (s: Song) => (
     <SongRow
@@ -229,7 +222,7 @@ function SkeletonRows({ n }: { n: number }) {
   );
 }
 
-function PasteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (text: string) => void }) {
+export function PasteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (text: string) => void }) {
   const t = useT();
   const [text, setText] = useState("");
   const valid = !!parseYouTubeId(text);
