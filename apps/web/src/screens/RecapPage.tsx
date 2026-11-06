@@ -1,15 +1,14 @@
-import { Download, MicOff } from "lucide-react";
+import { MicOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import type { ApiErrorResponse, Recap, RecapResponse } from "@karaoke-tube/shared";
 import { Button, EmptyState, Logo, SessionLanguage, Spinner, useT } from "@karaoke-tube/ui";
 import { RecapView, ShareRecapButton } from "./RecapView";
-import { saveRecapImage } from "./recap-image";
 import css from "./RecapPage.module.css";
 
 type Load = { state: "loading" } | { state: "gone" } | { state: "error" } | { state: "ready"; recap: Recap };
 
-/** /recap/:id: public, no login. The recap card with Share and Save as image; friendly when it has expired. */
+/** /recap/:id: public, no login. The recap card with a Share button; friendly when it has expired. */
 export function RecapPage({ preload }: { preload?: Recap } = {}) {
   const { id = "" } = useParams();
   const t = useT();
@@ -29,6 +28,16 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
       .catch((e) => e.name !== "AbortError" && setLoad({ state: "error" }));
     return () => ctl.abort();
   }, [id, preload]);
+
+  // The recap itself is laid out like the end of the phone story (same width, spacing and bottom bar).
+  if (load.state === "ready") {
+    return (
+      // The recap is in the language the night was held in.
+      <SessionLanguage lang={load.recap.language}>
+        <RecapBody recap={load.recap} />
+      </SessionLanguage>
+    );
+  }
 
   return (
     <div className={css.page}>
@@ -54,12 +63,6 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
           {t("recap.loadErrorHint")}
         </EmptyState>
       )}
-      {load.state === "ready" && (
-        // The recap is in the language the night was held in.
-        <SessionLanguage lang={load.recap.language}>
-          <RecapBody recap={load.recap} />
-        </SessionLanguage>
-      )}
     </div>
   );
 }
@@ -67,17 +70,16 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
 function RecapBody({ recap }: { recap: Recap }) {
   const t = useT();
   return (
-    <>
-      <RecapView recap={recap} />
+    <div className={css.summary}>
+      <div className={css.scroll}>
+        <RecapView recap={recap} />
+        <p className={css.foot}>
+          {t("recap.madeWith")} <Link to="/join">{t("recap.joinParty")}</Link>
+        </p>
+      </div>
       <div className={css.actions}>
         <ShareRecapButton recap={recap} />
-        <Button size="lg" variant="secondary" icon={<Download size={18} />} onClick={() => void saveRecapImage(recap, t)}>
-          {t("recap.save")}
-        </Button>
       </div>
-      <p className={css.foot}>
-        {t("recap.madeWith")} <Link to="/join">{t("recap.joinParty")}</Link>
-      </p>
-    </>
+    </div>
   );
 }

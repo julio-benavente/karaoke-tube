@@ -158,7 +158,7 @@ describe("C4 recap & titles", () => {
     expect(recap.topMoment?.item.id).toBe(itemId);
     for (const m of recap.members) expect(recap.titles[m.id]!.length).toBeGreaterThanOrEqual(2);
     expect(recap.titles[ana.id]).toContain("showstopper");
-    expect(recap.titles[ben.id]).toContain("biggest_fan");
+    expect(recap.titles[ben.id]).toContain("award_giver"); // one reaction is too few for Biggest Fan
 
     const res = await SELF.fetch(`${BASE}/api/recaps/${recap.id}`);
     expect(res.status).toBe(200);

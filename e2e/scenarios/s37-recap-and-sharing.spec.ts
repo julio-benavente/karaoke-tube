@@ -35,22 +35,14 @@ test("S37 · Recap and sharing @recap", async ({ night, browser }) => {
   expect(recap.titles[benId]).toContain("grand_finale");
   for (const m of recap.members) if (m.nickname !== "Hana") expect(recap.titles[m.id]?.length, `${m.nickname} has titles`).toBeGreaterThanOrEqual(1);
 
-  // The public page opens for someone not in the party; the picture can be saved and isn't empty.
+  // The public page opens for someone not in the party.
   const reader = await browser.newContext({ viewport: { width: 430, height: 900 }, locale: "en-US" });
-  await reader.addInitScript(() => {
-    (navigator as unknown as { canShare?: unknown }).canShare = undefined; // the share sheet is the system's; test the plain download
-  });
   const page = await reader.newPage();
   await page.goto(`/recap/${recap.id}`);
   await expect(page.getByText(en["recap.titles"])).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(en["recap.setlist"])).toBeVisible();
   await expect(page.locator("body")).toContainText("Opening Act");
-  const download = page.waitForEvent("download", { timeout: 20_000 });
-  await page.getByRole("button", { name: en["recap.save"] }).click();
-  const file = await download;
-  const path = await file.path();
-  const { statSync } = await import("node:fs");
-  expect(statSync(path!).size).toBeGreaterThan(5_000);
+  await expect(page.getByRole("button", { name: en["share.recap"] })).toBeVisible();
 
   // An unknown recap id is a clear "expired" page, not a crash.
   await page.goto("/recap/00000000-0000-0000-0000-000000000000");

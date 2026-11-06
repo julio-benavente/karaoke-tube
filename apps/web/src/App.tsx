@@ -23,6 +23,7 @@ const NewParty = lazy(() => import("./host/NewParty").then((m) => ({ default: m.
 const TvPair = lazy(() => import("./tv/TvPair").then((m) => ({ default: m.TvPair })));
 const TvScreen = lazy(() => import("./tv/TvScreen").then((m) => ({ default: m.TvScreen })));
 const RecapDev = DEV ? lazy(() => import("./dev/RecapDev").then((m) => ({ default: m.RecapDev }))) : () => null;
+const TitlesDev = DEV ? lazy(() => import("./dev/TitlesDev").then((m) => ({ default: m.TitlesDev }))) : () => null;
 const SongCards = DEV ? lazy(() => import("./dev/SongCards").then((m) => ({ default: m.SongCards }))) : () => null;
 const Posters = DEV ? lazy(() => import("./dev/Posters").then((m) => ({ default: m.Posters }))) : () => null;
 const TvPreview = DEV ? lazy(() => import("./dev/TvPreview").then((m) => ({ default: m.TvPreview }))) : () => null;
@@ -51,6 +52,7 @@ export function App() {
           <Route path="/host/:code/*" element={<HostApp />} />
           {DEV && <Route path="/dev/ui" element={<Gallery />} />}
           {DEV && <Route path="/dev/recap" element={<RecapDev />} />}
+          {DEV && <Route path="/dev/titles" element={<TitlesDev />} />}
           {DEV && <Route path="/dev/tv" element={<TvPreview />} />}
           {DEV && <Route path="/dev/song-cards" element={<SongCards />} />}
           {DEV && <Route path="/dev/posters" element={<Posters />} />}

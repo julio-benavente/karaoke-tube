@@ -33,7 +33,54 @@ describe("computeTitles", () => {
       expect(result[id]!.length).toBeGreaterThanOrEqual(MIN_TITLES);
       expect(result[id]!.length).toBeLessThanOrEqual(MAX_TITLES);
     }
-    expect(result.ana).toEqual(["great_audience", "party_spirit"]);
+    // Nothing happened: only the host-less first guest has something real (Early Bird); the rest get kind fillers.
+    expect(result.ana).toContain("early_bird");
+    for (const titles of Object.values(result)) for (const t of titles) expect(["early_bird", "party_spirit", "good_company", "front_row"]).toContain(t);
+  });
+
+  it("fillers rotate so a quiet room doesn't all get the same title", () => {
+    const r = computeTitles(input({}));
+    const filler = Object.values(r).map((t) => t.filter((x) => x !== "early_bird").join());
+    expect(new Set(filler).size).toBeGreaterThan(1);
+  });
+
+  it("early bird is the first guest, never the host", () => {
+    const members = [
+      { id: "ana", joinedAt: 0, isHost: true },
+      { id: "ben", joinedAt: 5 },
+      { id: "cleo", joinedAt: 9 },
+    ];
+    const r = computeTitles(input({ members }));
+    expect(r.ben).toContain("early_bird");
+    expect(r.ana).not.toContain("early_bird");
+  });
+
+  it("award titles go to whoever got the most of that award; DJ to who picked the most songs for others", () => {
+    const performances = [
+      perf(["ana"], { awards: { nailed_it: 3 } }),
+      perf(["ben"], { awards: { nailed_it: 1 }, addedBy: "dan" }),
+      perf(["cleo"], { addedBy: "dan" }),
+    ];
+    const r = computeTitles(input({ performances }));
+    expect(r.ana).toContain("golden_voice");
+    expect(r.ben).not.toContain("golden_voice");
+    expect(r.dan).toContain("dj");
+  });
+
+  it("hat trick for three songs; patient soul for a long wait", () => {
+    const performances = [
+      perf(["cleo"]),
+      perf(["ana"]),
+      perf(["dan"]),
+      perf(["ana"]),
+      perf(["dan"]),
+      perf(["ana"]),
+      perf(["ben"], { addedAt: 1000, performedAt: 1_000_000 }),
+    ];
+    performances[6]!.performedAt = 1000 + 9 * 60_000;
+    const r = computeTitles(input({ performances }));
+    expect(r.ana).toContain("hat_trick");
+    expect(r.ben).toContain("patient_soul");
   });
 
   it("finds the opening act, grand finale, encore and repeat performer", () => {

@@ -1052,9 +1052,14 @@ export class Room extends DurableObject<Env> {
       (cheered[a.member_id] ??= []).push(a.item_id);
     }
 
+    // People who cheered a song (reaction or award), not counting its singers; each person counts once.
+    const cheerers = (itemId: string, singerIds: string[], everyone: boolean, addedBy: string) => {
+      const singers = everyone ? [addedBy] : singerIds;
+      return Object.entries(cheered).filter(([id, ids]) => ids.includes(itemId) && !singers.includes(id)).length;
+    };
     const titles = this.settings().titles
       ? computeTitles({
-          members: members.map((m) => ({ id: m.id, joinedAt: m.joined_at })),
+          members: members.map((m) => ({ id: m.id, joinedAt: m.joined_at, isHost: m.role === "host" })),
           performances: performances.map((p, i) => ({
             itemId: p.item.id,
             singerIds: p.item.singerIds,
@@ -1062,7 +1067,9 @@ export class Room extends DurableObject<Env> {
             addedBy: p.item.addedBy,
             durationSec: p.item.song.durationSec,
             performedAt: items[i]!.performedAt!,
-            cheers: p.cheers,
+            addedAt: items[i]!.addedAt,
+            cheers: cheerers(p.item.id, p.item.singerIds, !!p.item.everyone, p.item.addedBy),
+            awards: p.awards,
           })),
           reactionsSent,
           awardsGiven,

@@ -122,7 +122,7 @@ Ana and Ben join in Spanish. Ana adds three songs, Ben adds one.
 1. Cleo adds a group song for everyone. The TV shows "Everyone". All 5 phones get the turn alert and show the countdown.
 2. During the song, a late guest (Fay) joins: she appears in the room and sees the group song playing.
 3. After it, a normal song plays; the group song doesn't count against anyone's slot limit.
-4. Recap gives Cleo "Choir Leader".
+4. Recap gives Cleo "Sing-along Starter".
 
 **S12 · Only hosts add** `@host` · twist: mode rotation
 1. Hana turns on "only hosts can add". Ana's search shows "Only the hosts can add songs right now"; the add buttons are disabled.

@@ -13,15 +13,52 @@
   display: flex;
 }
 
-.actions {
+/* The recap: same layout as the summary at the end of the phone story. */
+.summary {
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  background: var(--kt-base);
+}
+
+.scroll {
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--kt-space-8) var(--kt-space-4) var(--kt-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-6);
+  animation: rise 500ms var(--kt-ease-out) both;
+}
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
   gap: var(--kt-space-3);
+  padding: var(--kt-space-4) var(--kt-space-4) max(var(--kt-space-4), env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--kt-base) 70%, transparent);
 }
 
 .actions > button {
   flex: 1;
   white-space: nowrap;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll {
+    animation-duration: 1ms;
+  }
 }
 
 .link {
