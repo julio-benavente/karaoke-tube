@@ -1,7 +1,7 @@
+import { PageLoading } from "./PageLoading";
 import { LegalPage } from "./screens/Legal";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
-import { Spinner } from "@karaoke-tube/ui";
 import { Landing } from "./screens/Landing";
 import { JoinScreen } from "./screens/Join";
 import { RoomShell } from "./screens/RoomShell";
@@ -32,7 +32,7 @@ export function App() {
   return (
     <AccountProvider>
     <BrowserRouter>
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/join/:code?" element={<JoinScreen />} />

@@ -13,6 +13,13 @@
   display: flex;
 }
 
+/* The recap is loading: the spinner sits in the middle of the page, under the logo. */
+.loading {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
 /* The recap: same layout as the summary at the end of the phone story. */
 .summary {
   min-height: 100vh;

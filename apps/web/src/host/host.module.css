@@ -422,14 +422,23 @@
   transition: box-shadow var(--kt-fast) var(--kt-ease);
 }
 
+/* The Home / Settings "Search" bar (opens Search): the soft grey pill. The real field on Search is the white one. */
 .fakeSearch {
   padding: 0 var(--kt-space-5);
   text-align: left;
+  background: var(--kt-hover);
+  box-shadow: inset 0 0 0 1px var(--kt-white-10);
+  color: var(--kt-text-2);
+  font-weight: inherit;
+  transition: background-color var(--kt-fast) var(--kt-ease);
+}
+
+.fakeSearch:hover {
+  background: var(--kt-white-20);
 }
 
 .fakeSearch svg {
   flex: none;
-  color: var(--kt-base);
 }
 
 .searchField {
@@ -882,8 +891,7 @@
   margin-top: calc(-1 * var(--kt-space-3));
 }
 
-/* On a phone the bars are squarer, like the guest Search. */
-.mobileMain .fakeSearch,
+/* On a phone the real search field is squarer, like the guest Search. */
 .mobileMain .searchField {
   border-radius: var(--kt-radius-xs);
 }

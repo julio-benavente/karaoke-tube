@@ -44,7 +44,11 @@ export function RecapPage({ preload }: { preload?: Recap } = {}) {
       <div className={css.top}>
         <Logo />
       </div>
-      {load.state === "loading" && <Spinner />}
+      {load.state === "loading" && (
+        <div className={css.loading}>
+          <Spinner />
+        </div>
+      )}
       {load.state === "gone" && (
         <EmptyState
           icon={<MicOff />}

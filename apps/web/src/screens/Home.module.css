@@ -73,11 +73,11 @@
   gap: var(--kt-space-2);
   height: var(--kt-control-lg);
   padding: 0 var(--kt-space-5);
-  border-radius: var(--kt-radius-xs);
-  background: var(--kt-text);
-  color: #4d4652;
-  font-size: var(--kt-text-base);
-  font-weight: var(--kt-weight-medium);
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-hover);
+  box-shadow: inset 0 0 0 1px var(--kt-white-10);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -85,7 +85,6 @@
 
 .fakeSearch svg {
   flex: none;
-  color: var(--kt-base);
 }
 
 /* Space between the host's party / now-playing cards and the song cards below. */
