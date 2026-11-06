@@ -46,6 +46,10 @@ const HOST_OFFLINE_MS = 60_000;
 
 /** An open party with nobody connected for this long ends itself. */
 export const IDLE_TTL_MS = 12 * 60 * 60 * 1000;
+/** No party lasts longer than this, even with people still connected (a phone left open on a table). */
+export const MAX_PARTY_MS = 12 * 60 * 60 * 1000;
+/** An open party where no song has been added or played for this long ends itself, even with people connected. */
+export const NO_SONGS_TTL_MS = 3 * 60 * 60 * 1000;
 const MAX_NICKNAME = 24;
 
 /** Kept on each socket with `serializeAttachment`, so it survives hibernation. */
@@ -151,6 +155,8 @@ export class Room extends DurableObject<Env> {
     const { memberId, key } = await this.addMember(nickname, avatarSeed, "host");
     // Nobody is connected yet: if the host never shows up, the idle clock still ends the party.
     this.setMeta("idleSince", Date.now());
+    this.setMeta("createdAt", Date.now());
+    this.setMeta("lastSongAt", Date.now());
     await this.scheduleAlarm();
     return { code, memberId, key };
   }
@@ -300,7 +306,31 @@ export class Room extends DurableObject<Env> {
       await this.endRoom("abandoned");
       return;
     }
+    // Even with people connected: a party never runs longer than MAX_PARTY_MS, and one where no song has been
+    // added or played for NO_SONGS_TTL_MS is over. (A song that is playing counts as activity.)
+    this.ensureClocks(now);
+    if (now >= this.getMeta<number>("createdAt")! + MAX_PARTY_MS) {
+      console.log("[room] ending a party that reached its maximum length");
+      await this.endRoom("max_length");
+      return;
+    }
+    if (now >= this.getMeta<number>("lastSongAt")! + NO_SONGS_TTL_MS) {
+      const state = this.playback().state;
+      if (state === "playing" || state === "get_ready") {
+        this.setMeta("lastSongAt", now);
+      } else {
+        console.log("[room] ending a party with no songs for a while");
+        await this.endRoom("inactive");
+        return;
+      }
+    }
     await this.scheduleAlarm();
+  }
+
+  /** Rooms made before these clocks existed start them the first time they are needed. */
+  private ensureClocks(now = Date.now()) {
+    if (this.getMeta<number>("createdAt") === null) this.setMeta("createdAt", now);
+    if (this.getMeta<number>("lastSongAt") === null) this.setMeta("lastSongAt", now);
   }
 
   /**
@@ -438,6 +468,8 @@ export class Room extends DurableObject<Env> {
       if (this.getMeta<boolean>("countdownPending") && pb.state === "get_ready" && pb.countdownEndsAt) times.push(pb.countdownEndsAt);
       const idleSince = this.getMeta<number>("idleSince");
       if (idleSince) times.push(idleSince + IDLE_TTL_MS);
+      this.ensureClocks();
+      times.push(this.getMeta<number>("createdAt")! + MAX_PARTY_MS, this.getMeta<number>("lastSongAt")! + NO_SONGS_TTL_MS);
       const hostOfflineSince = this.getMeta<number>("hostOfflineSince");
       if (hostOfflineSince) times.push(hostOfflineSince + this.hostOfflineMs());
     }
@@ -451,7 +483,7 @@ export class Room extends DurableObject<Env> {
   }
 
   /** End the party: status ended, tell everyone, delete storage after ENDED_TTL_MS. */
-  private async endRoom(reason: "host" | "abandoned" | "host_left" = "host") {
+  private async endRoom(reason: "host" | "abandoned" | "host_left" | "max_length" | "inactive" = "host") {
     const now = Date.now();
     // The song on screen when the party ends still counts as sung if it started.
     const current = this.nowPlayingItem();
@@ -546,6 +578,7 @@ export class Room extends DurableObject<Env> {
           this.nextAddedAt(),
           everyone ? 1 : 0,
         );
+        this.setMeta("lastSongAt", Date.now());
         logEvent(this.env, "song_added", {
           room: this.roomTag(),
           status,
@@ -811,6 +844,7 @@ export class Room extends DurableObject<Env> {
     const upNext = this.upNext();
     const next = upNext[0];
     const now = Date.now();
+    this.setMeta("lastSongAt", now); // a song just ended or is about to start
     if (!next) {
       this.setPlayback(idlePlayback(now));
       this.setMeta("countdownPending", false);

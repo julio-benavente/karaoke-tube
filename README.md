@@ -18,8 +18,17 @@ Free · No install · No sign-up · English and Spanish
 
 ## Contents
 
-**For everyone:** [Start a party in 1 minute](#start-a-party-in-1-minute) · [What you can do](#what-you-can-do) · [Questions](#questions)
-**For developers:** [How it's built](#how-its-built) · [Design decisions](#design-decisions) · [Run it locally](#run-it-locally) · [Testing](#testing) · [Docs](#docs)
+- **For everyone**
+  - [Start a party in 1 minute](#start-a-party-in-1-minute)
+  - [What you can do](#what-you-can-do)
+  - [A closer look](#a-closer-look)
+  - [Questions](#questions)
+- **For developers**
+  - [How it's built](#how-its-built)
+  - [Design decisions](#design-decisions)
+  - [Run it locally](#run-it-locally)
+  - [Testing](#testing)
+  - [Docs](#docs)
 
 ---
 

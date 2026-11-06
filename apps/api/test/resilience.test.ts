@@ -1,7 +1,7 @@
 import { env, runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { SELF } from "cloudflare:test";
-import { BASE, TestClient, createRoom, guest, hostRoom } from "./helpers";
+import { BASE, TestClient, createRoom, guest, hostRoom, song } from "./helpers";
 
 const stubFor = (code: string) => env.ROOM.get(env.ROOM.idFromName(code));
 const until = async (cond: () => boolean, ms = 2000) => {
@@ -97,6 +97,64 @@ describe("abandoned parties", () => {
       JSON.parse(state.storage.sql.exec<{ value: string }>("SELECT value FROM meta WHERE key = 'idleSince'").one().value),
     );
     expect(idleSince).toBeNull();
+  });
+});
+
+describe("parties that run too long or go quiet", () => {
+  const setMeta = (code: string, key: string, value: number) =>
+    runInDurableObject(stubFor(code), async (_room, state) => {
+      state.storage.sql.exec("UPDATE meta SET value = ? WHERE key = ?", JSON.stringify(value), key);
+    });
+  const hours = (h: number) => Date.now() - h * 3600_000;
+
+  it("end after 3 hours with no songs, even with people connected", async () => {
+    const { code, host } = await hostRoom();
+    await guest(code, "Ana");
+    const stub = stubFor(code);
+
+    await setMeta(code, "lastSongAt", hours(2));
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "open" });
+
+    await setMeta(code, "lastSongAt", hours(4));
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "ended" });
+    host.close();
+  });
+
+  it("stay open when a song was added or played recently", async () => {
+    const { code, host } = await hostRoom();
+    const stub = stubFor(code);
+    await setMeta(code, "lastSongAt", hours(4));
+    await host.act({ type: "add_song", song: song("Fresh") }); // adding a song restarts the 3 hours
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "open" });
+    host.close();
+  });
+
+  it("do not end while a song is playing, however long it has been since one was added", async () => {
+    const { code, host } = await hostRoom();
+    await host.act({ type: "add_song", song: song("Long one") }); // starts right away (get ready or playing)
+    const stub = stubFor(code);
+    await setMeta(code, "lastSongAt", hours(4));
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "open" });
+    host.close();
+  });
+
+  it("end after 12 hours, even with people connected and songs being sung", async () => {
+    const { code, host } = await hostRoom();
+    await host.act({ type: "add_song", song: song("Still going") });
+    const stub = stubFor(code);
+
+    await setMeta(code, "createdAt", hours(11));
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "open" });
+
+    await setMeta(code, "createdAt", hours(13));
+    await runDurableObjectAlarm(stub);
+    expect(await stub.info()).toMatchObject({ status: "ended" });
+    host.close();
   });
 });
 
