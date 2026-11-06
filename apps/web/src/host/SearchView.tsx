@@ -1,5 +1,5 @@
 import { Search as SearchIcon, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Song } from "@karaoke-tube/shared";
 import {
   BROWSE_PRESETS,
@@ -35,8 +35,6 @@ export function SearchView() {
   // What you search (text, filters, category) lives in the address: Back, refresh and links keep it.
   const cs = useCatalogSearch(search);
 
-  useEffect(() => inputRef.current?.focus(), []);
-
   if (!state) return null;
   const queued = new Set(state.upNext.map((q) => q.song.videoId));
 
@@ -48,6 +46,8 @@ export function SearchView() {
           <span className="kt-sr-only">{t("search.songs")}</span>
           <input
             ref={inputRef}
+            // autoFocus (not an effect): it focuses while the page is inserted, so the phone keyboard opens.
+            autoFocus
             value={search.query}
             onChange={(e) => cs.onType(e.target.value)}
             placeholder={window.matchMedia("(max-width: 820px)").matches ? t("search.placeholder") : t("search.placeholderHost")}
