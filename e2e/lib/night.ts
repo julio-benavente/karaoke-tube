@@ -40,7 +40,7 @@ export class Night {
     if (o.ctx) await expect(page.getByLabel(d["newparty.name"])).not.toHaveValue("", { timeout: 10_000 }); // a signed-in host starts with their own name
     else await page.getByLabel(d["newparty.name"]).fill(name);
     await page.getByRole("button", { name: d["newparty.start"] }).click();
-    await page.waitForURL(/\/host\/[a-z]+-[a-z]+-[a-z]+/);
+    await page.waitForURL(/\/host\/[a-z]+-[a-z]+(-[a-z]+)?/);
     this.code = page.url().split("/host/")[1].split(/[/?#]/)[0];
     await expect.poll(() => this.host.connected(), { message: "host connects" }).toBe(true);
     this.watcher.start();

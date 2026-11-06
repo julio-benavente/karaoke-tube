@@ -12,8 +12,8 @@ import {
 import type { Context, Next } from "hono";
 import { logEvent } from "../log";
 import { userFromRequest } from "./account";
-import { ADJECTIVES, NOUNS } from "../words";
-import { ADJECTIVES_ES, NOUNS_ES } from "../words-es";
+import { WORDS } from "../words";
+import { WORDS_ES } from "../words-es";
 
 /** Unbiased random integer in [0, n). */
 function randomInt(n: number): number {
@@ -24,19 +24,18 @@ function randomInt(n: number): number {
   return buf[0]! % n;
 }
 
-/** "<adjective>-<adjective>-<noun>" with two different adjectives, e.g. "fuzzy-golden-panda" (Spanish rooms: "feliz-dorado-panda"). */
+/** Two different simple words, e.g. "fuzzy-panda" (Spanish rooms: "feliz-panda"). */
 export function randomCode(language: RoomLanguage = "en"): string {
-  const adjectives: readonly string[] = language === "es" ? ADJECTIVES_ES : ADJECTIVES;
-  const nouns: readonly string[] = language === "es" ? NOUNS_ES : NOUNS;
-  const first = randomInt(adjectives.length);
-  let second = randomInt(adjectives.length - 1);
+  const words: readonly string[] = language === "es" ? WORDS_ES : WORDS;
+  const first = randomInt(words.length);
+  let second = randomInt(words.length - 1);
   if (second >= first) second++;
-  return `${adjectives[first]}-${adjectives[second]}-${nouns[randomInt(nouns.length)]}`;
+  return `${words[first]}-${words[second]}`;
 }
 
 /**
  * Per-IP rate limit (Workers rate limiting binding). Generous, because a whole party often shares one Wi-Fi IP;
- * with 6-character codes that still makes guessing a live room take days. Skipped when there's no client IP
+ * with hundreds of thousands of possible codes that still makes guessing a live room slow. Skipped when there's no client IP
  * (local tests); Cloudflare always sets it in production.
  */
 const limit = (pick: (env: Env) => RateLimit) => async (c: Context<{ Bindings: Env }>, next: Next) => {

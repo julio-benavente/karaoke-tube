@@ -3,7 +3,7 @@ import { englishLeftovers } from "../lib/english";
 import { es } from "../../packages/ui/src/i18n/es";
 import { newContext, PHONE, Phone } from "../lib/people";
 import { song } from "../lib/songs";
-import { ADJECTIVES_ES, NOUNS_ES } from "../../apps/api/src/words-es";
+import { WORDS_ES } from "../../apps/api/src/words-es";
 
 test("S35 · A night in Spanish @i18n", async ({ night }) => {
   const { host, tv } = await night.setup({ lang: "es", countdown: 2, songSec: 8, settings: { tvLayout: "bar" } });
@@ -29,8 +29,7 @@ test("S35 · A night in Spanish @i18n", async ({ night }) => {
 
   // The party code is made of Spanish words (the host started the party in Spanish).
   const words = night.code.split("-");
-  expect(ADJECTIVES_ES as readonly string[], "code adjectives").toEqual(expect.arrayContaining([words[0], words[1]]));
-  expect(NOUNS_ES as readonly string[], "code noun").toContain(words[2]);
+  expect(WORDS_ES as readonly string[], "code words").toEqual(expect.arrayContaining([words[0], words[1]]));
 
   // Ben's own phone prefers English, but the party is in Spanish: he still sees Spanish.
   await ben.page.evaluate(() => localStorage.setItem("kt:lang", "en"));

@@ -366,16 +366,17 @@ export type ErrorCode =
 // ── Room codes ───────────────────────────────────────────────────────────
 
 /**
- * Room codes are three words, e.g. "fuzzy-golden-panda": easy to say across a room, ~57 million combinations
+ * Room codes are two simple words, e.g. "fuzzy-panda": easy to say across a room, hundreds of thousands of combinations
  * (the API also rate-limits lookups per IP). Always lowercase with dashes in URLs and storage.
- * Spanish rooms use Spanish words (ASCII only, no accents, e.g. "feliz-dorado-panda"); the same pattern accepts both.
+ * Spanish rooms use Spanish words (ASCII only, no accents, e.g. "feliz-panda"); the same pattern accepts both.
  */
-export const ROOM_CODE_EXAMPLE = "fuzzy-golden-panda";
-export const ROOM_CODE_RE = /^[a-z]+-[a-z]+-[a-z]+$/;
+// New codes are two words; a third word is still accepted for parties that started with the earlier three-word codes.
+export const ROOM_CODE_EXAMPLE = "fuzzy-panda";
+export const ROOM_CODE_RE = /^[a-z]+-[a-z]+(-[a-z]+)?$/;
 
 /**
  * The canonical form of a typed code: lowercase, any run of spaces/dashes/punctuation becomes one dash
- * ("Fuzzy Golden  Panda" → "fuzzy-golden-panda"). Leaves a trailing dash while typing; check the result
+ * ("Fuzzy  Panda" → "fuzzy-panda"). Leaves a trailing dash while typing; check the result
  * with `isRoomCode`.
  */
 export function normalizeRoomCode(input: string): string {
@@ -386,7 +387,7 @@ export function normalizeRoomCode(input: string): string {
     .slice(0, 40);
 }
 
-/** For showing a code to people: words with spaces, "fuzzy golden panda". */
+/** For showing a code to people: words with spaces, "fuzzy panda". */
 export function formatRoomCode(code: string): string {
   return code.replace(/-/g, " ");
 }

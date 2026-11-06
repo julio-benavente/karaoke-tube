@@ -65,7 +65,7 @@ The UI worktree runs only the web app on :5174 with the mock (`pnpm --filter @ka
 - `player_event.durationSec?` (integration): the player reports the video's real length. Songs added from a pasted link
   without a YouTube key come from oEmbed with `durationSec: 0`; the room fills it in from this when the song starts.
 - Room codes (integration): `ROOM_CODE_EXAMPLE`, `ROOM_CODE_RE`, `normalizeRoomCode()`, `isRoomCode()`. Codes are
-  three words, e.g. `fuzzy-golden-panda` (was 4 characters), lowercase with dashes; the API also rate-limits room
+  two simple words, e.g. `fuzzy-panda` (earlier: three words, still accepted), lowercase with dashes; the API also rate-limits room
   lookups and joins per IP. (`ROOM_CODE_ALPHABET` / `ROOM_CODE_LENGTH` from an intermediate commit are gone.)
 - v1.1 (`contract: v1.1`, see [C-v1.1.md](C-v1.1.md)): settings `duets` / `turnAlerts` / `awards` / `titles`; queue
   mode `"approval"` with item status `"pending"` and `RoomState.pending`; `QueueItem.everyone` and

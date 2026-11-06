@@ -6,19 +6,20 @@ import { BASE, TestClient, createRoom, guest, hostRoom, song } from "./helpers";
 describe("rooms HTTP", () => {
   it("creates a room with a word code", async () => {
     const room = await createRoom("Julio");
-    expect(room.code).toMatch(/^[a-z]+-[a-z]+-[a-z]+$/);
+    expect(room.code).toMatch(/^[a-z]+-[a-z]+$/);
     const info = await (await SELF.fetch(`${BASE}/api/rooms/${room.code.toUpperCase().replace(/-/g, "%20")}`)).json();
     expect(info).toEqual({ code: room.code, exists: true, locked: false, status: "open", language: "en" });
   });
 
   it("gives a Spanish session Spanish-word codes and remembers its language", async () => {
-    const { ADJECTIVES_ES, NOUNS_ES } = await import("../src/words-es");
+    const { WORDS_ES } = await import("../src/words-es");
     const room = await createRoom("Julia", "es");
     expect(isRoomCode(room.code)).toBe(true);
-    const [a, b, n] = room.code.split("-");
-    expect(ADJECTIVES_ES as readonly string[]).toContain(a);
-    expect(ADJECTIVES_ES as readonly string[]).toContain(b);
-    expect(NOUNS_ES as readonly string[]).toContain(n);
+    const [a, b, extra] = room.code.split("-");
+    expect(extra).toBeUndefined(); // two words
+    expect(a).not.toBe(b);
+    expect(WORDS_ES as readonly string[]).toContain(a);
+    expect(WORDS_ES as readonly string[]).toContain(b);
     const info = await (await SELF.fetch(`${BASE}/api/rooms/${room.code}`)).json<{ language: string }>();
     expect(info.language).toBe("es");
     const host = await TestClient.open(room.code);
