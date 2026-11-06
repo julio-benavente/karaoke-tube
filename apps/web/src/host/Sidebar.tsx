@@ -1,9 +1,9 @@
 import { formatRoomCode } from "@karaoke-tube/shared";
-import { Check, ChevronDown, Copy, Crown, Home, ListPlus, MoreHorizontal, PhoneOff, Search, Settings, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Copy, Crown, Home, ListPlus, MoreHorizontal, Pencil, PhoneOff, Search, Settings, ShieldCheck, UserMinus, UserPlus } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Member } from "@karaoke-tube/shared";
-import { AddGuestSheet, Avatar, Button, LanguageSwitcher, Logo, Pill, Toggle, useRoom, useSingWith, useT } from "@karaoke-tube/ui";
+import { AddGuestSheet, Avatar, Button, ChangeAvatarSheet, LanguageSwitcher, Logo, Pill, Toggle, useRoom, useSingWith, useT } from "@karaoke-tube/ui";
 import { WEB_URL } from "./client";
 import type { View } from "./HostApp";
 import css from "./host.module.css";
@@ -193,6 +193,7 @@ function GuestRow({ member, temp, isMe, canManage, onAddFor }: { member: Member;
   const canAddFor = sing.canAddFor && !isMe;
   const canKick = canManage || (member.phoneless && sing.canAddFor);
   const [open, setOpen] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
@@ -233,7 +234,7 @@ function GuestRow({ member, temp, isMe, canManage, onAddFor }: { member: Member;
           )}
         </span>
       </div>
-      {(canManage || canAddFor || canKick) && (
+      {(isMe || canManage || canAddFor || canKick) && (
         <button
           type="button"
           className={css.guestMore}
@@ -246,6 +247,19 @@ function GuestRow({ member, temp, isMe, canManage, onAddFor }: { member: Member;
       )}
       {open && (
         <div className={css.menu} role="menu">
+          {isMe && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setAvatarOpen(true);
+              }}
+            >
+              <Pencil size={16} />
+              {t("avatar.change")}
+            </button>
+          )}
           {canAddFor && (
             <button
               type="button"
@@ -289,6 +303,7 @@ function GuestRow({ member, temp, isMe, canManage, onAddFor }: { member: Member;
           )}
         </div>
       )}
+      {isMe && <ChangeAvatarSheet open={avatarOpen} onClose={() => setAvatarOpen(false)} />}
     </li>
   );
 }

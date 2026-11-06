@@ -9,7 +9,6 @@ import {
   Card,
   SongArt,
   SAMPLE_SONGS,
-  SingWithButton,
   Shelf,
   ShortcutTile,
   Tile,
@@ -22,6 +21,7 @@ import {
   useSearch,
 } from "@karaoke-tube/ui";
 import { HomeStatus } from "../host/HomeStatus";
+import { useSearchPrime } from "../useSearchPrime";
 import { fromBrowseFilter, writeFilters } from "../catalogFilters";
 import { useShell } from "./RoomShell";
 import { SongSheet } from "./SongSheet";
@@ -35,6 +35,7 @@ export function HomeScreen() {
   const { state, me, isHost } = useRoom();
   const navigate = useNavigate();
   const { code } = useShell();
+  const searchPrime = useSearchPrime();
   const roomSongs = useRoomSongs(state);
   const { add, addNow, pending } = useAddWithToast();
   const [sheetSong, setSheetSong] = useState<Song | null>(null);
@@ -77,14 +78,18 @@ export function HomeScreen() {
 
   return (
     <div className={css.home} style={{ ["--tint" as string]: tint }}>
+      {searchPrime.proxy}
       <header className={css.header}>
         <button type="button" className={css.me} onClick={() => navigate(`/r/${code}/party`)} aria-label={t("tab.party")}>
           <Avatar seed={me.avatarSeed} size={32} />
         </button>
-        <button type="button" className={css.fakeSearch} onClick={() => navigate(`/r/${code}/search`, { state: { focusSearch: true } })}>
+        <button type="button" className={css.fakeSearch} onClick={() => {
+            searchPrime.prime();
+            navigate(`/r/${code}/search`, { state: { focusSearch: true } });
+          }}
+        >
           <SearchIcon size={18} aria-hidden /> {t("search.placeholder")}
         </button>
-        {isHost && <SingWithButton />}
       </header>
 
       <h1 className={css.greeting}>

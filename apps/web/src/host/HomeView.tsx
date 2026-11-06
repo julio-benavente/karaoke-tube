@@ -4,7 +4,6 @@ import {
   Card,
   BROWSE_PRESETS,
   Shelf,
-  SingWithButton,
   SongArt,
   greeting,
   hueOf,
@@ -14,6 +13,7 @@ import {
   useSearch,
   useT,
 } from "@karaoke-tube/ui";
+import { useSearchPrime } from "../useSearchPrime";
 import { HomeStatus } from "./HomeStatus";
 import { useHostAdd } from "./useHostAdd";
 import css from "./host.module.css";
@@ -24,6 +24,7 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
   const t = useT();
   const [lang] = useLang();
   const add = useHostAdd();
+  const searchPrime = useSearchPrime();
   const classics = useSearch();
   // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
@@ -42,11 +43,11 @@ export function HomeView({ onSearch }: { onSearch: () => void }) {
   return (
     <div className={css.view} style={{ ["--tint" as string]: tint }}>
       <div className={css.wash} />
+      {searchPrime.proxy}
       <header className={`${css.viewTop} ${css.viewTopFlow}`}>
-        <button type="button" className={css.fakeSearch} onClick={onSearch}>
+        <button type="button" className={css.fakeSearch} onClick={() => { searchPrime.prime(); onSearch(); }}>
           {t("search.placeholder")}
         </button>
-        <SingWithButton />
       </header>
       <h1 className={css.greeting}>{greeting(undefined, t)}</h1>
       <HomeStatus />

@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
-import { Button, LanguageSwitcher, SingWithButton, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { Button, LanguageSwitcher, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { useSearchPrime } from "../useSearchPrime";
 import { ShowCodeButton } from "./ShowCodeButton";
 import { TvScreenSettings } from "./TvScreenSettings";
 import css from "./host.module.css";
@@ -15,17 +16,18 @@ const JOIN_OPTIONS: Array<[JoinInfoMode, TKey]> = [
 export function SettingsView({ onSearch }: { onSearch: () => void }) {
   const { state, send } = useRoom();
   const t = useT();
+  const searchPrime = useSearchPrime();
   if (!state) return null;
   const s = state.settings;
   const set = (patch: Partial<RoomSettings>) => send({ type: "update_settings", settings: patch });
 
   return (
     <div className={css.view}>
+      {searchPrime.proxy}
       <header className={`${css.viewTop} ${css.viewTopFlow}`}>
-        <button type="button" className={css.fakeSearch} onClick={onSearch}>
+        <button type="button" className={css.fakeSearch} onClick={() => { searchPrime.prime(); onSearch(); }}>
           {t("search.placeholder")}
         </button>
-        <SingWithButton />
       </header>
       <h1 className={css.pageTitle}>{t("nav.settings")}</h1>
 
