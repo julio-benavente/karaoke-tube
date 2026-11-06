@@ -109,7 +109,7 @@ export function Sidebar({ view, onView, only, actions }: { view: View; onView: (
           </div>
           <ul className={css.guests}>
             {members.map((m) => (
-              <GuestRow key={m.id} member={m} temp={m.id === state.tempHostId} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id} onAddFor={() => onView("search")} />
+              <GuestRow key={m.id} member={m} temp={m.id === state.tempHostId} isMe={m.id === me.id} canManage={me.role === "host" && m.id !== me.id && m.id !== state.realHostId} onAddFor={() => onView("search")} />
             ))}
           </ul>
         </Section>

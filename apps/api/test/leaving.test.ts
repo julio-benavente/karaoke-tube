@@ -99,12 +99,18 @@ describe("host offline", () => {
     expect(state.members.find((m) => m.id === memberId)?.role).toBe("cohost");
     expect(state.members.find((m) => m.id === ana.id)?.role).toBe("guest"); // the co-host came first
     expect(state.tempHostId).toBe(ben.id); // Ben is only standing in
+    expect(state.realHostId).toBe(memberId);
+
+    // The stand-in can't demote or remove the real host while they are away.
+    expect(await ben.client.expectError({ type: "set_role", memberId, role: "guest" })).toBe("not_allowed");
+    expect(await ben.client.expectError({ type: "kick", memberId })).toBe("not_allowed");
 
     // The real host comes back: host again, and Ben returns to co-host.
     const back = await TestClient.open(code);
     const welcome = await back.request({ type: "rejoin", memberId, key }, "welcome");
     expect(welcome.state.members.find((m) => m.id === memberId)?.role).toBe("host");
     expect(welcome.state.tempHostId).toBeNull();
+    expect(welcome.state.realHostId).toBeNull();
     state = await ana.client.waitForState((s) => s.members.find((m) => m.id === ben.id)?.role === "cohost");
     expect(state.members.filter((m) => m.role === "host").map((m) => m.id)).toEqual([memberId]);
   });

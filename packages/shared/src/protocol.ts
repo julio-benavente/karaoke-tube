@@ -139,6 +139,8 @@ export type RoomState = {
    * The real host gets the role back when they return and this member goes back to what they were.
    */
   tempHostId?: string | null;
+  /** Set together with `tempHostId`: the real host, waiting as a co-host. The stand-in can't demote or remove them. */
+  realHostId?: string | null;
   /** A TV screen is paired with this party (it may be offline: see `playerConnected`). */
   screenPaired?: boolean;
   /** Songs waiting for a host's OK ("approval" mode), oldest first. v1.1. */

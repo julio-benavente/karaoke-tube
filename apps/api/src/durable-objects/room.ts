@@ -644,6 +644,7 @@ export class Room extends DurableObject<Env> {
         const target = this.memberRow(msg.memberId);
         if (!target || target.role === "host") throw new RoomError("not_allowed", "Can't change that member's role.");
         if (target.phoneless) throw new RoomError("not_allowed", "A guest without a phone can't be a co-host.");
+        if (target.id === this.getMeta<Succession>("succession")?.originalId) throw new RoomError("not_allowed", "The host's seat is theirs while they are away.");
         this.sql.exec("UPDATE members SET role = ? WHERE id = ?", msg.role, target.id);
         break;
       }
@@ -652,6 +653,7 @@ export class Room extends DurableObject<Env> {
         const target = this.memberRow(msg.memberId);
         if (!target || target.role === "host" || target.id === me.id) throw new RoomError("not_allowed", "Can't remove that member.");
         if (me.role === "cohost" && target.role === "cohost") throw new RoomError("not_allowed", "Only the host can remove a co-host.");
+        if (target.id === this.getMeta<Succession>("succession")?.originalId) throw new RoomError("not_allowed", "Can't remove the host while they are away.");
         await this.removeMemberSongs(target.id);
         this.sql.exec("DELETE FROM members WHERE id = ?", target.id);
         for (const sock of this.socketsOf(target.id)) {
@@ -1139,6 +1141,7 @@ export class Room extends DurableObject<Env> {
       recap: this.status() === "ended" ? (this.getMeta<Recap>("recap") ?? null) : null,
       playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
       tempHostId: this.getMeta<Succession>("succession")?.actingId ?? null,
+      realHostId: this.getMeta<Succession>("succession")?.originalId ?? null,
       screenPaired: this.getMeta<string>("screenKeyHash") !== null,
       serverNow: Date.now(),
     };

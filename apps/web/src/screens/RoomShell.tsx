@@ -219,8 +219,8 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
               badge: mine || undefined,
             },
             { key: "party", label: t("tab.party"), icon: <PartyPopper strokeWidth={tab === "party" ? 2.4 : 2} /> },
-            // Co-hosts change the party settings in the host app, which opens straight on that page.
-            ...(me?.role === "cohost" ? [{ key: "settings", label: t("nav.settings"), icon: <SettingsIcon strokeWidth={2} /> }] : []),
+            // Co-hosts (and a stand-in host, who is a plain host here) change the party settings in the host app.
+            ...(isHost ? [{ key: "settings", label: t("nav.settings"), icon: <SettingsIcon strokeWidth={2} /> }] : []),
           ]}
         >
           {state.nowPlaying && (

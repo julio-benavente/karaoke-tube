@@ -116,7 +116,7 @@ export function PartyScreen() {
                   <Pencil size={18} />
                 </button>
               )}
-              {isHost && m.id !== me.id && m.role !== "host" && (
+              {isHost && m.id !== me.id && m.role !== "host" && m.id !== state.realHostId && (
                 <button type="button" className={css.more} onClick={() => setMenu(m)} aria-label={`Options for ${m.nickname}`}>
                   <MoreHorizontal />
                 </button>
