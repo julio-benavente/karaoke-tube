@@ -21,6 +21,7 @@ import {
   type ServerMessage,
   type Song,
   SCREEN_MEMBER_ID,
+  JOIN_FLASH_MS,
 } from "@karaoke-tube/shared";
 import { logEvent } from "../log";
 import { cleanPosterUrl } from "../poster";
@@ -722,8 +723,13 @@ export class Room extends DurableObject<Env> {
       }
       case "show_join": {
         requireHost();
-        this.broadcast({ type: "join_flash" });
-        return;
+        this.setMeta("joinShownUntil", Date.now() + JOIN_FLASH_MS);
+        break;
+      }
+      case "hide_join": {
+        requireHost();
+        this.setMeta("joinShownUntil", null);
+        break;
       }
       case "end_party": {
         if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can end the party.");
@@ -1141,6 +1147,7 @@ export class Room extends DurableObject<Env> {
       recap: this.status() === "ended" ? (this.getMeta<Recap>("recap") ?? null) : null,
       playerConnected: playerAttached && this.getMeta<boolean>("playerTabOpen") === true,
       tempHostId: this.getMeta<Succession>("succession")?.actingId ?? null,
+      joinShownUntil: this.getMeta<number>("joinShownUntil") ?? null,
       realHostId: this.getMeta<Succession>("succession")?.originalId ?? null,
       screenPaired: this.getMeta<string>("screenKeyHash") !== null,
       serverNow: Date.now(),
@@ -1406,6 +1413,7 @@ export function parseClientMessage(text: string): ClientMessage {
     case "restart":
     case "end_party":
     case "show_join":
+    case "hide_join":
       break;
     case "player_status":
       ok(typeof m.tabOpen === "boolean");

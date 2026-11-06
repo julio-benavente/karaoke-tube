@@ -493,6 +493,7 @@ export const en = {
   "host.showQueue": "Show queue",
   "host.showCodeToast": "Showing the code on the TV for 15 seconds.",
   "host.showCode": "Show code on TV",
+  "host.hideCode": "Hide code",
   "host.end": "End",
   "host.endLabel": "End party",
   "host.endTitle": "End the party?",

@@ -494,6 +494,7 @@ export const es: Dict = {
   "host.lockedToast": "Fiesta cerrada. No pueden entrar nuevos invitados.",
   "host.hideQueue": "Ocultar cola",
   "host.showQueue": "Mostrar cola",
+  "host.hideCode": "Ocultar código",
   "host.showCodeToast": "Mostrando el código en la TV por 15 segundos.",
   "host.showCode": "Mostrar código en la TV",
   "host.end": "Terminar",

@@ -3,6 +3,9 @@
 
 // ── Domain ──────────────────────────────────────────────────────────────
 
+/** How long "Show code on TV" keeps the join QR + code on the TV. */
+export const JOIN_FLASH_MS = 15_000;
+
 export type Role = "host" | "cohost" | "guest";
 
 export type Member = {
@@ -139,6 +142,8 @@ export type RoomState = {
    * The real host gets the role back when they return and this member goes back to what they were.
    */
   tempHostId?: string | null;
+  /** Server time (ms) until which the TV shows the join QR + code because a host asked ("Show code on TV"); null/past = not. */
+  joinShownUntil?: number | null;
   /** Set together with `tempHostId`: the real host, waiting as a co-host. The stand-in can't demote or remove them. */
   realHostId?: string | null;
   /** A TV screen is paired with this party (it may be offline: see `playerConnected`). */
@@ -306,8 +311,10 @@ export type ClientMessage =
   | { type: "remove_member_songs"; memberId: string }
   | { type: "update_settings"; settings: Partial<RoomSettings> } // hosts
   | { type: "end_party" } // host only
-  /** Hosts: flash the join QR + code on the TV for a few seconds (the room replies to everyone with `join_flash`). */
+  /** Hosts: show the join QR + code on the TV for `JOIN_FLASH_MS` (see `RoomState.joinShownUntil`). */
   | { type: "show_join" }
+  /** Hosts: take the join QR + code off the TV now (it only ends that temporary showing, not the `joinInfo` setting). */
+  | { type: "hide_join" }
   /** Hosts: add a guest who has no phone, so they get turns in the rotation. Hosts then add songs for them with `add_song` + `singerIds`. */
   | { type: "add_guest"; nickname: string; avatarSeed: string }
   | { type: "react"; reaction: Reaction }
@@ -341,9 +348,7 @@ export type ServerMessage =
   | { type: "screen_removed" }
   /** To a TV window that was the player: another TV window connected and took over. */
   | { type: "player_replaced" }
-  | { type: "ended" }
-  /** A host asked the TV to show the join QR + code for a few seconds. */
-  | { type: "join_flash" };
+  | { type: "ended" };
 
 export type ErrorCode =
   | "room_not_found"

@@ -123,23 +123,21 @@ describe("lock and end", () => {
     expect((await guest(code, "Late")).welcome.state.settings.joinInfo).toBe("start");
   });
 
-  it("show_join: hosts and co-hosts may send it, guests may not; everyone gets join_flash", async () => {
+  it("show_join / hide_join: hosts and co-hosts may send them, guests may not; everyone sees joinShownUntil", async () => {
     const { code, host } = await hostRoom({ player: false });
     const ana = await guest(code, "Ana");
     const ben = await guest(code, "Ben");
     await host.act({ type: "set_role", memberId: ana.id, role: "cohost" });
 
     expect(await ben.client.expectError({ type: "show_join" })).toBe("not_allowed");
-    expect(ben.client.messages.some((m) => m.type === "join_flash")).toBe(false);
+    expect(await ben.client.expectError({ type: "hide_join" })).toBe("not_allowed");
 
-    host.send({ type: "show_join" });
-    await ben.client.next("join_flash");
-    await ana.client.next("join_flash");
-    await host.next("join_flash");
-
-    const from = ben.client.messages.length;
-    ana.client.send({ type: "show_join" });
-    await ben.client.next("join_flash", from);
+    const shown = await host.act({ type: "show_join" });
+    expect(shown.joinShownUntil).toBeGreaterThan(Date.now());
+    // Hiding ends only the temporary showing; the joinInfo setting is untouched.
+    const hidden = await ana.client.act({ type: "hide_join" });
+    expect(hidden.joinShownUntil).toBeNull();
+    expect(hidden.settings.joinInfo).toBe(shown.settings.joinInfo);
   });
 
   it("ends the party: status ended, `ended` broadcast, joins refused", async () => {

@@ -17,9 +17,18 @@ test("S21 · Show the code on the TV @tv @join", async ({ night }) => {
   await expect.poll(joinCard, { message: "flash shows the code" }).toBe(true);
   await expect.poll(joinCard, { timeout: 25_000, message: "flash goes away" }).toBe(false);
 
-  // "Always": the code stays over the song.
+  // "Hide code" ends a showing early.
+  await host.send({ type: "show_join" });
+  await expect.poll(joinCard).toBe(true);
+  await host.send({ type: "hide_join" });
+  await expect.poll(joinCard, { message: "hide takes the flash off" }).toBe(false);
+
+  // "Always": the code stays over the song, and "Hide code" does not override the setting.
   await host.send({ type: "update_settings", settings: { joinInfo: "always" } });
   await expect.poll(joinCard).toBe(true);
+  await host.send({ type: "show_join" });
+  await host.send({ type: "hide_join" });
+  await expect.poll(joinCard, { message: "the setting still shows the code" }).toBe(true);
 
   // Someone joins by QR (a new phone) mid-song and adds a song; playback is undisturbed.
   const eli = await night.join("Eli");

@@ -1,6 +1,7 @@
-import { Minus, Plus, QrCode } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import type { JoinInfoMode, QueueMode, RoomSettings } from "@karaoke-tube/shared";
 import { Button, LanguageSwitcher, SingWithButton, Toggle, useRoom, useT, type TFn, type TKey } from "@karaoke-tube/ui";
+import { ShowCodeButton } from "./ShowCodeButton";
 import { TvScreenSettings } from "./TvScreenSettings";
 import css from "./host.module.css";
 
@@ -121,16 +122,7 @@ export function SettingsView({ onSearch }: { onSearch: () => void }) {
             <span className={css.settingLabel}>{t("settings.showCode")}</span>
             <span className={css.settingDesc}>{t("settings.showCodeDesc")}</span>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<QrCode size={16} />}
-            disabled={!state.playerConnected}
-            title={state.playerConnected ? undefined : t("settings.openTvFirst")}
-            onClick={() => send({ type: "show_join" })}
-          >
-            {t("settings.showCodeBtn")}
-          </Button>
+          <ShowCodeButton label={t("settings.showCodeBtn")} toastOnShow={false} disabled={!state.playerConnected} title={state.playerConnected ? undefined : t("settings.openTvFirst")} />
         </div>
         <Toggle
           label={t("settings.reactions")}

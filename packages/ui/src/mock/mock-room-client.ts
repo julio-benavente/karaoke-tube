@@ -433,7 +433,10 @@ export function createMockRoomClient(options: MockRoomOptions = {}): MockRoomCli
         return commit({ ...roomState, members: roomState.members.map((m) => (m.id === sender.id ? { ...m, avatarSeed: msg.avatarSeed } : m)) });
       case "show_join":
         if (!host) return deny();
-        return;
+        return commit({ ...roomState, joinShownUntil: Date.now() + 15_000 });
+      case "hide_join":
+        if (!host) return deny();
+        return commit({ ...roomState, joinShownUntil: null });
       case "end_party":
         if (sender?.role !== "host") return deny();
         return endParty();

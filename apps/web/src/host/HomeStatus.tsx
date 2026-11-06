@@ -1,7 +1,8 @@
-import { Lock, LockOpen, QrCode, SkipForward, Tv } from "lucide-react";
+import { Lock, LockOpen, SkipForward, Tv } from "lucide-react";
 import { formatRoomCode } from "@karaoke-tube/shared";
 import { Button, IconButton, SongArt, singerNames, songParts, useRoom, useT, useToast } from "@karaoke-tube/ui";
 import { openTvScreen } from "./client";
+import { ShowCodeButton } from "./ShowCodeButton";
 import { isPhoneLayout } from "./phone";
 import css from "./host.module.css";
 
@@ -38,17 +39,7 @@ function PartyCard() {
       </div>
       <div className={css.partyActions}>
         {tvOn ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<QrCode size={16} />}
-            onClick={() => {
-              send({ type: "show_join" });
-              toast.show(t("host.showCodeToast"));
-            }}
-          >
-            {t("host.showCode")}
-          </Button>
+          <ShowCodeButton label={t("host.showCode")} />
         ) : isPhoneLayout() || me?.role !== "host" ? null : ( // only the host can pair a TV
           <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => !openTvScreen(state.code) && toast.show(t("host.tvPopup"), { tone: "error" })}>
             {t("host.openTv")}

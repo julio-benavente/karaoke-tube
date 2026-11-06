@@ -81,7 +81,7 @@ export function HomeScreen() {
         <button type="button" className={css.me} onClick={() => navigate(`/r/${code}/party`)} aria-label={t("tab.party")}>
           <Avatar seed={me.avatarSeed} size={32} />
         </button>
-        <button type="button" className={css.fakeSearch} onClick={() => navigate(`/r/${code}/search`)}>
+        <button type="button" className={css.fakeSearch} onClick={() => navigate(`/r/${code}/search`, { state: { focusSearch: true } })}>
           <SearchIcon size={18} aria-hidden /> {t("search.placeholder")}
         </button>
         {isHost && <SingWithButton />}

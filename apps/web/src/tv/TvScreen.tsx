@@ -14,9 +14,9 @@ import { TvLayer } from "./TvLayer";
 import { Lobby } from "./Lobby";
 import { clearScreen, loadScreen } from "./screenStore";
 import { useWakeLock } from "./useWakeLock";
+import { useJoinShown } from "../useJoinShown";
 
 const AWARDS_SHOW_MS = 60_000;
-const JOIN_FLASH_MS = 15_000;
 
 const page = { position: "fixed", inset: 0, height: "100dvh", background: "#000", color: "#fff", overflow: "hidden", fontFamily: '"Figtree", system-ui, sans-serif' } as const;
 
@@ -83,10 +83,7 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
   const wrapRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const [client, setClient] = useState<RoomClient | null>(null);
-  // "Show code on TV" from the host app: the join QR + code show over the song for a while.
-  const [flash, setFlash] = useState(false);
   const [replaced, setReplaced] = useState(false);
-  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const startAtFor = (item: QueueItem): number => {
     const state = clientRef.current?.state;
@@ -103,10 +100,6 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
       if (msg.type === "play") {
         wantPlay.current = msg.item;
         playerRef.current?.play(msg.item, startAtFor(msg.item));
-      } else if (msg.type === "join_flash") {
-        setFlash(true);
-        clearTimeout(flashTimer.current);
-        flashTimer.current = setTimeout(() => setFlash(false), JOIN_FLASH_MS);
       } else if (msg.type === "player_command") {
         playerRef.current?.command(msg.command);
       } else if (msg.type === "player_replaced") {
@@ -124,7 +117,6 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
     clientRef.current = c;
     setClient(c);
     return () => {
-      clearTimeout(flashTimer.current);
       c.close();
       clientRef.current = null;
       setClient(null);
@@ -133,6 +125,8 @@ function TvBody({ code, screenKey, onLanguage }: { code: string; screenKey: stri
 
   const subscribe = useCallback((l: () => void) => client?.subscribe(l) ?? (() => {}), [client]);
   const state = useSyncExternalStore(subscribe, () => client?.state ?? null);
+  // "Show code on TV" from a host: the join QR + code show over the song for a while (and "Hide code" ends it early).
+  const flash = useJoinShown(state?.joinShownUntil);
   const status = useSyncExternalStore(subscribe, () => client?.status ?? "connecting");
   const closeReason = useSyncExternalStore(subscribe, () => client?.closeReason ?? null);
   const roomLanguage = state?.settings.language;

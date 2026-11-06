@@ -1,5 +1,6 @@
 import { Clipboard, Info, Link2, Search as SearchIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router";
 import type { Song } from "@karaoke-tube/shared";
 import {
   BROWSE_PRESETS,
@@ -36,6 +37,8 @@ export function SearchScreen() {
   const { add, pending } = useAddWithToast();
   const [pasteOpen, setPasteOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Coming from the Home search bar: the field is ready to type in (one tap, not two).
+  const focusOnOpen = !!(useLocation().state as { focusSearch?: boolean } | null)?.focusSearch;
 
   // A pasted YouTube link in the search field becomes a single "From your link" result.
   const linkId = parseYouTubeId(search.query);
@@ -93,6 +96,7 @@ export function SearchScreen() {
           <span className="kt-sr-only">{t("search.songs")}</span>
           <input
             ref={inputRef}
+            autoFocus={focusOnOpen}
             className={css.input}
             value={search.query}
             onChange={(e) => onType(e.target.value)}

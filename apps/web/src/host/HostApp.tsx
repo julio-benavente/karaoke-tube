@@ -2,7 +2,7 @@ import { useLogParty } from "../account/AccountContext";
 import { useLiveParties } from "../account/useLiveParties";
 import { useRoleToast } from "../useRoleToast";
 import { adoptLiveParty, markHosting } from "../session";
-import { CircleSlash, Home, ListMusic, Lock, LockOpen, PartyPopper, Search as SearchIcon, Settings as SettingsIcon, Tv, Power, Flame, QrCode } from "lucide-react";
+import { CircleSlash, Home, ListMusic, Lock, LockOpen, PartyPopper, Search as SearchIcon, Settings as SettingsIcon, Tv, Power, Flame } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AWARDS, AWARD_INFO, REACTION_EMOJI, normalizeRoomCode } from "@karaoke-tube/shared";
 import {
@@ -45,6 +45,7 @@ import { PHONE_QUERY as MOBILE_QUERY } from "./phone";
 import { NextSongFor } from "./NextSongFor";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
+import { ShowCodeButton } from "./ShowCodeButton";
 import { TvOfflineBanner } from "./TvOfflineBanner";
 import { useAfter } from "./useAfter";
 import css from "./host.module.css";
@@ -249,19 +250,7 @@ function Host() {
               only="party"
               actions={
                 <div className={css.mobileActions}>
-                  {state.playerConnected && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      icon={<QrCode size={16} />}
-                      onClick={() => {
-                        send({ type: "show_join" });
-                        toast.show(t("host.showCodeToast"));
-                      }}
-                    >
-                      {t("host.showCode")}
-                    </Button>
-                  )}
+                  {state.playerConnected && <ShowCodeButton label={t("host.showCode")} />}
                   <Button
                     size="sm"
                     variant="secondary"
@@ -341,19 +330,7 @@ function Host() {
               <IconButton label={queueOpen ? t("host.hideQueue") : t("host.showQueue")} active={queueOpen} onClick={() => setQueueOpen(!queueOpen)}>
                 <QueueIcon />
               </IconButton>
-              {state.playerConnected && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<QrCode size={16} />}
-                  onClick={() => {
-                    send({ type: "show_join" });
-                    toast.show(t("host.showCodeToast"));
-                  }}
-                >
-                  {t("host.showCode")}
-                </Button>
-              )}
+              {state.playerConnected && <ShowCodeButton label={t("host.showCode")} />}
               <Button size="sm" variant="secondary" icon={<Tv size={16} />} onClick={() => showOnTv(toast.show, state.code, t)}>
                 {t("host.openTv")}
               </Button>
