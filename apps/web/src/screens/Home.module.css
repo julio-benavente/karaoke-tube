@@ -49,11 +49,6 @@
   transform: scale(0.94);
 }
 
-.chips {
-  flex: 1;
-  margin-right: calc(-1 * var(--kt-space-4));
-  padding-right: var(--kt-space-4);
-}
 
 .greeting {
   margin: var(--kt-space-2) 0 var(--kt-space-4);
@@ -67,6 +62,25 @@
     font-size: var(--kt-text-3xl);
     margin: var(--kt-space-4) 0 var(--kt-space-6);
   }
+}
+
+/* The search bar next to the avatar: opens Search. */
+.fakeSearch {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-2);
+  height: var(--kt-control-lg);
+  padding: 0 var(--kt-space-5);
+  border-radius: var(--kt-radius-full);
+  background: var(--kt-hover);
+  box-shadow: inset 0 0 0 1px var(--kt-white-10);
+  color: var(--kt-text-2);
+  font-size: var(--kt-text-md);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 /* Space between the host's party / now-playing cards and the song cards below. */
@@ -110,4 +124,11 @@
 .mixCell {
   min-width: 0;
   padding: var(--kt-space-3);
+}
+
+/* Song cards drop their padding on touch screens: do the same so the genre cover is as big as the song art. */
+@media (hover: none) {
+  .mixCell {
+    padding: 0;
+  }
 }

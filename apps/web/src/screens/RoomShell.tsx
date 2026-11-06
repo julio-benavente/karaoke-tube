@@ -24,6 +24,9 @@ import {
 import { dropRoomClient, getRoomClient, getSearchApi, hasJoined, markJoined, normalizeCode } from "../session";
 import { useLogParty } from "../account/AccountContext";
 import { useRoleToast } from "../useRoleToast";
+import { NextSongFor } from "../host/NextSongFor";
+import { TvOfflineBanner } from "../host/TvOfflineBanner";
+import { useAfter } from "../host/useAfter";
 import { AwardPrompt } from "./AwardPrompt";
 import { EndStory } from "./EndStory";
 import { NowSingingSheet } from "./NowSinging";
@@ -74,6 +77,7 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
   const t = useT();
   const [lang] = useLang();
   const { state, me, status, closeReason, isHost, send } = useRoom();
+  const tvGone = useAfter(isHost && status === "open" && state?.playerConnected === false, 2500);
   const navigate = useNavigate();
   const location = useLocation();
   const [search, setSearch] = useSearchParams();
@@ -203,6 +207,8 @@ function Shell({ code, retry }: { code: string; retry: () => void }) {
             </Banner>
           </div>
         )}
+        {tvGone && <TvOfflineBanner compact onOpenTv={() => {}} />}
+        {isHost && <NextSongFor />}
         <main className={css.main}>
           <Outlet />
         </main>

@@ -21,7 +21,7 @@ export function TvScreenSettings() {
   const [error, setError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   if (!state) return null;
-  const isHost = me?.role === "host";
+  const isHost = me?.role === "host" || me?.role === "cohost";
   const paired = state.screenPaired === true;
   const connected = state.playerConnected === true;
 

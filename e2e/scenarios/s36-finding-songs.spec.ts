@@ -10,10 +10,9 @@ test("S36 · Finding songs @search", async ({ night }) => {
   const results = () => page.getByRole("button", { name: /^Add .* to queue$/ });
   const box = () => page.getByPlaceholder(en["search.placeholder"]);
 
-  // 1. Home: a genre chip changes what is shown.
-  const before = await ana.bodyText();
-  await page.getByRole("button", { name: "Rock", exact: true }).first().click();
-  await expect.poll(async () => (await ana.bodyText()) !== before).toBe(true);
+  // 1. Home: the search bar next to the avatar opens Search.
+  await page.getByRole("button", { name: en["search.placeholder"] }).first().click();
+  await expect(box()).toBeVisible();
 
   // 2. Search, as you type: a prefix finds Queen, a typo still finds Bohemian Rhapsody.
   await ana.tab("Search");

@@ -72,7 +72,7 @@ export const en = {
   "tvscreen.codeHint": "Type the 5-digit code shown on the TV.",
   "tvscreen.pairButton": "Pair",
   "tvscreen.notFound": "No TV is showing that code. Codes change every few minutes, so check the number on the TV (or press New code there).",
-  "tvscreen.notHost": "Only the host can pair a TV.",
+  "tvscreen.notHost": "Only the host or a co-host can pair a TV.",
   "tvscreen.error": "Couldn't pair the TV. Try again.",
   "tvscreen.paired": "TV paired",
   "tvscreen.thisComputer": "Use this computer",

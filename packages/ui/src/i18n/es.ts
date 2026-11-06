@@ -75,7 +75,7 @@ export const es: Dict = {
   "tvscreen.codeHint": "Escribe el código de 5 dígitos que muestra la TV.",
   "tvscreen.pairButton": "Vincular",
   "tvscreen.notFound": "Ninguna TV muestra ese código. Los códigos cambian cada pocos minutos: revisa el número en la TV (o pulsa Nuevo código allí).",
-  "tvscreen.notHost": "Solo el anfitrión puede vincular una TV.",
+  "tvscreen.notHost": "Solo el anfitrión o un coanfitrión puede vincular una TV.",
   "tvscreen.error": "No se pudo vincular la TV. Inténtalo de nuevo.",
   "tvscreen.paired": "TV vinculada",
   "tvscreen.thisComputer": "Usar esta computadora",

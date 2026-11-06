@@ -46,26 +46,13 @@ import { NextSongFor } from "./NextSongFor";
 import { SearchView } from "./SearchView";
 import { SettingsView } from "./SettingsView";
 import { TvOfflineBanner } from "./TvOfflineBanner";
+import { useAfter } from "./useAfter";
 import css from "./host.module.css";
 
 export type View = "home" | "search" | "settings" | "queue" | "party";
 const VIEWS = ["search", "settings", "queue", "party"] as const;
 
 /** Phones and narrow windows get the phone layout: one column, tabs at the bottom. */
-
-/** True once `on` has been true for `ms` without a break; false again as soon as it stops. */
-function useAfter(on: boolean, ms: number): boolean {
-  const [v, setV] = useState(false);
-  useEffect(() => {
-    if (!on) {
-      setV(false);
-      return;
-    }
-    const id = setTimeout(() => setV(true), ms);
-    return () => clearTimeout(id);
-  }, [on, ms]);
-  return v;
-}
 
 function useIsMobile(): boolean {
   const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);

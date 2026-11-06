@@ -15,7 +15,7 @@ export function TvOfflineBanner({ onOpenTv, compact = false }: { onOpenTv: () =>
   const pair = usePairClaim(state?.code ?? "");
   const [open, setOpen] = useState(false);
   if (!state) return null;
-  const isHost = me?.role === "host";
+  const isHost = me?.role === "host" || me?.role === "cohost";
   const link = `${location.host}/tv`;
   const showHelp = !compact || open;
 

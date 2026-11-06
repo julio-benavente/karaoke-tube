@@ -355,13 +355,13 @@ export class Room extends DurableObject<Env> {
   }
 
   /**
-   * The host app pairs a TV: only the host (including a temporary host) can. Returns the screen's key, which the
+   * The host app pairs a TV: only a host (including a temporary host) or a co-host can. Returns the screen's key, which the
    * TV keeps; any earlier screen is dropped, so there is one screen per party.
    */
   async pairScreen(memberId: string, key: string): Promise<string | null> {
     if (this.getMeta("code") === null || this.status() !== "open") return null;
     const member = this.memberRow(memberId);
-    if (!member || member.role !== "host" || member.key_hash !== (await sha256(key))) return null;
+    if (!member || (member.role !== "host" && member.role !== "cohost") || member.key_hash !== (await sha256(key))) return null;
     this.dropScreenSockets();
     const screenKey = randomKey();
     this.setMeta("screenKeyHash", await sha256(screenKey));
@@ -693,7 +693,7 @@ export class Room extends DurableObject<Env> {
         break;
       }
       case "remove_screen": {
-        if (me.role !== "host") throw new RoomError("not_allowed", "Only the host can remove the TV screen.");
+        requireHost();
         this.dropScreen();
         break;
       }

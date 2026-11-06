@@ -1,4 +1,5 @@
 import { presetName, useLang, useT } from "@karaoke-tube/ui";
+import { Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { Song } from "@karaoke-tube/shared";
@@ -7,9 +8,8 @@ import {
   BROWSE_PRESETS,
   Card,
   SongArt,
-  Chip,
-  ChipRow,
   SAMPLE_SONGS,
+  SingWithButton,
   Shelf,
   ShortcutTile,
   Tile,
@@ -28,9 +28,7 @@ import { SongSheet } from "./SongSheet";
 import { useAddWithToast } from "./useAdd";
 import css from "./Home.module.css";
 
-const GENRES = BROWSE_PRESETS.filter((p) => p.chip);
-
-/** G2: greeting, genre chips, 6 shortcut tiles, "Popular in this room". */
+/** G2: greeting, search bar, 6 shortcut tiles, "Popular in this room". */
 export function HomeScreen() {
   const t = useT();
   const [lang] = useLang();
@@ -40,16 +38,9 @@ export function HomeScreen() {
   const roomSongs = useRoomSongs(state);
   const { add, addNow, pending } = useAddWithToast();
   const [sheetSong, setSheetSong] = useState<Song | null>(null);
-  const [genre, setGenre] = useState<string | null>(null);
-  const genreSearch = useSearch();
   const classics = useSearch();
   const popular = useSearch();
 
-  const preset = GENRES.find((g) => g.id === genre);
-  useEffect(() => {
-    if (preset) genreSearch.browse(preset.filter, { limit: 30, fallbackQuery: preset.query });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset?.id]);
   // Everything on Home comes from our own song catalog (by labels), most popular first.
   useEffect(() => {
     const party = BROWSE_PRESETS.find((p) => p.id === "classics")!;
@@ -90,16 +81,10 @@ export function HomeScreen() {
         <button type="button" className={css.me} onClick={() => navigate(`/r/${code}/party`)} aria-label={t("tab.party")}>
           <Avatar seed={me.avatarSeed} size={32} />
         </button>
-        <ChipRow className={css.chips}>
-          <Chip selected={!genre} onClick={() => setGenre(null)}>
-            All
-          </Chip>
-          {GENRES.map((g) => (
-            <Chip key={g.id} selected={genre === g.id} onClick={() => setGenre(genre === g.id ? null : g.id)}>
-              {presetName(t, g.id)}
-            </Chip>
-          ))}
-        </ChipRow>
+        <button type="button" className={css.fakeSearch} onClick={() => navigate(`/r/${code}/search`)}>
+          <SearchIcon size={18} aria-hidden /> {t("search.placeholder")}
+        </button>
+        {isHost && <SingWithButton />}
       </header>
 
       <h1 className={css.greeting}>
@@ -112,31 +97,6 @@ export function HomeScreen() {
         </div>
       )}
 
-      {preset ? (
-        <section className={css.section}>
-          {genreSearch.loading && !genreSearch.results.length ? (
-            <div className={css.grid}>
-              {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className={css.skeleton} />
-              ))}
-            </div>
-          ) : (
-            <div className={css.grid}>
-              {genreSearch.results.slice(0, 6).map((s) => (
-                <ShortcutTile
-                  key={s.videoId}
-                  title={songParts(s).title}
-                  label={s.title}
-                  art={<SongArt song={s} radius="none" explicit={s.explicit} />}
-                  onClick={() => setSheetSong(s)}
-                  onPlay={() => add(s)}
-                />
-              ))}
-            </div>
-          )}
-          <Shelf title={t("home.more", { title: presetName(t, preset.id) })}>{genreSearch.results.slice(6).map(card)}</Shelf>
-        </section>
-      ) : (
         <section className={css.section}>
           <div className={css.grid}>
             {shortcuts.map((s) => (
@@ -166,7 +126,6 @@ export function HomeScreen() {
           </Shelf>
           {classics.results.length > 0 && <Shelf title={t("home.classics")}>{classics.results.map(card)}</Shelf>}
         </section>
-      )}
 
       <SongSheet song={sheetSong} onClose={() => setSheetSong(null)} onAdd={addNow} />
     </div>

@@ -37,7 +37,7 @@ export const pairRoutes = new Hono<{ Bindings: Env }>()
   // The TV polls until the host has entered the code.
   .get("/:id", limit, async (c) => c.json(await stub(c.env).status(c.req.param("id") ?? "")))
 
-  // The host app pairs the TV that shows `code` with its party. Only a host (or temporary host) can.
+  // The host app pairs the TV that shows `code` with its party. Only a host (or temporary host) or a co-host can.
   .post("/claim", limit, claimLimit, async (c) => {
     const body = await c.req.json<Partial<PairClaimRequest>>().catch(() => null);
     const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().replace(/[\s-]/g, "") : "";
@@ -49,7 +49,7 @@ export const pairRoutes = new Hono<{ Bindings: Env }>()
     if (!(await pairing.isWaiting(code))) return fail(c, 404, "No TV is showing that code. Check it, or open the TV page again for a new one.");
     const room = c.env.ROOM.get(c.env.ROOM.idFromName(roomCode));
     const screenKey = await room.pairScreen(body.memberId, body.key);
-    if (!screenKey) return fail(c, 403, "Only the host can pair a TV.");
+    if (!screenKey) return fail(c, 403, "Only the host or a co-host can pair a TV.");
     if (!(await pairing.complete(code, roomCode, screenKey))) return fail(c, 404, "That code was just used or has expired.");
     return c.json({ ok: true });
   });
