@@ -106,7 +106,11 @@ export function HomeScreen() {
         {greeting(undefined, t)}, {me.nickname}
       </h1>
 
-      {isHost && <HomeStatus />}
+      {isHost && (
+        <div className={css.status}>
+          <HomeStatus />
+        </div>
+      )}
 
       {preset ? (
         <section className={css.section}>

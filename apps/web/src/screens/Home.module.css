@@ -69,6 +69,11 @@
   }
 }
 
+/* Space between the host's party / now-playing cards and the song cards below. */
+.status {
+  margin-bottom: var(--kt-space-6);
+}
+
 .section {
   display: flex;
   flex-direction: column;
