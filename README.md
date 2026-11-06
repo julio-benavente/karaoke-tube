@@ -163,7 +163,7 @@ Without a key, or when the daily quota (10,000 units) runs out, search returns `
 pnpm typecheck
 pnpm build
 pnpm --filter @karaoke-tube/api cf-typegen   # after editing wrangler.jsonc
-pnpm --filter @karaoke-tube/api deploy       # builds web + deploys the Worker (needs `wrangler login`)
+pnpm deploy:api                             # builds web + deploys the Worker (needs `wrangler login`)
 ```
 
 ## Testing
